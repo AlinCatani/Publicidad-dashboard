@@ -1,250 +1,988 @@
+
 <!DOCTYPE html>
 <html lang="es">
 <head>
 <meta charset="UTF-8">
-<title>Dashboard META INGENES — 14/05/2026</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>INGENES — Dashboard Media Buying · Mayo 2026</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=DM+Mono:wght@300;400;500&display=swap" rel="stylesheet">
 <style>
-  :root{
-    --bg:#0d1117; --panel:#161b22; --panel2:#1c2230;
-    --txt:#e6edf3; --muted:#8b949e; --line:#30363d;
-    --green:#3fb950; --yellow:#d29922; --red:#f85149; --accent:#58e696;
+  :root {
+    --bg: #0a0e0b;
+    --bg-card: #111714;
+    --bg-card2: #161d18;
+    --green: #3ddc64;
+    --green-dim: #2aab4a;
+    --green-pale: rgba(61,220,100,0.08);
+    --green-pale2: rgba(61,220,100,0.14);
+    --amber: #f5c842;
+    --amber-pale: rgba(245,200,66,0.10);
+    --red: #f0484a;
+    --red-pale: rgba(240,72,74,0.10);
+    --blue: #5ab4f5;
+    --blue-pale: rgba(90,180,245,0.10);
+    --text: #e8f0ea;
+    --text-muted: #7a9480;
+    --text-dim: #3d5242;
+    --border: rgba(61,220,100,0.12);
+    --border-bright: rgba(61,220,100,0.28);
+    --mono: 'DM Mono', monospace;
+    --sans: 'Syne', sans-serif;
   }
-  *{box-sizing:border-box}
-  body{margin:0;background:var(--bg);color:var(--txt);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;line-height:1.45}
-  header{padding:28px 36px;background:linear-gradient(135deg,#0a3d2a 0%,#0d1117 70%);border-bottom:1px solid var(--line)}
-  header h1{margin:0;font-size:26px;font-weight:700;letter-spacing:.3px}
-  header h1 .accent{color:var(--accent)}
-  header p{margin:6px 0 0;color:var(--muted);font-size:13px}
-  main{padding:24px 36px;max-width:1500px;margin:0 auto}
-  section{margin-bottom:36px}
-  h2{font-size:16px;text-transform:uppercase;letter-spacing:1.2px;color:var(--accent);border-left:3px solid var(--accent);padding-left:10px;margin:0 0 14px}
-  h3{font-size:13px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin:18px 0 8px}
-  .grid{display:grid;gap:14px}
-  .kpis{grid-template-columns:repeat(4,1fr)}
-  .kpi{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:16px 18px}
-  .kpi .lbl{color:var(--muted);font-size:11px;text-transform:uppercase;letter-spacing:1px}
-  .kpi .val{font-size:24px;font-weight:700;margin-top:6px;color:var(--accent)}
-  .kpi .sub{color:var(--muted);font-size:11px;margin-top:4px}
-  .panel{background:var(--panel);border:1px solid var(--line);border-radius:10px;overflow:hidden}
-  table{width:100%;border-collapse:collapse;font-size:13px}
-  th,td{padding:9px 12px;text-align:right;border-bottom:1px solid var(--line)}
-  th{background:var(--panel2);color:var(--muted);text-transform:uppercase;font-size:10px;letter-spacing:1px;font-weight:600}
-  td:first-child,th:first-child{text-align:left}
-  tbody tr:hover{background:rgba(63,185,80,.04)}
-  .green{color:var(--green);font-weight:600}
-  .yellow{color:var(--yellow);font-weight:600}
-  .red{color:var(--red);font-weight:600}
-  .pill{display:inline-block;padding:2px 8px;border-radius:12px;font-size:11px;font-weight:600}
-  .pill.g{background:rgba(63,185,80,.15);color:var(--green)}
-  .pill.y{background:rgba(210,153,34,.15);color:var(--yellow)}
-  .pill.r{background:rgba(248,81,73,.15);color:var(--red)}
-  .progress{background:var(--panel2);border-radius:6px;overflow:hidden;height:10px;margin-top:6px}
-  .progress > div{height:100%;background:linear-gradient(90deg,#3fb950,#58e696)}
-  .progress.warn > div{background:linear-gradient(90deg,#d29922,#f0c44a)}
-  .progress.bad > div{background:linear-gradient(90deg,#f85149,#ff7b72)}
-  .alert{background:var(--panel);border-left:3px solid var(--red);padding:10px 14px;border-radius:6px;margin-bottom:8px;font-size:13px}
-  .alert.warn{border-color:var(--yellow)}
-  .alert.info{border-color:var(--accent)}
-  .alert .tag{font-size:10px;text-transform:uppercase;letter-spacing:1px;font-weight:700;margin-right:8px}
-  .alert .tag.r{color:var(--red)}
-  .alert .tag.y{color:var(--yellow)}
-  .alert .tag.i{color:var(--accent)}
-  .note{color:var(--muted);font-size:12px;font-style:italic;margin-top:10px}
-  footer{text-align:center;padding:24px;color:var(--muted);font-size:11px;border-top:1px solid var(--line);margin-top:40px}
-  .twocol{display:grid;grid-template-columns:1fr 1fr;gap:14px}
-  @media (max-width:900px){.kpis{grid-template-columns:repeat(2,1fr)}.twocol{grid-template-columns:1fr}}
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--sans);
+    min-height: 100vh;
+    background-image: radial-gradient(ellipse 80% 40% at 50% -10%, rgba(61,220,100,0.07) 0%, transparent 70%);
+  }
+
+  /* ── LOGIN SCREEN ── */
+  #login-screen {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    padding: 24px;
+    background: var(--bg);
+    background-image:
+      radial-gradient(ellipse 70% 50% at 50% 0%, rgba(61,220,100,0.09) 0%, transparent 70%),
+      radial-gradient(ellipse 40% 40% at 80% 80%, rgba(61,220,100,0.04) 0%, transparent 60%);
+  }
+  .login-card {
+    width: 100%;
+    max-width: 420px;
+    background: var(--bg-card);
+    border: 1px solid var(--border-bright);
+    border-radius: 20px;
+    padding: 48px 40px 40px;
+    position: relative;
+    overflow: hidden;
+  }
+  .login-card::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(145deg, rgba(61,220,100,0.05) 0%, transparent 55%);
+    pointer-events: none;
+  }
+  .login-logo-wrap {
+    text-align: center;
+    margin-bottom: 32px;
+  }
+  .login-logo {
+    font-size: 28px;
+    font-weight: 800;
+    letter-spacing: .1em;
+    color: var(--green);
+    text-transform: uppercase;
+    display: inline-block;
+  }
+  .login-logo span { color: var(--text); }
+  .login-tagline {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--text-muted);
+    letter-spacing: .14em;
+    text-transform: uppercase;
+    margin-top: 6px;
+    display: block;
+  }
+  .login-divider {
+    width: 40px;
+    height: 2px;
+    background: linear-gradient(90deg, var(--green), transparent);
+    margin: 20px auto;
+    border-radius: 2px;
+  }
+  .login-label {
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: .12em;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    margin-bottom: 8px;
+    display: block;
+  }
+  .login-input-wrap {
+    position: relative;
+    margin-bottom: 8px;
+  }
+  .login-input {
+    width: 100%;
+    background: rgba(61,220,100,0.04);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 13px 46px 13px 16px;
+    font-family: var(--mono);
+    font-size: 14px;
+    color: var(--text);
+    outline: none;
+    transition: border-color .2s, box-shadow .2s;
+    -webkit-text-security: disc;
+  }
+  .login-input:focus {
+    border-color: var(--green);
+    box-shadow: 0 0 0 3px rgba(61,220,100,0.12);
+  }
+  .login-input.error {
+    border-color: var(--red);
+    box-shadow: 0 0 0 3px rgba(240,72,74,0.12);
+    animation: shake .35s ease;
+  }
+  @keyframes shake {
+    0%,100%{ transform:translateX(0) }
+    20%    { transform:translateX(-6px) }
+    40%    { transform:translateX(6px) }
+    60%    { transform:translateX(-4px) }
+    80%    { transform:translateX(4px) }
+  }
+  .toggle-pw {
+    position: absolute;
+    right: 14px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: var(--text-muted);
+    font-size: 14px;
+    line-height: 1;
+    padding: 4px;
+    transition: color .15s;
+  }
+  .toggle-pw:hover { color: var(--green); }
+  .login-error {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--red);
+    min-height: 18px;
+    margin-bottom: 18px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    opacity: 0;
+    transition: opacity .2s;
+  }
+  .login-error.visible { opacity: 1; }
+  .login-btn {
+    width: 100%;
+    background: var(--green);
+    color: #0a0e0b;
+    font-family: var(--sans);
+    font-weight: 800;
+    font-size: 13px;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+    border: none;
+    border-radius: 10px;
+    padding: 14px;
+    cursor: pointer;
+    transition: background .2s, transform .1s, box-shadow .2s;
+    box-shadow: 0 4px 20px rgba(61,220,100,0.25);
+  }
+  .login-btn:hover {
+    background: #4eff7a;
+    box-shadow: 0 6px 28px rgba(61,220,100,0.38);
+  }
+  .login-btn:active { transform: scale(.98); }
+  .login-btn:disabled {
+    opacity: .5;
+    cursor: not-allowed;
+    transform: none;
+  }
+  .login-footer {
+    text-align: center;
+    margin-top: 28px;
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--text-dim);
+  }
+  /* spinning loader on the button */
+  .btn-spinner {
+    display: inline-block;
+    width: 14px;
+    height: 14px;
+    border: 2px solid rgba(0,0,0,0.25);
+    border-top-color: #0a0e0b;
+    border-radius: 50%;
+    animation: spin .6s linear infinite;
+    vertical-align: middle;
+    margin-right: 6px;
+  }
+  @keyframes spin { to { transform:rotate(360deg) } }
+
+  /* ── DASHBOARD (hidden until auth) ── */
+  #dashboard { display: none; }
+
+  /* ── all original dashboard styles below ── */
+  .topbar {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 18px 32px; border-bottom: 1px solid var(--border);
+    background: rgba(10,14,11,0.97); position: sticky; top: 0; z-index: 100;
+  }
+  .topbar-left { display: flex; align-items: center; gap: 14px; }
+  .logo { font-size: 18px; font-weight: 800; letter-spacing: .08em; color: var(--green); text-transform: uppercase; }
+  .logo span { color: var(--text); }
+  .topbar-tag {
+    font-family: var(--mono); font-size: 11px; color: var(--text-muted);
+    background: var(--green-pale); border: 1px solid var(--border);
+    padding: 3px 10px; border-radius: 20px; letter-spacing: .04em;
+  }
+  .topbar-right { display: flex; align-items: center; gap: 20px; font-family: var(--mono); font-size: 11px; color: var(--text-muted); }
+  .live-dot {
+    width: 7px; height: 7px; border-radius: 50%; background: var(--green);
+    box-shadow: 0 0 0 0 rgba(61,220,100,0.5); animation: pulse 2s infinite;
+    display: inline-block; margin-right: 6px;
+  }
+  @keyframes pulse {
+    0%  { box-shadow: 0 0 0 0 rgba(61,220,100,.5); }
+    70% { box-shadow: 0 0 0 7px rgba(61,220,100,0); }
+    100%{ box-shadow: 0 0 0 0 rgba(61,220,100,0); }
+  }
+  .logout-btn {
+    font-family: var(--mono); font-size: 10px; color: var(--text-dim);
+    background: none; border: 1px solid var(--border); border-radius: 20px;
+    padding: 3px 10px; cursor: pointer; transition: color .15s, border-color .15s;
+  }
+  .logout-btn:hover { color: var(--red); border-color: rgba(240,72,74,.3); }
+  .main { padding: 28px 32px 60px; max-width: 1440px; margin: 0 auto; }
+  .section-label {
+    font-family: var(--mono); font-size: 10px; letter-spacing: .16em;
+    color: var(--green); text-transform: uppercase;
+    margin-bottom: 16px; display: flex; align-items: center; gap: 10px;
+  }
+  .section-label::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+  .cards-grid { display: grid; grid-template-columns: repeat(4,1fr); gap: 14px; margin-bottom: 32px; }
+  .card {
+    background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px;
+    padding: 20px 22px; position: relative; overflow: hidden; transition: border-color .2s;
+  }
+  .card:hover { border-color: var(--border-bright); }
+  .card::before {
+    content: ''; position: absolute; inset: 0;
+    background: linear-gradient(135deg, rgba(61,220,100,0.04) 0%, transparent 60%);
+    pointer-events: none;
+  }
+  .card-label { font-family: var(--mono); font-size: 10px; letter-spacing: .12em; color: var(--text-muted); text-transform: uppercase; margin-bottom: 10px; }
+  .card-val { font-size: 32px; font-weight: 800; line-height: 1; color: var(--green); margin-bottom: 6px; font-variant-numeric: tabular-nums; }
+  .card-val.white { color: var(--text); }
+  .card-val.amber { color: var(--amber); }
+  .card-sub { font-family: var(--mono); font-size: 11px; color: var(--text-muted); }
+  .card-accent { position: absolute; top: 14px; right: 16px; font-family: var(--mono); font-size: 10px; padding: 2px 8px; border-radius: 20px; }
+  .card-accent.green { background: var(--green-pale); color: var(--green); border: 1px solid rgba(61,220,100,.2); }
+  .card-accent.amber { background: var(--amber-pale); color: var(--amber); border: 1px solid rgba(245,200,66,.2); }
+  .line-cards { display: grid; grid-template-columns: repeat(2,1fr); gap: 14px; margin-bottom: 32px; }
+  .line-card {
+    background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px;
+    padding: 18px 22px; display: flex; align-items: center; gap: 20px;
+  }
+  .line-card-icon {
+    width: 42px; height: 42px; border-radius: 10px;
+    background: var(--green-pale2); border: 1px solid var(--border-bright);
+    display: flex; align-items: center; justify-content: center; font-size: 18px; flex-shrink: 0;
+  }
+  .line-card-body { flex: 1; }
+  .line-card-name { font-size: 13px; font-weight: 700; color: var(--text); margin-bottom: 6px; }
+  .line-card-row { display: flex; gap: 20px; flex-wrap: wrap; }
+  .line-stat { display: flex; flex-direction: column; gap: 1px; }
+  .line-stat-val { font-family: var(--mono); font-size: 14px; font-weight: 500; color: var(--green); }
+  .line-stat-val.amber { color: var(--amber); }
+  .line-stat-label { font-family: var(--mono); font-size: 10px; color: var(--text-muted); }
+  .line-card-badge { font-family: var(--mono); font-size: 10px; padding: 3px 9px; border-radius: 20px; align-self: flex-start; white-space: nowrap; }
+  .badge-green { background: var(--green-pale); color: var(--green); border: 1px solid rgba(61,220,100,.2); }
+  .badge-amber { background: var(--amber-pale); color: var(--amber); border: 1px solid rgba(245,200,66,.2); }
+  .badge-dim   { background: rgba(255,255,255,.04); color: var(--text-muted); border: 1px solid var(--border); }
+  .table-wrap { background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; overflow: hidden; margin-bottom: 32px; }
+  .table-header { padding: 14px 20px; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; }
+  .table-title { font-size: 13px; font-weight: 700; color: var(--text); }
+  .table-subtitle { font-family: var(--mono); font-size: 10px; color: var(--text-muted); }
+  table { width: 100%; border-collapse: collapse; }
+  thead th {
+    font-family: var(--mono); font-size: 10px; letter-spacing: .1em; color: var(--text-dim);
+    text-transform: uppercase; padding: 10px 16px; text-align: left;
+    border-bottom: 1px solid var(--border); white-space: nowrap;
+  }
+  thead th.r { text-align: right; }
+  tbody tr { border-bottom: 1px solid rgba(61,220,100,0.06); transition: background .15s; }
+  tbody tr:last-child { border-bottom: none; }
+  tbody tr:hover { background: rgba(61,220,100,0.04); }
+  tbody td { padding: 11px 16px; font-size: 12px; color: var(--text); vertical-align: middle; }
+  tbody td.r { text-align: right; font-family: var(--mono); font-size: 11px; }
+  tbody td.mono { font-family: var(--mono); font-size: 11px; }
+  .row-total td { background: rgba(61,220,100,0.06); font-weight: 700; font-size: 12px; }
+  .row-total td.r { color: var(--green); }
+  .sem { display: inline-flex; align-items: center; gap: 7px; font-family: var(--mono); font-size: 11px; font-weight: 500; }
+  .sem-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+  .sem-dot.green { background: var(--green); box-shadow: 0 0 6px rgba(61,220,100,.6); }
+  .sem-dot.amber { background: var(--amber); box-shadow: 0 0 6px rgba(245,200,66,.6); }
+  .sem-dot.red   { background: var(--red);   box-shadow: 0 0 6px rgba(240,72,74,.6); }
+  .cpl-green { color: var(--green); }
+  .cpl-amber { color: var(--amber); }
+  .cpl-red   { color: var(--red); }
+  .cpl-crit  { color: var(--red); font-weight: 700; }
+  .fatigue-chip { font-family: var(--mono); font-size: 10px; padding: 2px 8px; border-radius: 20px; white-space: nowrap; }
+  .f-ok   { background: var(--green-pale); color: var(--green); }
+  .f-near { background: var(--amber-pale); color: var(--amber); }
+  .f-over { background: var(--red-pale);   color: var(--red); }
+  .f-crit { background: rgba(240,72,74,.25); color: #ff8080; font-weight: 700; }
+  .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 32px; }
+  .progress-grid { display: flex; flex-direction: column; gap: 10px; margin-bottom: 32px; }
+  .progress-row { background: var(--bg-card); border: 1px solid var(--border); border-radius: 10px; padding: 14px 18px; }
+  .progress-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+  .progress-name { font-size: 12px; font-weight: 600; color: var(--text); }
+  .progress-stats { display: flex; gap: 18px; align-items: center; }
+  .pstat { display: flex; flex-direction: column; align-items: flex-end; gap: 1px; }
+  .pstat-val { font-family: var(--mono); font-size: 12px; font-weight: 500; }
+  .pstat-label { font-family: var(--mono); font-size: 10px; color: var(--text-muted); }
+  .bar-track { height: 6px; border-radius: 3px; background: rgba(255,255,255,0.07); position: relative; overflow: visible; }
+  .bar-fill { height: 6px; border-radius: 3px; position: absolute; left: 0; top: 0; }
+  .bar-green { background: linear-gradient(90deg, #2aab4a, #3ddc64); }
+  .bar-amber { background: linear-gradient(90deg, #c49a00, #f5c842); }
+  .bar-red   { background: linear-gradient(90deg, #a02020, #f0484a); }
+  .bar-blue  { background: linear-gradient(90deg, #2266a0, #5ab4f5); }
+  .bar-pace-mark { position: absolute; top: -3px; width: 2px; height: 12px; background: rgba(255,255,255,.35); border-radius: 1px; }
+  .bar-pace-label { position: absolute; top: -18px; font-family: var(--mono); font-size: 9px; color: var(--text-muted); transform: translateX(-50%); white-space: nowrap; }
+  .alerts-grid { display: flex; flex-direction: column; gap: 10px; margin-bottom: 40px; }
+  .alert-item { border-radius: 10px; padding: 14px 18px; display: flex; align-items: flex-start; gap: 14px; border: 1px solid transparent; }
+  .alert-1 { background: rgba(240,72,74,.10); border-color: rgba(240,72,74,.3); }
+  .alert-2 { background: rgba(240,72,74,.06); border-color: rgba(240,72,74,.18); }
+  .alert-3 { background: rgba(245,200,66,.07); border-color: rgba(245,200,66,.22); }
+  .alert-4 { background: rgba(90,180,245,.06); border-color: rgba(90,180,245,.18); }
+  .alert-5 { background: rgba(61,220,100,.05); border-color: rgba(61,220,100,.15); }
+  .alert-icon { font-size: 18px; flex-shrink: 0; margin-top: 1px; }
+  .alert-body { flex: 1; }
+  .alert-title { font-size: 13px; font-weight: 700; margin-bottom: 3px; }
+  .alert-1 .alert-title, .alert-2 .alert-title { color: var(--red); }
+  .alert-3 .alert-title { color: var(--amber); }
+  .alert-4 .alert-title { color: var(--blue); }
+  .alert-5 .alert-title { color: var(--green); }
+  .alert-desc { font-size: 12px; color: var(--text-muted); line-height: 1.55; }
+  .alert-desc strong { color: var(--text); }
+  .alert-badge { font-family: var(--mono); font-size: 10px; padding: 2px 8px; border-radius: 20px; white-space: nowrap; flex-shrink: 0; align-self: flex-start; }
+  .badge-red   { background: var(--red-pale);   color: var(--red);   border: 1px solid rgba(240,72,74,.2); }
+  .badge-blue  { background: var(--blue-pale);  color: var(--blue);  border: 1px solid rgba(90,180,245,.2); }
+  .dash-footer { text-align: center; padding: 20px 0; font-family: var(--mono); font-size: 10px; color: var(--text-dim); border-top: 1px solid var(--border); }
+  @media (max-width: 1100px) {
+    .cards-grid { grid-template-columns: repeat(2,1fr); }
+    .two-col { grid-template-columns: 1fr; }
+  }
+  @media (max-width: 700px) {
+    .main { padding: 16px; }
+    .cards-grid { grid-template-columns: 1fr; }
+    .line-cards { grid-template-columns: 1fr; }
+    .topbar { padding: 14px 16px; flex-wrap: wrap; gap: 8px; }
+    .progress-stats { flex-wrap: wrap; gap: 8px; }
+    .login-card { padding: 36px 24px 28px; }
+  }
 </style>
 </head>
 <body>
-<header>
-  <h1>Dashboard META <span class="accent">INGENES</span></h1>
-  <p>Datos al cierre del 13 de mayo de 2026 · Generado 14/05/2026 · Fuente: Meta Ads API (MCP)</p>
+
+<!-- ══════════════════════════════════════
+     LOGIN SCREEN
+══════════════════════════════════════ -->
+<div id="login-screen">
+  <div class="login-card">
+    <div class="login-logo-wrap">
+      <div class="login-logo">INGE<span>NES</span></div>
+      <span class="login-tagline">Media Buying Dashboard · Acceso interno</span>
+    </div>
+    <div class="login-divider"></div>
+
+    <label class="login-label" for="pw-input">Contraseña</label>
+    <div class="login-input-wrap">
+      <input
+        id="pw-input"
+        class="login-input"
+        type="password"
+        placeholder="••••••••••••"
+        autocomplete="current-password"
+        spellcheck="false"
+      />
+      <button class="toggle-pw" id="toggle-pw-btn" tabindex="-1" title="Mostrar/ocultar">👁</button>
+    </div>
+
+    <div class="login-error" id="login-error">⚠ Contraseña incorrecta</div>
+
+    <button class="login-btn" id="login-btn">Ingresar al dashboard</button>
+
+    <div class="login-footer">Mayo 2026 · Día 14/31 · MXN<br>Acceso restringido al equipo de Media Buying</div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════
+     DASHBOARD (hidden until auth)
+══════════════════════════════════════ -->
+<div id="dashboard">
+
+<header class="topbar">
+  <div class="topbar-left">
+    <div class="logo">INGE<span>NES</span></div>
+    <div class="topbar-tag">Media Buying Dashboard</div>
+  </div>
+  <div class="topbar-right">
+    <span><span class="live-dot"></span>Live · Meta Ads MCP</span>
+    <span>Mayo 2026 · Día 14/31</span>
+    <span>MXN</span>
+    <button class="logout-btn" id="logout-btn">Cerrar sesión</button>
+  </div>
 </header>
 
-<main>
+<main class="main">
 
-<!-- ====== 1. RESUMEN EJECUTIVO ====== -->
-<section>
-  <h2>1. Resumen ejecutivo</h2>
-  <div class="grid kpis">
-    <div class="kpi"><div class="lbl">Gasto ayer (todas cuentas)</div><div class="val">$46,958</div><div class="sub">MX$ — MX_México + MX_Engagement</div></div>
-    <div class="kpi"><div class="lbl">Leads (consultas) ayer</div><div class="val">215</div><div class="sub">Solo cuentas con objetivo LEADS</div></div>
-    <div class="kpi"><div class="lbl">CPL promedio ayer</div><div class="val">$204.43</div><div class="sub">Umbral territorial: $300 MXN</div></div>
-    <div class="kpi"><div class="lbl">Ejecutado mes (MTD)</div><div class="val">99.4%</div><div class="sub">$602,978 de $607,883 esperado</div></div>
-  </div>
-  <div class="note">Fuente: Meta Ads API · Cuentas activas con MCP habilitado al 14/05/2026: MX_México (act_2831833353638198) y MX_Engagement (act_647137773679537). Las cuentas USA_MXN, Turismo, MX_Donación, MX_Lead y MX_Monterrey siguen pendientes de habilitación MCP por parte de Meta.</div>
-</section>
+  <!-- ══ 01. RESUMEN EJECUTIVO ══ -->
+  <div class="section-label">01 — Resumen ejecutivo</div>
 
-<!-- ====== 2. RENDIMIENTO DÍA ANTERIOR ====== -->
-<section>
-  <h2>2. Rendimiento día anterior — MX_FERTILIDAD (territorial)</h2>
-  <div class="panel">
-    <table>
-      <thead><tr><th>Campaña</th><th>Pres. diario</th><th>Gasto</th><th>Impresiones</th><th>Clicks</th><th>CTR</th><th>CPC</th><th>Consultas</th><th>CPL</th><th>Estado</th></tr></thead>
-      <tbody>
-        <tr><td>AGS_MOR_LEON</td><td>$5,600</td><td>$5,707.94</td><td>330,057</td><td>2,777</td><td>0.84%</td><td>$2.06</td><td>23</td><td class="green">$248.17</td><td><span class="pill g">🟢 Bajo umbral</span></td></tr>
-        <tr><td>CIUDAD JUAREZ</td><td>$5,000</td><td>$5,160.97</td><td>28,720</td><td>329</td><td>1.15%</td><td>$15.69</td><td>7</td><td class="red">$737.28</td><td><span class="pill r">🔴 Sobre umbral</span></td></tr>
-        <tr><td>CDMX</td><td>$4,600</td><td>$4,306.46</td><td>182,210</td><td>1,745</td><td>0.96%</td><td>$2.47</td><td>30</td><td class="green">$143.55</td><td><span class="pill g">🟢 Bajo umbral</span></td></tr>
-        <tr><td>CANCÚN</td><td>$3,500</td><td>$3,864.28</td><td>168,342</td><td>1,575</td><td>0.94%</td><td>$2.45</td><td>7</td><td class="red">$552.04</td><td><span class="pill r">🔴 Sobre umbral</span></td></tr>
-        <tr><td>MONTERREY</td><td>$3,700</td><td>$3,630.01</td><td>157,125</td><td>1,237</td><td>0.79%</td><td>$2.93</td><td>17</td><td class="green">$213.53</td><td><span class="pill g">🟢 Bajo umbral</span></td></tr>
-        <tr><td>GUADALAJARA</td><td>$3,700</td><td>$3,412.98</td><td>142,061</td><td>1,232</td><td>0.87%</td><td>$2.77</td><td>9</td><td class="red">$379.22</td><td><span class="pill r">🔴 Sobre umbral</span></td></tr>
-        <tr><td>MÉRIDA</td><td>$2,300</td><td>$2,452.78</td><td>130,719</td><td>1,043</td><td>0.80%</td><td>$2.35</td><td>13</td><td class="green">$188.68</td><td><span class="pill g">🟢 Bajo umbral</span></td></tr>
-        <tr><td>TOLUCA</td><td>$2,500</td><td>$2,409.69</td><td>136,501</td><td>1,214</td><td>0.89%</td><td>$1.98</td><td>12</td><td class="green">$200.81</td><td><span class="pill g">🟢 Bajo umbral</span></td></tr>
-        <tr><td>QUERETARO</td><td>$2,600</td><td>$2,305.81</td><td>109,534</td><td>860</td><td>0.79%</td><td>$2.68</td><td>17</td><td class="green">$135.64</td><td><span class="pill g">🟢 Bajo umbral</span></td></tr>
-        <tr><td>PUERTO VALLARTA</td><td>$2,000</td><td>$2,258.69</td><td>93,499</td><td>941</td><td>1.01%</td><td>$2.40</td><td>9</td><td class="green">$250.97</td><td><span class="pill g">🟢 Bajo umbral</span></td></tr>
-        <tr><td>TIJUANA</td><td>$1,700</td><td>$1,789.23</td><td>76,125</td><td>553</td><td>0.73%</td><td>$3.24</td><td>14</td><td class="green">$127.80</td><td><span class="pill g">🟢 Bajo umbral</span></td></tr>
-        <tr><td>MAZATLÁN</td><td>$1,600</td><td>$1,541.24</td><td>74,777</td><td>531</td><td>0.71%</td><td>$2.90</td><td>9</td><td class="green">$171.25</td><td><span class="pill g">🟢 Bajo umbral</span></td></tr>
-        <tr><td>CHIHUAHUA</td><td>$1,600</td><td>$1,530.01</td><td>72,869</td><td>543</td><td>0.75%</td><td>$2.82</td><td>11</td><td class="green">$139.09</td><td><span class="pill g">🟢 Bajo umbral</span></td></tr>
-        <tr><td>PUEBLA</td><td>$1,400</td><td>$1,465.25</td><td>65,863</td><td>619</td><td>0.94%</td><td>$2.37</td><td>17</td><td class="green">$86.19</td><td><span class="pill g">🟢 Bajo umbral</span></td></tr>
-        <tr><td>VERACRUZ</td><td>$1,000</td><td>$1,071.47</td><td>55,218</td><td>502</td><td>0.91%</td><td>$2.13</td><td>12</td><td class="green">$89.29</td><td><span class="pill g">🟢 Bajo umbral</span></td></tr>
-        <tr><td>HERMOSILLO</td><td>$700</td><td>$725.59</td><td>29,868</td><td>282</td><td>0.94%</td><td>$2.57</td><td>5</td><td class="green">$145.12</td><td><span class="pill g">🟢 Bajo umbral</span></td></tr>
-        <tr><td>MEXICALI</td><td>$350</td><td>$320.95</td><td>12,166</td><td>133</td><td>1.09%</td><td>$2.41</td><td>3</td><td class="green">$106.98</td><td><span class="pill g">🟢 Bajo umbral</span></td></tr>
-        <tr style="background:var(--panel2);font-weight:600">
-          <td>TOTAL MX_México</td><td>$43,850</td><td>$43,953.35</td><td>1,865,654</td><td>16,116</td><td>0.86%</td><td>$2.73</td><td>215</td><td class="green">$204.43</td><td><span class="pill g">🟢 Avg en umbral</span></td>
-        </tr>
-      </tbody>
-    </table>
-  </div>
-  <div class="note">Fuente: ads_get_ad_entities (act_2831833353638198) · date_preset=yesterday · Umbral territorial $300 MXN.</div>
-
-  <h3>MX_Engagement (campañas nacionales de branding/engagement — no leads directos)</h3>
-  <div class="panel">
-    <table>
-      <thead><tr><th>Campaña</th><th>Objetivo</th><th>Gasto</th><th>Impresiones</th><th>Clicks</th><th>CTR</th><th>CPC</th><th>Resultado</th></tr></thead>
-      <tbody>
-        <tr><td>NacionaL_Branding</td><td>Engagement</td><td>$1,591.01</td><td>65,992</td><td>611</td><td>0.93%</td><td>$2.60</td><td>5,955 post engagements</td></tr>
-        <tr><td>Nacional_Engagement</td><td>Engagement</td><td>$1,414.02</td><td>78,598</td><td>961</td><td>1.22%</td><td>$1.47</td><td>19,169 ThruPlays</td></tr>
-        <tr style="background:var(--panel2);font-weight:600"><td>TOTAL MX_Engagement</td><td>—</td><td>$3,005.03</td><td>144,590</td><td>1,572</td><td>1.09%</td><td>$1.91</td><td>—</td></tr>
-      </tbody>
-    </table>
-  </div>
-  <div class="note">Fuente: ads_get_ad_entities (act_647137773679537) · date_preset=yesterday.</div>
-</section>
-
-<!-- ====== 3. TENDENCIA 7 DÍAS ====== -->
-<section>
-  <h2>3. Tendencia últimos 7 días (07–13 mayo)</h2>
-  <div class="panel">
-    <table>
-      <thead><tr><th>Campaña</th><th>Gasto 7d</th><th>Consultas 7d</th><th>CPL 7d</th><th>CPL ayer</th><th>Tendencia CPL</th><th>CTR 7d</th></tr></thead>
-      <tbody>
-        <tr><td>AGS_MOR_LEON</td><td>$40,580.34</td><td>213</td><td class="green">$190.52</td><td>$248.17</td><td class="yellow">↑ subiendo</td><td>0.69%</td></tr>
-        <tr><td>CIUDAD JUAREZ</td><td>$36,711.22</td><td>44</td><td class="red">$834.35</td><td>$737.28</td><td class="green">↓ bajando</td><td>0.92%</td></tr>
-        <tr><td>CDMX</td><td>$32,169.93</td><td>163</td><td class="green">$197.36</td><td>$143.55</td><td class="green">↓ bajando</td><td>0.81%</td></tr>
-        <tr><td>MONTERREY</td><td>$25,869.86</td><td>108</td><td class="green">$239.54</td><td>$213.53</td><td class="green">↓ bajando</td><td>0.65%</td></tr>
-        <tr><td>GUADALAJARA</td><td>$25,613.97</td><td>79</td><td class="red">$324.23</td><td>$379.22</td><td class="yellow">↑ subiendo</td><td>0.73%</td></tr>
-        <tr><td>CANCÚN</td><td>$24,916.84</td><td>71</td><td class="red">$350.94</td><td>$552.04</td><td class="red">↑ subiendo fuerte</td><td>0.92%</td></tr>
-        <tr><td>QUERETARO</td><td>$17,934.28</td><td>89</td><td class="green">$201.51</td><td>$135.64</td><td class="green">↓ bajando</td><td>0.72%</td></tr>
-        <tr><td>TOLUCA</td><td>$17,522.52</td><td>75</td><td class="green">$233.63</td><td>$200.81</td><td class="green">↓ bajando</td><td>0.73%</td></tr>
-        <tr><td>MÉRIDA</td><td>$16,169.33</td><td>74</td><td class="green">$218.50</td><td>$188.68</td><td class="green">↓ bajando</td><td>0.79%</td></tr>
-        <tr><td>PUERTO VALLARTA</td><td>$14,190.06</td><td>62</td><td class="green">$228.87</td><td>$250.97</td><td class="yellow">↑ subiendo</td><td>0.91%</td></tr>
-        <tr><td>TIJUANA</td><td>$12,153.56</td><td>58</td><td class="green">$209.54</td><td>$127.80</td><td class="green">↓ bajando</td><td>0.70%</td></tr>
-        <tr><td>CHIHUAHUA</td><td>$11,426.75</td><td>50</td><td class="green">$228.54</td><td>$139.09</td><td class="green">↓ bajando</td><td>0.74%</td></tr>
-        <tr><td>MAZATLÁN</td><td>$11,402.73</td><td>47</td><td class="green">$242.61</td><td>$171.25</td><td class="green">↓ bajando</td><td>0.72%</td></tr>
-        <tr><td>PUEBLA</td><td>$9,718.35</td><td>68</td><td class="green">$142.92</td><td>$86.19</td><td class="green">↓ bajando</td><td>0.75%</td></tr>
-        <tr><td>VERACRUZ</td><td>$6,979.85</td><td>48</td><td class="green">$145.41</td><td>$89.29</td><td class="green">↓ bajando</td><td>0.78%</td></tr>
-        <tr><td>HERMOSILLO</td><td>$5,016.56</td><td>32</td><td class="green">$156.77</td><td>$145.12</td><td class="green">↓ bajando</td><td>0.79%</td></tr>
-        <tr><td>MEXICALI</td><td>$2,479.48</td><td>14</td><td class="green">$177.11</td><td>$106.98</td><td class="green">↓ bajando</td><td>0.82%</td></tr>
-        <tr style="background:var(--panel2);font-weight:600">
-          <td>TOTAL MX_México 7d</td><td>$310,855.63</td><td>1,295</td><td class="green">$240.04</td><td>$204.43</td><td class="green">↓ mejorando</td><td>0.78%</td>
-        </tr>
-      </tbody>
-    </table>
-  </div>
-  <div class="note">Fuente: ads_get_ad_entities (act_2831833353638198) · date_preset=last_7d. CPL ayer comparado contra CPL 7d. Flecha indica dirección del costo (↓ es bueno).</div>
-</section>
-
-<!-- ====== 4. PRESUPUESTO MTD ====== -->
-<section>
-  <h2>4. Presupuesto mes a la fecha (1–13 mayo)</h2>
-  <div class="twocol">
-    <div class="panel" style="padding:18px">
-      <h3 style="margin-top:0">MX_FERTILIDAD (MX_México)</h3>
-      <div style="display:flex;justify-content:space-between;font-size:13px"><span>Pres. diario total</span><span><strong>$43,850 MXN/día</strong></span></div>
-      <div style="display:flex;justify-content:space-between;font-size:13px"><span>Esperado al día 13</span><span><strong>$570,050</strong></span></div>
-      <div style="display:flex;justify-content:space-between;font-size:13px"><span>Gasto real MTD</span><span><strong>$566,544.96</strong></span></div>
-      <div style="display:flex;justify-content:space-between;font-size:13px"><span>Pace</span><span class="green"><strong>99.4% — en pace</strong></span></div>
-      <div class="progress"><div style="width:99.4%"></div></div>
-      <div style="margin-top:12px;font-size:13px"><span class="muted">Proyección fin de mes:</span> <strong>$1,359,350 MXN</strong> (31 días)</div>
-      <div style="font-size:13px"><span class="muted">Leads MTD:</span> <strong>2,678 consultas</strong> · CPL MTD <strong class="green">$211.55</strong></div>
+  <div class="cards-grid">
+    <div class="card">
+      <div class="card-label">Gasto total (7 días)</div>
+      <div class="card-val">$331K</div>
+      <div class="card-sub">MXN · MX_Fertilidad + Engagement</div>
+      <div class="card-accent green">MX_México + Eng</div>
     </div>
-    <div class="panel" style="padding:18px">
-      <h3 style="margin-top:0">MX_Engagement</h3>
-      <div style="display:flex;justify-content:space-between;font-size:13px"><span>Gasto MTD</span><span><strong>$36,432.89 MXN</strong></span></div>
-      <div style="display:flex;justify-content:space-between;font-size:13px"><span>Promedio diario</span><span><strong>$2,803 MXN/día</strong></span></div>
-      <div style="display:flex;justify-content:space-between;font-size:13px"><span>Objetivo</span><span>Engagement / Branding</span></div>
-      <div class="progress warn"><div style="width:60%"></div></div>
-      <div style="margin-top:12px;font-size:13px"><span class="muted">Sin umbral CPL aplicable</span> · Resultados: 414,563 post engagements + 222,707 ThruPlays MTD</div>
-      <div style="font-size:13px"><span class="muted">Campañas activas:</span> NacionaL_Branding, Nacional_Engagement, Interacción_Maternidad</div>
+    <div class="card">
+      <div class="card-label">Leads totales (7 días)</div>
+      <div class="card-val white">1,343</div>
+      <div class="card-sub">Evento consulta · pixel 541919576788742</div>
+      <div class="card-accent green">17 campañas activas</div>
+    </div>
+    <div class="card">
+      <div class="card-label">CPL promedio (7 días)</div>
+      <div class="card-val amber">$231</div>
+      <div class="card-sub">MXN · umbral territorial $300</div>
+      <div class="card-accent green">Bajo umbral global</div>
+    </div>
+    <div class="card">
+      <div class="card-label">Presupuesto restante (mayo)</div>
+      <div class="card-val white">$829K</div>
+      <div class="card-sub">17 días · $43,550/día leads</div>
+      <div class="card-accent amber">42.6% ejecutado</div>
     </div>
   </div>
-  <div class="note">Las cuentas pendientes MCP (USA_MXN, Turismo, MX_Donación segmentos A/B/C) no se incluyen aquí. Cuando Meta habilite la API se sumarán automáticamente.</div>
-</section>
 
-<!-- ====== 5. CREATIVOS ====== -->
-<section>
-  <h2>5. Análisis de creativos — últimos 7 días</h2>
-  <div class="panel">
+  <div class="line-cards">
+    <div class="line-card">
+      <div class="line-card-icon">🇲🇽</div>
+      <div class="line-card-body">
+        <div class="line-card-name">MX_FERTILIDAD — Leads</div>
+        <div class="line-card-row">
+          <div class="line-stat"><span class="line-stat-val">$310K</span><span class="line-stat-label">Gasto 7d</span></div>
+          <div class="line-stat"><span class="line-stat-val">1,343</span><span class="line-stat-label">Leads</span></div>
+          <div class="line-stat"><span class="line-stat-val amber">$231</span><span class="line-stat-label">CPL prom.</span></div>
+          <div class="line-stat"><span class="line-stat-val">$43,550</span><span class="line-stat-label">Daily budget</span></div>
+        </div>
+      </div>
+      <div class="line-card-badge badge-amber">3 alertas CPL</div>
+    </div>
+    <div class="line-card">
+      <div class="line-card-icon">📣</div>
+      <div class="line-card-body">
+        <div class="line-card-name">MX_ENGAGEMENT — Branding</div>
+        <div class="line-card-row">
+          <div class="line-stat"><span class="line-stat-val">$20.6K</span><span class="line-stat-label">Gasto 7d</span></div>
+          <div class="line-stat"><span class="line-stat-val">190K+</span><span class="line-stat-label">ThruPlays/Eng</span></div>
+          <div class="line-stat"><span class="line-stat-val">$0.069</span><span class="line-stat-label">Costo ThruPlay</span></div>
+          <div class="line-stat"><span class="line-stat-val">1.32%</span><span class="line-stat-label">CTR</span></div>
+        </div>
+      </div>
+      <div class="line-card-badge badge-green">En pace</div>
+    </div>
+    <div class="line-card" style="opacity:.5">
+      <div class="line-card-icon">🇺🇸</div>
+      <div class="line-card-body">
+        <div class="line-card-name">US_FERTILIDAD</div>
+        <div class="line-card-row">
+          <div class="line-stat"><span class="line-stat-val" style="color:var(--text-muted)">Sin datos</span><span class="line-stat-label">MCP pendiente</span></div>
+          <div class="line-stat"><span class="line-stat-val" style="color:var(--text-muted);font-size:11px">act_404757519356714</span><span class="line-stat-label">Cuenta</span></div>
+        </div>
+      </div>
+      <div class="line-card-badge badge-dim">⏳ MCP pendiente</div>
+    </div>
+    <div class="line-card" style="opacity:.5">
+      <div class="line-card-icon">✈️</div>
+      <div class="line-card-body">
+        <div class="line-card-name">TURISMO + DONACIÓN</div>
+        <div class="line-card-row">
+          <div class="line-stat"><span class="line-stat-val" style="color:var(--text-muted)">Sin datos</span><span class="line-stat-label">MCP pendiente</span></div>
+          <div class="line-stat"><span class="line-stat-val" style="color:var(--text-muted);font-size:11px">3 cuentas pendientes</span><span class="line-stat-label">act_331654 / 806691 / más</span></div>
+        </div>
+      </div>
+      <div class="line-card-badge badge-dim">⏳ MCP pendiente</div>
+    </div>
+  </div>
+
+  <!-- ══ 02. MÉTRICAS POR CUENTA ══ -->
+  <div class="section-label">02 — Métricas por campaña · últimos 7 días</div>
+  <div class="table-wrap">
+    <div class="table-header">
+      <div>
+        <div class="table-title">MX_FERTILIDAD — Campañas activas</div>
+        <div class="table-subtitle">Umbral territorial $300 MXN · act_2831833353638198</div>
+      </div>
+      <div style="display:flex;gap:10px;flex-wrap:wrap">
+        <span class="fatigue-chip f-ok">✓ Bajo umbral</span>
+        <span class="fatigue-chip f-near">80–100% umbral</span>
+        <span class="fatigue-chip f-over">Sobre umbral</span>
+      </div>
+    </div>
     <table>
-      <thead><tr><th>Creativo</th><th>Formato</th><th>Gasto 7d</th><th>Consultas</th><th>CPL</th><th>CTR</th><th>Estado vs umbral $300</th></tr></thead>
+      <thead>
+        <tr>
+          <th>Campaña</th>
+          <th class="r">Presup./día</th>
+          <th class="r">Gasto 7d</th>
+          <th class="r">Resultados</th>
+          <th class="r">CPL</th>
+          <th class="r">CTR</th>
+          <th class="r">Impresiones</th>
+          <th>Estado</th>
+        </tr>
+      </thead>
       <tbody>
-        <tr><td>img_6862</td><td>Imagen</td><td>$19,235.12</td><td>113</td><td class="green">$170.22</td><td>0.57%</td><td><span class="pill g">🟢 Top performer</span></td></tr>
-        <tr><td>img_5007</td><td>Imagen</td><td>$7,482.09</td><td>39</td><td class="green">$191.85</td><td>0.79%</td><td><span class="pill g">🟢 Bueno</span></td></tr>
-        <tr><td>img_6394 (Cancún)</td><td>Imagen</td><td>$4,042.66</td><td>6</td><td class="red">$673.78</td><td>0.51%</td><td><span class="pill r">🔴 Reemplazar urgente</span></td></tr>
-        <tr><td>vid_6636</td><td>Video</td><td>$4,325.92</td><td>23</td><td class="green">$188.08</td><td>1.69%</td><td><span class="pill g">🟢 Bueno</span></td></tr>
-        <tr><td>img_6394 (Guadalajara)</td><td>Imagen</td><td>$3,922.27</td><td>11</td><td class="red">$356.57</td><td>0.54%</td><td><span class="pill r">🔴 Reemplazar</span></td></tr>
-        <tr><td>img_6392 (Guadalajara)</td><td>Imagen</td><td>$3,744.51</td><td>7</td><td class="red">$534.93</td><td>0.57%</td><td><span class="pill r">🔴 Reemplazar</span></td></tr>
-        <tr><td>img_6394 (CDMX)</td><td>Imagen</td><td>$4,778.44</td><td>23</td><td class="green">$207.76</td><td>0.58%</td><td><span class="pill g">🟢 OK</span></td></tr>
-        <tr><td>img_6394 (Mazatlán)</td><td>Imagen</td><td>$3,026.13</td><td>7</td><td class="red">$432.30</td><td>0.51%</td><td><span class="pill r">🔴 Reemplazar</span></td></tr>
-        <tr><td>vid_6626 (CD Juárez)</td><td>Video</td><td>$2,426.52</td><td>5</td><td class="red">$485.30</td><td>1.16%</td><td><span class="pill r">🔴 Reemplazar</span></td></tr>
-        <tr><td>vid_6626 (Cancún)</td><td>Video</td><td>$1,513.22</td><td>2</td><td class="red">$756.61</td><td>1.19%</td><td><span class="pill r">🔴 Reemplazar urgente</span></td></tr>
-        <tr><td>img_6394 (Mérida)</td><td>Imagen</td><td>$1,719.62</td><td>6</td><td class="yellow">$286.60</td><td>0.51%</td><td><span class="pill y">🟡 Vigilar</span></td></tr>
-        <tr><td>img_6394 (Puerto Vallarta)</td><td>Imagen</td><td>$1,541.50</td><td>5</td><td class="red">$308.30</td><td>0.57%</td><td><span class="pill r">🔴 Reemplazar</span></td></tr>
-        <tr><td>img_6990</td><td>Imagen</td><td>$2,351.92</td><td>14</td><td class="green">$167.99</td><td>0.67%</td><td><span class="pill g">🟢 Bueno</span></td></tr>
-        <tr><td>vid_6899 (Chihuahua)</td><td>Video</td><td>$1,266.98</td><td>8</td><td class="green">$158.37</td><td>1.17%</td><td><span class="pill g">🟢 Bueno</span></td></tr>
+        <tr><td>CDMX</td><td class="r">$4,600</td><td class="r">$32,161</td><td class="r">163</td><td class="r cpl-green">$197</td><td class="r">0.81%</td><td class="r">1,686,754</td><td><span class="sem"><span class="sem-dot green"></span><span class="cpl-green">bajo umbral</span></span></td></tr>
+        <tr><td>AGS_MOR_LEON</td><td class="r">$5,600</td><td class="r">$40,573</td><td class="r">213</td><td class="r cpl-green">$190</td><td class="r">0.69%</td><td class="r">2,488,582</td><td><span class="sem"><span class="sem-dot green"></span><span class="cpl-green">bajo umbral</span></span></td></tr>
+        <tr><td>MONTERREY</td><td class="r">$3,700</td><td class="r">$25,866</td><td class="r">108</td><td class="r cpl-green">$239</td><td class="r">0.65%</td><td class="r">1,337,649</td><td><span class="sem"><span class="sem-dot green"></span><span class="cpl-green">bajo umbral</span></span></td></tr>
+        <tr style="background:rgba(245,200,66,0.04)"><td>GUADALAJARA</td><td class="r">$3,700</td><td class="r">$25,610</td><td class="r">79</td><td class="r cpl-amber">$324</td><td class="r">0.73%</td><td class="r">1,159,284</td><td><span class="sem"><span class="sem-dot amber"></span><span class="cpl-amber">8% sobre umbral</span></span></td></tr>
+        <tr><td>QUERÉTARO</td><td class="r">$2,600</td><td class="r">$17,931</td><td class="r">89</td><td class="r cpl-green">$201</td><td class="r">0.72%</td><td class="r">949,191</td><td><span class="sem"><span class="sem-dot green"></span><span class="cpl-green">bajo umbral</span></span></td></tr>
+        <tr><td>TOLUCA</td><td class="r">$2,500</td><td class="r">$17,516</td><td class="r">75</td><td class="r cpl-green">$234</td><td class="r">0.73%</td><td class="r">1,134,274</td><td><span class="sem"><span class="sem-dot green"></span><span class="cpl-green">bajo umbral</span></span></td></tr>
+        <tr><td>MÉRIDA</td><td class="r">$2,300</td><td class="r">$16,166</td><td class="r">74</td><td class="r cpl-green">$218</td><td class="r">0.79%</td><td class="r">964,041</td><td><span class="sem"><span class="sem-dot green"></span><span class="cpl-green">bajo umbral</span></span></td></tr>
+        <tr style="background:rgba(240,72,74,0.05)"><td>CANCÚN</td><td class="r">$3,500</td><td class="r">$24,913</td><td class="r">71</td><td class="r cpl-red">$351</td><td class="r">0.92%</td><td class="r">1,088,576</td><td><span class="sem"><span class="sem-dot red"></span><span class="cpl-red">17% sobre umbral</span></span></td></tr>
+        <tr><td>PUERTO VALLARTA</td><td class="r">$2,000</td><td class="r">$14,186</td><td class="r">62</td><td class="r cpl-green">$229</td><td class="r">0.91%</td><td class="r">646,770</td><td><span class="sem"><span class="sem-dot green"></span><span class="cpl-green">bajo umbral</span></span></td></tr>
+        <tr><td>TIJUANA</td><td class="r">$1,700</td><td class="r">$12,151</td><td class="r">58</td><td class="r cpl-green">$210</td><td class="r">0.70%</td><td class="r">587,791</td><td><span class="sem"><span class="sem-dot green"></span><span class="cpl-green">bajo umbral</span></span></td></tr>
+        <tr><td>CHIHUAHUA</td><td class="r">$1,600</td><td class="r">$11,425</td><td class="r">50</td><td class="r cpl-green">$229</td><td class="r">0.74%</td><td class="r">570,010</td><td><span class="sem"><span class="sem-dot green"></span><span class="cpl-green">bajo umbral</span></span></td></tr>
+        <tr><td>MAZATLÁN</td><td class="r">$1,600</td><td class="r">$11,402</td><td class="r">47</td><td class="r cpl-green">$243</td><td class="r">0.72%</td><td class="r">598,562</td><td><span class="sem"><span class="sem-dot green"></span><span class="cpl-green">bajo umbral</span></span></td></tr>
+        <tr><td>PUEBLA</td><td class="r">$1,400</td><td class="r">$9,716</td><td class="r">68</td><td class="r cpl-green">$143</td><td class="r">0.75%</td><td class="r">579,837</td><td><span class="sem"><span class="sem-dot green"></span><span class="cpl-green">bajo umbral</span></span></td></tr>
+        <tr><td>VERACRUZ</td><td class="r">$1,000</td><td class="r">$6,978</td><td class="r">48</td><td class="r cpl-green">$145</td><td class="r">0.79%</td><td class="r">434,076</td><td><span class="sem"><span class="sem-dot green"></span><span class="cpl-green">bajo umbral</span></span></td></tr>
+        <tr><td>HERMOSILLO</td><td class="r">$700</td><td class="r">$5,016</td><td class="r">32</td><td class="r cpl-green">$157</td><td class="r">0.79%</td><td class="r">218,651</td><td><span class="sem"><span class="sem-dot green"></span><span class="cpl-green">bajo umbral</span></span></td></tr>
+        <tr><td>MEXICALI</td><td class="r">$350</td><td class="r">$2,479</td><td class="r">14</td><td class="r cpl-green">$177</td><td class="r">0.82%</td><td class="r">109,925</td><td><span class="sem"><span class="sem-dot green"></span><span class="cpl-green">bajo umbral</span></span></td></tr>
+        <tr style="background:rgba(240,72,74,0.08)"><td><strong>CIUDAD JUÁREZ 🚨</strong></td><td class="r">$5,000</td><td class="r">$36,709</td><td class="r">44</td><td class="r cpl-crit">$834</td><td class="r">0.92%</td><td class="r">216,423</td><td><span class="sem"><span class="sem-dot red"></span><span class="cpl-crit">178% sobre umbral</span></span></td></tr>
+        <tr class="row-total"><td>TOTAL MX_FERTILIDAD</td><td class="r">$43,550</td><td class="r">$310,403</td><td class="r">1,343</td><td class="r">$231 prom.</td><td class="r">0.76%</td><td class="r">14,969,396</td><td><span class="sem"><span class="sem-dot amber"></span><span style="color:var(--amber);font-family:var(--mono);font-size:11px">3 alertas activas</span></span></td></tr>
       </tbody>
     </table>
   </div>
-  <h3>Candidatos a reemplazar (ordenados por urgencia)</h3>
-  <ol style="margin:0 0 0 18px;padding:0;font-size:14px;line-height:1.8">
-    <li><strong class="red">vid_6626 en CANCÚN</strong> — CPL $756.61 (2.5× umbral)</li>
-    <li><strong class="red">img_6394 en CANCÚN</strong> — CPL $673.78 (2.2× umbral)</li>
-    <li><strong class="red">img_6392 en GUADALAJARA</strong> — CPL $534.93 (1.8× umbral)</li>
-    <li><strong class="red">vid_6626 en CIUDAD JUÁREZ</strong> — CPL $485.30 (1.6× umbral)</li>
-    <li><strong class="red">img_6394 en MAZATLÁN</strong> — CPL $432.30 (1.4× umbral)</li>
-    <li><strong class="red">img_6394 en GUADALAJARA</strong> — CPL $356.57</li>
-    <li><strong class="red">img_6394 en PUERTO VALLARTA</strong> — CPL $308.30</li>
-  </ol>
-  <div class="note">Fuente: ads_get_ad_entities a nivel de anuncio (act_2831833353638198) · last_7d · filtrado por gasto &gt; $500 MXN. Patrón claro: el creativo <strong>img_6394</strong> está fatigado en plazas con costos altos; el <strong>img_6862</strong> es el top global y debería extenderse a más adsets.</div>
-</section>
 
-<!-- ====== 6. ALERTAS ====== -->
-<section>
-  <h2>6. Alertas del día — 14/05/2026</h2>
+  <!-- ══ 03. CREATIVOS ══ -->
+  <div class="section-label">03 — Creativos activos · fatiga y rendimiento</div>
+  <div class="two-col">
+    <div class="table-wrap" style="margin-bottom:0">
+      <div class="table-header">
+        <div>
+          <div class="table-title">Imágenes (img_)</div>
+          <div class="table-subtitle">6 IDs únicos · umbral $300 MXN</div>
+        </div>
+      </div>
+      <table>
+        <thead><tr><th>Creativo</th><th class="r">Inst.</th><th class="r">Gasto 7d</th><th class="r">Result.</th><th class="r">CPL</th><th class="r">CTR</th><th>Estado</th></tr></thead>
+        <tbody>
+          <tr><td class="mono">img_6862</td><td class="r">3</td><td class="r">$21,339</td><td class="r">131</td><td class="r cpl-green">$163</td><td class="r">0.64%</td><td><span class="fatigue-chip f-ok">✓ OK</span></td></tr>
+          <tr><td class="mono">img_6392</td><td class="r">10</td><td class="r">$13,310</td><td class="r">82</td><td class="r cpl-green">$162</td><td class="r">0.59%</td><td><span class="fatigue-chip f-ok">✓ OK · 1 inst. 🔴</span></td></tr>
+          <tr><td class="mono">img_6394</td><td class="r">15</td><td class="r">$27,066</td><td class="r">115</td><td class="r cpl-green">$235</td><td class="r">0.56%</td><td><span class="fatigue-chip f-near">⚠ 4 inst. sobre umbral</span></td></tr>
+          <tr><td class="mono">img_5007</td><td class="r">1</td><td class="r">$7,479</td><td class="r">39</td><td class="r cpl-green">$192</td><td class="r">0.79%</td><td><span class="fatigue-chip f-ok">✓ OK</span></td></tr>
+          <tr><td class="mono">img_6990</td><td class="r">1</td><td class="r">$2,352</td><td class="r">14</td><td class="r cpl-green">$168</td><td class="r">0.67%</td><td><span class="fatigue-chip f-ok">✓ OK</span></td></tr>
+          <tr><td class="mono">img_6994</td><td class="r">17</td><td class="r">$6,493</td><td class="r">29</td><td class="r cpl-green">$224</td><td class="r">0.75%</td><td><span class="fatigue-chip f-ok">✓ OK · vol. bajo</span></td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="table-wrap" style="margin-bottom:0">
+      <div class="table-header">
+        <div>
+          <div class="table-title">Videos (vid_)</div>
+          <div class="table-subtitle">9 IDs únicos · CTR promedio 1.10%</div>
+        </div>
+      </div>
+      <table>
+        <thead><tr><th>Creativo</th><th class="r">Inst.</th><th class="r">Gasto 7d</th><th class="r">Result.</th><th class="r">CPL</th><th class="r">CTR</th><th>Estado</th></tr></thead>
+        <tbody>
+          <tr><td class="mono">vid_6626</td><td class="r">14</td><td class="r">$10,357</td><td class="r">63</td><td class="r cpl-green">$164</td><td class="r">1.10%</td><td><span class="fatigue-chip f-ok">✓ Escalar</span></td></tr>
+          <tr><td class="mono">vid_6636</td><td class="r">1</td><td class="r">$4,325</td><td class="r">23</td><td class="r cpl-green">$188</td><td class="r">1.69%</td><td><span class="fatigue-chip f-ok">✓ OK</span></td></tr>
+          <tr><td class="mono">vid_6845</td><td class="r">1</td><td class="r">$759</td><td class="r">6</td><td class="r cpl-green">$126</td><td class="r">1.27%</td><td><span class="fatigue-chip f-ok">✓ OK</span></td></tr>
+          <tr><td class="mono">vid_6841</td><td class="r">1</td><td class="r">$419</td><td class="r">3</td><td class="r cpl-green">$140</td><td class="r">0.87%</td><td><span class="fatigue-chip f-ok">✓ OK</span></td></tr>
+          <tr><td class="mono">vid_6899</td><td class="r">1</td><td class="r">$1,267</td><td class="r">8</td><td class="r cpl-green">$158</td><td class="r">1.17%</td><td><span class="fatigue-chip f-ok">✓ OK</span></td></tr>
+          <tr><td class="mono">vid_6397</td><td class="r">1</td><td class="r">$527</td><td class="r">3</td><td class="r cpl-green">$176</td><td class="r">1.10%</td><td><span class="fatigue-chip f-near">⚠ Learning exit</span></td></tr>
+          <tr style="background:rgba(245,200,66,0.04)"><td class="mono">vid_6710</td><td class="r">1</td><td class="r">$1,714</td><td class="r">6</td><td class="r cpl-amber">$286</td><td class="r">2.23%</td><td><span class="fatigue-chip f-near">⚠ 95% umbral</span></td></tr>
+          <tr style="background:rgba(240,72,74,0.05)"><td class="mono">vid_6901</td><td class="r">1</td><td class="r">$7,268</td><td class="r">14</td><td class="r cpl-red">$519</td><td class="r">1.85%</td><td><span class="fatigue-chip f-over">🔴 Reemplazar</span></td></tr>
+          <tr style="background:rgba(240,72,74,0.08)"><td class="mono">vid_6523 🚨</td><td class="r">1</td><td class="r">$4,107</td><td class="r">5</td><td class="r cpl-crit">$821</td><td class="r">0.90%</td><td><span class="fatigue-chip f-crit">🚨 Pausar ya</span></td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+  <div style="margin-bottom:32px;padding:12px 16px;background:var(--bg-card);border:1px solid rgba(240,72,74,.25);border-radius:10px;font-size:12px;color:var(--text-muted);line-height:1.8">
+    <strong style="color:var(--red)">Candidatos a reemplazar por urgencia:</strong>
+    <span style="color:var(--red);font-family:var(--mono)"> 1) vid_6523 ($821 CPL · pausar)</span> →
+    <span style="color:var(--red);font-family:var(--mono)">2) vid_6901 ($519 CPL · revisar landing)</span> →
+    <span style="color:var(--amber);font-family:var(--mono)">3) img_6394 (4 instancias &gt;$300 · pausar solo esas)</span> →
+    <span style="color:var(--amber);font-family:var(--mono)">4) img_6392 inst. 120248028690690195 ($535 CPL)</span> →
+    <span style="color:var(--amber);font-family:var(--mono)">5) vid_6710 ($286 · monitorear)</span>
+  </div>
 
-  <div class="alert"><span class="tag r">🔴 CRÍTICO</span><strong>CIUDAD JUÁREZ con CPL $737 ayer y $834 acumulado 7d</strong> — la campaña lleva una semana operando muy por encima del umbral $300. Recomendación: pausar y revisar segmentación + creativo (vid_6626 dispara $485 CPL).</div>
+  <!-- ══ 04. PRESUPUESTO ══ -->
+  <div class="section-label">04 — Pace de presupuesto · Mayo 2026</div>
+  <div style="font-family:var(--mono);font-size:10px;color:var(--text-muted);margin-bottom:16px;display:flex;align-items:center;gap:18px;flex-wrap:wrap">
+    <span>Día 14 de 31 · Pace esperado = <strong style="color:var(--text)">45.2%</strong></span>
+    <span style="display:flex;align-items:center;gap:5px"><span style="width:10px;height:10px;border-radius:2px;background:#3ddc64;display:inline-block"></span>En pace (85–115%)</span>
+    <span style="display:flex;align-items:center;gap:5px"><span style="width:10px;height:10px;border-radius:2px;background:#5ab4f5;display:inline-block"></span>Sin completar (&lt;85%)</span>
+    <span style="display:flex;align-items:center;gap:5px"><span style="width:10px;height:10px;border-radius:2px;background:#f0484a;display:inline-block"></span>Excediendo (&gt;115%)</span>
+  </div>
+  <div class="progress-grid">
 
-  <div class="alert"><span class="tag r">🔴 CRÍTICO</span><strong>CANCÚN: CPL diario $552 (1.8× umbral)</strong> — los dos creativos principales (img_6394 y vid_6626) tienen CPLs de $673 y $756 respectivamente. Reemplazar ambos.</div>
+    <div class="progress-row">
+      <div class="progress-top">
+        <div><span class="progress-name">CDMX</span> <span class="fatigue-chip f-near" style="font-size:10px">🔵 Sin completar</span></div>
+        <div class="progress-stats">
+          <div class="pstat"><span class="pstat-val" style="color:var(--text)">$58,697</span><span class="pstat-label">gastado</span></div>
+          <div class="pstat"><span class="pstat-val" style="color:var(--text-muted)">$64,400</span><span class="pstat-label">pace hoy</span></div>
+          <div class="pstat"><span class="pstat-val" style="color:var(--blue)">41.2%</span><span class="pstat-label">ejecutado</span></div>
+          <div class="pstat"><span class="pstat-val" style="color:var(--text-muted)">$83,903</span><span class="pstat-label">restante</span></div>
+        </div>
+      </div>
+      <div class="bar-track"><div class="bar-pace-label" style="left:45.2%">pace</div><div class="bar-pace-mark" style="left:45.2%"></div><div class="bar-fill bar-blue" style="width:41.2%"></div></div>
+    </div>
 
-  <div class="alert"><span class="tag r">🔴 CRÍTICO</span><strong>GUADALAJARA: CPL $379 con tendencia al alza</strong> — img_6392 ($535) e img_6394 ($357) requieren reemplazo. Probar img_6862 que rinde $170 CPL a nivel global.</div>
+    <div class="progress-row">
+      <div class="progress-top">
+        <div><span class="progress-name">AGS_MOR_LEON</span> <span class="fatigue-chip f-near" style="font-size:10px">🔵 Sin completar</span></div>
+        <div class="progress-stats">
+          <div class="pstat"><span class="pstat-val" style="color:var(--text)">$75,421</span><span class="pstat-label">gastado</span></div>
+          <div class="pstat"><span class="pstat-val" style="color:var(--text-muted)">$78,400</span><span class="pstat-label">pace hoy</span></div>
+          <div class="pstat"><span class="pstat-val" style="color:var(--blue)">43.4%</span><span class="pstat-label">ejecutado</span></div>
+          <div class="pstat"><span class="pstat-val" style="color:var(--text-muted)">$98,179</span><span class="pstat-label">restante</span></div>
+        </div>
+      </div>
+      <div class="bar-track"><div class="bar-pace-label" style="left:45.2%">pace</div><div class="bar-pace-mark" style="left:45.2%"></div><div class="bar-fill bar-blue" style="width:43.4%"></div></div>
+    </div>
 
-  <div class="alert warn"><span class="tag y">🟡 ALERTA</span><strong>AGS_MOR_LEON</strong>: CPL ayer $248 (dentro del umbral) pero subiendo vs $190 de 7d. CTR bajo a 0.84%. Monitorear.</div>
+    <div class="progress-row" style="border-color:rgba(240,72,74,.3);background:rgba(240,72,74,.03)">
+      <div class="progress-top">
+        <div><span class="progress-name" style="color:var(--red)">CIUDAD JUÁREZ 🚨</span> <span class="fatigue-chip f-over" style="font-size:10px">CPL crítico $834</span></div>
+        <div class="progress-stats">
+          <div class="pstat"><span class="pstat-val" style="color:var(--text)">$67,505</span><span class="pstat-label">gastado</span></div>
+          <div class="pstat"><span class="pstat-val" style="color:var(--text-muted)">$70,000</span><span class="pstat-label">pace hoy</span></div>
+          <div class="pstat"><span class="pstat-val" style="color:var(--blue)">43.5%</span><span class="pstat-label">ejecutado</span></div>
+          <div class="pstat"><span class="pstat-val" style="color:var(--red)">$87,495</span><span class="pstat-label">restante</span></div>
+        </div>
+      </div>
+      <div class="bar-track"><div class="bar-pace-label" style="left:45.2%">pace</div><div class="bar-pace-mark" style="left:45.2%"></div><div class="bar-fill bar-red" style="width:43.5%"></div></div>
+    </div>
 
-  <div class="alert warn"><span class="tag y">🟡 ALERTA</span><strong>PUERTO VALLARTA</strong>: CPL ayer $251 con tendencia al alza. img_6394 ya supera umbral en esta plaza ($308).</div>
+    <div class="progress-row" style="border-color:rgba(245,200,66,.2)">
+      <div class="progress-top">
+        <div><span class="progress-name" style="color:var(--amber)">GUADALAJARA ⚠</span> <span class="fatigue-chip f-near" style="font-size:10px">CPL $324</span></div>
+        <div class="progress-stats">
+          <div class="pstat"><span class="pstat-val" style="color:var(--text)">$47,381</span><span class="pstat-label">gastado</span></div>
+          <div class="pstat"><span class="pstat-val" style="color:var(--text-muted)">$51,800</span><span class="pstat-label">pace hoy</span></div>
+          <div class="pstat"><span class="pstat-val" style="color:var(--blue)">41.3%</span><span class="pstat-label">ejecutado</span></div>
+          <div class="pstat"><span class="pstat-val" style="color:var(--amber)">$67,319</span><span class="pstat-label">restante</span></div>
+        </div>
+      </div>
+      <div class="bar-track"><div class="bar-pace-label" style="left:45.2%">pace</div><div class="bar-pace-mark" style="left:45.2%"></div><div class="bar-fill bar-amber" style="width:41.3%"></div></div>
+    </div>
 
-  <div class="alert info"><span class="tag i">ℹ️ INFO</span><strong>CIUDAD JUÁREZ</strong>: CPM $179.70 (10× el promedio del resto). Es un mercado caro estructuralmente; valorar reducir presupuesto si no rinde.</div>
+    <div class="progress-row" style="border-color:rgba(245,200,66,.2)">
+      <div class="progress-top">
+        <div><span class="progress-name" style="color:var(--amber)">CANCÚN ⚠</span> <span class="fatigue-chip f-near" style="font-size:10px">CPL $351</span></div>
+        <div class="progress-stats">
+          <div class="pstat"><span class="pstat-val" style="color:var(--text)">$45,866</span><span class="pstat-label">gastado</span></div>
+          <div class="pstat"><span class="pstat-val" style="color:var(--text-muted)">$49,000</span><span class="pstat-label">pace hoy</span></div>
+          <div class="pstat"><span class="pstat-val" style="color:var(--blue)">42.3%</span><span class="pstat-label">ejecutado</span></div>
+          <div class="pstat"><span class="pstat-val" style="color:var(--amber)">$62,634</span><span class="pstat-label">restante</span></div>
+        </div>
+      </div>
+      <div class="bar-track"><div class="bar-pace-label" style="left:45.2%">pace</div><div class="bar-pace-mark" style="left:45.2%"></div><div class="bar-fill bar-amber" style="width:42.3%"></div></div>
+    </div>
 
-  <div class="alert info"><span class="tag i">ℹ️ INFO</span><strong>Top performer del mes: img_6862</strong> — $170 CPL en 7d con $19,235 invertidos y 113 consultas. Expandirlo a más adsets.</div>
+    <div class="progress-row">
+      <div class="progress-top">
+        <div><span class="progress-name">MONTERREY / QUERÉTARO / TOLUCA / MÉRIDA / PUERTO VALLARTA</span></div>
+        <div class="progress-stats">
+          <div class="pstat"><span class="pstat-val" style="color:var(--green)">~42%</span><span class="pstat-label">prom. ejecutado</span></div>
+          <div class="pstat"><span class="pstat-val" style="color:var(--green)">CPL $201–$239</span><span class="pstat-label">bajo umbral ✓</span></div>
+        </div>
+      </div>
+      <div class="bar-track"><div class="bar-pace-label" style="left:45.2%">pace</div><div class="bar-pace-mark" style="left:45.2%"></div><div class="bar-fill bar-blue" style="width:42%"></div></div>
+    </div>
 
-  <div class="alert info"><span class="tag i">ℹ️ INFO</span><strong>Cuentas pendientes MCP</strong>: USA_MXN, Turismo, MX_Donación (Gestantes/Óvulos/Esperma), MX_Lead y MX_Monterrey continúan sin acceso a la API de Meta. Sin datos para reportar.</div>
+    <div class="progress-row">
+      <div class="progress-top">
+        <div><span class="progress-name">TIJUANA / CHIHUAHUA / MAZATLÁN / PUEBLA / VERACRUZ / HERMOSILLO / MEXICALI</span></div>
+        <div class="progress-stats">
+          <div class="pstat"><span class="pstat-val" style="color:var(--green)">~42%</span><span class="pstat-label">prom. ejecutado</span></div>
+          <div class="pstat"><span class="pstat-val" style="color:var(--green)">CPL $143–$243</span><span class="pstat-label">bajo umbral ✓</span></div>
+        </div>
+      </div>
+      <div class="bar-track"><div class="bar-pace-label" style="left:45.2%">pace</div><div class="bar-pace-mark" style="left:45.2%"></div><div class="bar-fill bar-blue" style="width:42%"></div></div>
+    </div>
 
-  <div class="alert info"><span class="tag i">ℹ️ INFO</span><strong>Pace del mes saludable</strong>: 99.4% del presupuesto MX_FERTILIDAD ejecutado. No requiere ajuste.</div>
-</section>
+    <div class="progress-row" style="border-color:rgba(61,220,100,.2)">
+      <div class="progress-top">
+        <div><span class="progress-name" style="color:var(--green)">MX_ENGAGEMENT — Branding</span> <span class="fatigue-chip f-ok" style="font-size:10px">✅ En pace</span></div>
+        <div class="progress-stats">
+          <div class="pstat"><span class="pstat-val" style="color:var(--text)">$20,812</span><span class="pstat-label">gastado</span></div>
+          <div class="pstat"><span class="pstat-val" style="color:var(--text-muted)">$21,000</span><span class="pstat-label">pace hoy</span></div>
+          <div class="pstat"><span class="pstat-val" style="color:var(--green)">44.8%</span><span class="pstat-label">ejecutado</span></div>
+          <div class="pstat"><span class="pstat-val" style="color:var(--text-muted)">$25,688</span><span class="pstat-label">restante</span></div>
+        </div>
+      </div>
+      <div class="bar-track"><div class="bar-pace-label" style="left:45.2%">pace</div><div class="bar-pace-mark" style="left:45.2%"></div><div class="bar-fill bar-green" style="width:44.8%"></div></div>
+    </div>
 
-<footer>
-  Dashboard generado automáticamente por Claude para el equipo de Media Buying de INGENES.<br>
-  Fuente de datos: Meta Marketing API vía MCP · Pixel principal 541919576788742 · Reporte 2026-05-14
-</footer>
+    <div class="progress-row" style="border-color:rgba(90,180,245,.2)">
+      <div class="progress-top">
+        <div>
+          <span class="progress-name" style="color:var(--blue)">MX_ENGAGEMENT — Nacional_Engagement</span>
+          <span class="fatigue-chip" style="font-size:10px;background:var(--blue-pale);color:var(--blue);border:1px solid rgba(90,180,245,.2);margin-left:8px">🔵 Arrancó día 7</span>
+        </div>
+        <div class="progress-stats">
+          <div class="pstat"><span class="pstat-val" style="color:var(--text)">$15,153</span><span class="pstat-label">gastado</span></div>
+          <div class="pstat"><span class="pstat-val" style="color:var(--text-muted)">$21,000</span><span class="pstat-label">pace hoy</span></div>
+          <div class="pstat"><span class="pstat-val" style="color:var(--blue)">32.6%</span><span class="pstat-label">ejecutado</span></div>
+          <div class="pstat"><span class="pstat-val" style="color:var(--blue)">$1,369/día real</span><span class="pstat-label">91% del daily</span></div>
+        </div>
+      </div>
+      <div class="bar-track"><div class="bar-pace-label" style="left:45.2%">pace</div><div class="bar-pace-mark" style="left:45.2%"></div><div class="bar-fill bar-blue" style="width:32.6%"></div></div>
+    </div>
+
+  </div>
+
+  <!-- ══ 05. ALERTAS ══ -->
+  <div class="section-label">05 — Alertas activas · ordenadas por urgencia</div>
+  <div class="alerts-grid">
+
+    <div class="alert-item alert-1">
+      <div class="alert-icon">🚨</div>
+      <div class="alert-body">
+        <div class="alert-title">URGENCIA 1 — vid_6523: CPL CRÍTICO $821 MXN</div>
+        <div class="alert-desc">Creativo activo en act_2831833353638198. Gasto de <strong>$4,107 en 7 días</strong> con solo 5 resultados. CPL = 2.7× el umbral de $300. CTR normal (0.90%) sugiere problema de landing o audiencia, no del creativo. <strong>Acción: pausar instancia y revisar adset. Requiere confirmación.</strong></div>
+      </div>
+      <span class="alert-badge badge-red">Pausar</span>
+    </div>
+
+    <div class="alert-item alert-2">
+      <div class="alert-icon">🔴</div>
+      <div class="alert-body">
+        <div class="alert-title">URGENCIA 1 — CIUDAD JUÁREZ: CPL $834 MXN · Presupuesto $5,000/día</div>
+        <div class="alert-desc">La campaña con mayor presupuesto tiene el peor CPL. <strong>$67,505 gastados en mayo</strong> con solo 44 resultados en 7 días. Cada día adicional representa ~$5,000 en gasto ineficiente. <strong>Acción: revisar creativos, audiencias y segmentación.</strong></div>
+      </div>
+      <span class="alert-badge badge-red">Crítico</span>
+    </div>
+
+    <div class="alert-item alert-2">
+      <div class="alert-icon">🔴</div>
+      <div class="alert-body">
+        <div class="alert-title">URGENCIA 1 — vid_6901: CPL $519 MXN · Gasto $7,268 en 7 días</div>
+        <div class="alert-desc">CTR alto (1.85%) pero CPL 73% sobre umbral. El video engancha pero no convierte. Posible desconexión entre mensaje del video y landing page. <strong>Acción: revisar landing + pausar o reemplazar el creativo.</strong></div>
+      </div>
+      <span class="alert-badge badge-red">Reemplazar</span>
+    </div>
+
+    <div class="alert-item alert-3">
+      <div class="alert-icon">⚠️</div>
+      <div class="alert-body">
+        <div class="alert-title">URGENCIA 2 — CANCÚN: CPL $351 MXN (17% sobre umbral $300)</div>
+        <div class="alert-desc">Presupuesto de $3,500/día con $45,866 acumulados en mayo. CPL sobre umbral con riesgo de seguir subiendo mientras los adsets estén en aprendizaje. <strong>Acción: revisar creativos del adset de Cancún.</strong></div>
+      </div>
+      <span class="alert-badge badge-amber">Monitorear</span>
+    </div>
+
+    <div class="alert-item alert-3">
+      <div class="alert-icon">⚠️</div>
+      <div class="alert-body">
+        <div class="alert-title">URGENCIA 2 — GUADALAJARA: CPL $324 MXN (8% sobre umbral)</div>
+        <div class="alert-desc">Marginal pero sobre $300. Con $47,381 acumulados en mayo es la segunda campaña con más gasto. <strong>Acción: monitorear en 48h; si CPL supera $340 → intervenir.</strong></div>
+      </div>
+      <span class="alert-badge badge-amber">Vigilar</span>
+    </div>
+
+    <div class="alert-item alert-3">
+      <div class="alert-icon">⚠️</div>
+      <div class="alert-body">
+        <div class="alert-title">URGENCIA 2 — img_6394: 4 instancias con CPL entre $308–$674</div>
+        <div class="alert-desc">El creativo tiene 15 instancias activas. Las instancias en adsets ineficientes generan CPL de $308–$674; las eficientes, $66–$196. <strong>Acción: pausar las 4 instancias problemáticas sin tocar las que están funcionando.</strong></div>
+      </div>
+      <span class="alert-badge badge-amber">Optimizar</span>
+    </div>
+
+    <div class="alert-item alert-4">
+      <div class="alert-icon">🔵</div>
+      <div class="alert-body">
+        <div class="alert-title">INFO — Subgasto generalizado: campañas en 41–44% vs pace 45.2%</div>
+        <div class="alert-desc">La brecha se explica por los <strong>~52 adsets en fase de aprendizaje</strong> activos. A medida que salgan, el gasto se normalizará. No se recomienda subir presupuestos hasta resolver los creativos con CPL crítico.</div>
+      </div>
+      <span class="alert-badge badge-blue">Normal</span>
+    </div>
+
+    <div class="alert-item alert-4">
+      <div class="alert-icon">🔵</div>
+      <div class="alert-body">
+        <div class="alert-title">INFO — Nacional_Engagement: arrancó día 7, no hay problema de entrega</div>
+        <div class="alert-desc">El 32.6% ejecutado en mayo se debe a que el adset <strong>inició el 7 de mayo</strong>. Entrega real: $1,369/día = 91% de su presupuesto. ThruPlay a $0.069 MXN, CTR 1.32%. <strong>Nuevo creativo activo hoy sin impresiones aún — confirmar aprobación.</strong></div>
+      </div>
+      <span class="alert-badge badge-blue">Verificar</span>
+    </div>
+
+    <div class="alert-item alert-4">
+      <div class="alert-icon">🔵</div>
+      <div class="alert-body">
+        <div class="alert-title">INFO — 4 adsets con salida fallida de aprendizaje (learning_exit_unsuccessfully)</div>
+        <div class="alert-desc">Adsets afectados: <span style="font-family:var(--mono);color:var(--text)">vid_6397, vid_6841, img_6394 (inst.), img_6994 (inst.)</span>. Entrega limitada estructuralmente. <strong>Acción: revisar tamaño de audiencia o aumentar presupuesto de esos adsets.</strong></div>
+      </div>
+      <span class="alert-badge badge-blue">Revisar</span>
+    </div>
+
+    <div class="alert-item alert-5">
+      <div class="alert-icon">✅</div>
+      <div class="alert-body">
+        <div class="alert-title">ESCALAR — vid_6626 e img_6862: mejores creativos de la semana</div>
+        <div class="alert-desc"><strong>vid_6626</strong>: CPL promedio $164, CTR 1.10%, 14 instancias activas. Las instancias con CPL &lt;$140 son candidatas a más presupuesto. <strong>img_6862</strong>: CPL $163, buen volumen (131 resultados en 7 días). Candidatos a replicar en nuevos adsets territoriales.</div>
+      </div>
+      <span class="alert-badge badge-green">Escalar</span>
+    </div>
+
+  </div>
+
 </main>
+
+<footer class="dash-footer">
+  Fuente: Meta Ads MCP · ads_get_ad_entities · act_2831833353638198 + act_647137773679537 · Generado 14 mayo 2026 · Día 14/31 · Todos los valores en MXN
+</footer>
+
+</div><!-- /dashboard -->
+
+<!-- ══════════════════════════════════════
+     AUTH LOGIC
+══════════════════════════════════════ -->
+<script>
+(function () {
+  // ── Contraseña almacenada como hash SHA-256 ──────────────────────
+  // Hash de "ingenes2026" (SHA-256, hex lowercase)
+  // No se guarda la contraseña en texto plano en ningún lugar del código
+  const CORRECT_HASH = "dee27fc5e04fdaa6de49e0d150471516d77f163214d3ca7cf43bcc3dae264dc5";
+
+  // Clave y TTL para sessionStorage (expira a medianoche)
+  const SESSION_KEY  = "ingenes_auth_token";
+  const SESSION_DATE = "ingenes_auth_date";
+
+  // ── Verificar sesión guardada ────────────────────────────────────
+  function todayStr() {
+    const d = new Date();
+    return d.getFullYear() + "-" + (d.getMonth()+1) + "-" + d.getDate();
+  }
+
+  function isSessionValid() {
+    try {
+      const token = localStorage.getItem(SESSION_KEY);
+      const date  = localStorage.getItem(SESSION_DATE);
+      return token === CORRECT_HASH && date === todayStr();
+    } catch(e) { return false; }
+  }
+
+  function saveSession() {
+    try {
+      localStorage.setItem(SESSION_KEY,  CORRECT_HASH);
+      localStorage.setItem(SESSION_DATE, todayStr());
+    } catch(e) {}
+  }
+
+  function clearSession() {
+    try {
+      localStorage.removeItem(SESSION_KEY);
+      localStorage.removeItem(SESSION_DATE);
+    } catch(e) {}
+  }
+
+  // ── SHA-256 usando Web Crypto API ────────────────────────────────
+  async function sha256(message) {
+    const msgBuffer = new TextEncoder().encode(message);
+    const hashBuffer = await crypto.subtle.digest("SHA-256", msgBuffer);
+    const hashArray  = Array.from(new Uint8Array(hashBuffer));
+    return hashArray.map(b => b.toString(16).padStart(2, "0")).join("");
+  }
+
+  // ── Mostrar / ocultar pantallas ──────────────────────────────────
+  function showDashboard() {
+    document.getElementById("login-screen").style.display = "none";
+    document.getElementById("dashboard").style.display = "block";
+  }
+
+  function showLogin() {
+    document.getElementById("login-screen").style.display = "flex";
+    document.getElementById("dashboard").style.display = "none";
+  }
+
+  // ── Arranque ─────────────────────────────────────────────────────
+  if (isSessionValid()) {
+    showDashboard();
+  } else {
+    showLogin();
+  }
+
+  // ── Toggle mostrar contraseña ────────────────────────────────────
+  const pwInput    = document.getElementById("pw-input");
+  const toggleBtn  = document.getElementById("toggle-pw-btn");
+  let   pwVisible  = false;
+
+  toggleBtn.addEventListener("click", function () {
+    pwVisible = !pwVisible;
+    // Usar -webkit-text-security para máxima compatibilidad
+    pwInput.style.webkitTextSecurity = pwVisible ? "none" : "disc";
+    // Fallback: cambiar type (funciona en Firefox)
+    try { pwInput.type = pwVisible ? "text" : "password"; } catch(e) {}
+    toggleBtn.textContent = pwVisible ? "🙈" : "👁";
+  });
+
+  // ── Login ────────────────────────────────────────────────────────
+  const loginBtn   = document.getElementById("login-btn");
+  const errorEl    = document.getElementById("login-error");
+
+  async function attemptLogin() {
+    const val = pwInput.value;
+    if (!val) return;
+
+    // Estado de carga
+    loginBtn.disabled = true;
+    loginBtn.innerHTML = '<span class="btn-spinner"></span>Verificando…';
+    errorEl.classList.remove("visible");
+
+    try {
+      const hash = await sha256(val);
+
+      if (hash === CORRECT_HASH) {
+        // Éxito
+        saveSession();
+        loginBtn.innerHTML = '✓ Acceso concedido';
+        loginBtn.style.background = "#2aab4a";
+        setTimeout(showDashboard, 420);
+      } else {
+        // Error
+        loginBtn.disabled = false;
+        loginBtn.innerHTML = "Ingresar al dashboard";
+        errorEl.classList.add("visible");
+        pwInput.classList.add("error");
+        pwInput.value = "";
+        setTimeout(() => pwInput.classList.remove("error"), 600);
+        pwInput.focus();
+      }
+    } catch(e) {
+      loginBtn.disabled = false;
+      loginBtn.innerHTML = "Ingresar al dashboard";
+    }
+  }
+
+  loginBtn.addEventListener("click", attemptLogin);
+  pwInput.addEventListener("keydown", function(e) {
+    if (e.key === "Enter") attemptLogin();
+  });
+
+  // ── Logout ───────────────────────────────────────────────────────
+  document.getElementById("logout-btn").addEventListener("click", function () {
+    clearSession();
+    pwInput.value = "";
+    showLogin();
+  });
+
+})();
+</script>
+
 </body>
 </html>
