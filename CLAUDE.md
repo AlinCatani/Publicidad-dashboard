@@ -8,7 +8,7 @@ entran correos `@ingenes.com`. Cada tablero es una página; se van acumulando. E
 
 - **Qué hace:** sirve tableros de lectura sobre BigQuery a la gente de Ingenes, con inicio de
   sesión de Google limitado al dominio `@ingenes.com` (verificado en el servidor).
-- **Con qué datos:** lee **en vivo** `gtm-pvkx9p9-ndk3z.looker_dashboard` desde el servidor, con
+- **Con qué datos:** lee **en vivo** BigQuery del proyecto Advertising (`gtm-pvkx9p9-ndk3z`) desde el servidor, con
   una service account **de solo lectura** propia de este proyecto (no `looker-bigquery@`, que es
   `Editor`). Sus llaves: `secretos/` en local y variables de entorno en Vercel.
 - **Qué NO puede hacer:**
@@ -51,7 +51,14 @@ Llave SSH de esta máquina (**Alin**): `~/.ssh/publicidad_dashboard_ed25519`, al
 
 ## Estado
 
-Carpeta creada por `/coordinador` el 2026-10-06. Paso 2 (esqueleto + repo) hecho el 2026-10-06.
-Pasos 3–5 del plan, pendientes.
+Carpeta creada por `/coordinador` el 2026-10-06. Pasos 2 (esqueleto + repo) y 3 (service account
++ OAuth) hechos el 2026-10-06. Pasos 4–5 del plan, pendientes.
+
+| En `secretos/` (local, nunca al repo) | Qué es |
+|---|---|
+| `tableros-lectura.json` | Llave de `tableros-lectura@`: lee **todo** BigQuery de Advertising, sin escribir |
+| `oauth-tableros.json` | Cliente OAuth «Tableros Ingenes», público **Interno**. De aquí sale `.env.local` |
+
+El por qué, en `memory/00-Índice.md`.
 
 @AGENTS.md
