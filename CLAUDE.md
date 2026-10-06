@@ -41,6 +41,8 @@ entran correos `@ingenes.com`. Cada tablero es una página; se van acumulando. E
 | `proxy.ts` | Barrera 1: sin sesión → `/entrar` |
 | `lib/sesion.ts` | Barrera 2: `requerirSesion()`, **toda página nueva la llama** al inicio |
 | `lib/tableros.ts` | Índice de tableros (solo metadatos). Tablero nuevo = carpeta en `app/` + fila aquí |
+| `lib/bigquery.ts` | Cliente de BigQuery: `BQ_KEYFILE` en local, `BQ_CREDENCIALES` en Vercel. Memoria de 5 min por consulta |
+| `app/monterrey/` | Primer tablero. `consultas.ts` = SQL (servidor); `pintar.js` + `marcado.ts` = el pintado del artefacto, sin datos |
 | `.env.example` | Variables que hacen falta. Los valores van en `.env.local` (ignorado) y en Vercel |
 
 **Las 3 máquinas se llaman Alin, Daniela y Estefany** (decidido por Alin, 2026-10-06). Ese
@@ -52,7 +54,7 @@ Llave SSH de esta máquina (**Alin**): `~/.ssh/publicidad_dashboard_ed25519`, al
 ## Estado
 
 Carpeta creada por `/coordinador` el 2026-10-06. Pasos 2 (esqueleto + repo) y 3 (service account
-+ OAuth) hechos el 2026-10-06. Pasos 4–5 del plan, pendientes.
++ OAuth) y 4 (Monterrey, en `app/monterrey/`) hechos el 2026-10-06. Paso 5 (Vercel), pendiente.
 
 | En `secretos/` (local, nunca al repo) | Qué es |
 |---|---|
