@@ -44,5 +44,6 @@ next-env.d.ts
 !.env.example
 
 # llaves locales (service account, paso 3) — nunca al repo
+# por si acaso: las llaves viven fuera del repo, en ../secretos/
 /secretos/
 *.json.key
