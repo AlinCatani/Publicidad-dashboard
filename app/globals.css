@@ -20,24 +20,19 @@ h1, h2 { font-family: var(--font-serif); color: var(--primary); font-weight: 600
 .boton .g { width: 18px; height: 18px; background: #fff; border-radius: 50%; padding: 2px; flex: none; }
 .enlace { background: none; border: 0; color: var(--primary); font: inherit; cursor: pointer; text-decoration: underline; }
 
-/* ---- Entrar: pantalla dividida ---- */
-.entrar { min-height: 100vh; display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr); }
-.entrar .portada { position: relative; overflow: hidden; background: radial-gradient(120% 90% at 20% 10%, #30508f 0%, var(--primary) 45%, #142650 100%); color: #fff; display: flex; flex-direction: column; justify-content: flex-end; padding: 40px; }
-.entrar .portada img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: 62% 50%; }
-.entrar .portada::after { content: ""; position: absolute; inset: 0; background: linear-gradient(180deg, rgba(20,38,80,0) 62%, rgba(20,38,80,.9) 100%); }
-.entrar .portada .texto { position: relative; z-index: 1; max-width: 440px; }
-.entrar .portada .eyebrow { font-size: 12px; letter-spacing: .14em; text-transform: uppercase; color: var(--accent); font-weight: 700; }
-.entrar .portada h2 { color: #fff; font-size: 30px; margin: 4px 0 0; text-wrap: balance; }
-.entrar .portada p { color: rgba(255,255,255,.85); font-family: var(--font-serif); font-style: italic; font-size: 19px; }
-.entrar .panel { display: flex; flex-direction: column; justify-content: center; gap: 18px; padding: 48px clamp(24px, 8vw, 96px); background: var(--surface); }
+/* ---- Entrar: foto completa arriba, acceso abajo ---- */
+.entrar { min-height: 100vh; display: flex; flex-direction: column; }
+.entrar .portada { background: radial-gradient(120% 90% at 20% 10%, #30508f 0%, var(--primary) 45%, #142650 100%); padding: 18px 20px 0; display: flex; justify-content: center; }
+.entrar .portada img { display: block; width: min(100%, 1180px); height: auto; max-height: 58vh; object-fit: contain; border-radius: 20px 20px 0 0; box-shadow: 0 -8px 30px rgba(0,0,0,.25); }
+.entrar .panel { flex: 1; display: flex; flex-direction: column; align-items: center; text-align: center; justify-content: center; gap: 12px; padding: 36px 24px 48px; background: var(--surface); }
 .entrar .panel img { width: 150px; height: auto; }
-.entrar .panel h1 { font-size: 40px; }
-.entrar .panel .sub { color: var(--ink-2); font-family: var(--font-serif); font-style: italic; font-size: 19px; margin-top: -8px; }
+.entrar .panel h1 { font-size: 38px; }
+.entrar .panel .sub { color: var(--ink-2); font-family: var(--font-serif); font-style: italic; font-size: 19px; margin-top: -6px; }
 .entrar .panel .nota { color: var(--muted); font-size: 13px; }
 @media (max-width: 860px) {
-  .entrar { grid-template-columns: 1fr; }
-  .entrar .portada { min-height: 42vh; padding: 24px; }
-  .entrar .portada h2 { font-size: 28px; }
+  .entrar .portada { padding: 12px 12px 0; }
+  .entrar .portada img { max-height: none; border-radius: 12px 12px 0 0; }
+  .entrar .panel h1 { font-size: 30px; }
 }
 
 /* ---- Inicio: lista de tableros ---- */

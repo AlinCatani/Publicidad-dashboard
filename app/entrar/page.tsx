@@ -21,10 +21,6 @@ export default async function Entrar({ searchParams }: PageProps<"/entrar">) {
     <main className="entrar">
       <section className="portada" aria-hidden="true">
         {HAY_PORTADA && <img src="/portada.webp" alt="" />}
-        <div className="texto">
-          <p className="eyebrow">Marketing · Ingenes</p>
-          <h2>De las impresiones a las primeras visitas</h2>
-        </div>
       </section>
       <section className="panel">
         <img src="/ingenes-logo.webp" alt="Instituto Ingenes" />
