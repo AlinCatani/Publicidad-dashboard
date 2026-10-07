@@ -42,8 +42,8 @@ export const MARCADO = `<div class="wrap">
         <span class="flabel" id="lbl-canal">Canal</span>
         <div class="seg" role="group" aria-labelledby="lbl-canal" id="fCanal">
           <button type="button" data-v="pagado">Meta + Google</button>
-          <button type="button" data-v="meta"><span class="dot meta"></span>Meta</button>
-          <button type="button" data-v="google"><span class="dot google"></span>Google</button>
+          <button type="button" data-v="meta" class="logo-btn" title="Solo Meta (Facebook e Instagram), con los demás filtros"><svg class="lg" viewBox="0 0 48 32" aria-hidden="true"><defs><linearGradient id="lgM" x1="0" x2="1"><stop offset="0" stop-color="#0064e0"/><stop offset="1" stop-color="#0082fb"/></linearGradient></defs><path fill="url(#lgM)" d="M12.3 4C6.4 4 1 11.3 1 19.5 1 25.3 3.9 28 7.8 28c2.9 0 5.3-1.6 8.1-6.3l3.2-5.6 3.4 5.9C25.5 27 28 28 31 28c5.1 0 9-3.7 9-9.5C40 10.4 34.7 4 29.7 4c-3.2 0-6 2-9.3 7.2L19 13.5l-1.3-2.2C14.9 6.6 13.6 4 12.3 4zm-.4 4.6c1 0 2.1 1.8 4.6 6.1L18 17l-2.8 4.9c-2 3.4-3.6 4.7-5.3 4.7-2.1 0-3.7-1.5-3.7-5.3 0-6.3 3.5-12.7 5.7-12.7zm18 0c2.4 0 5.9 5 5.9 11.1 0 3.1-1.5 4.6-3.7 4.6-1.9 0-3.3-1.3-5.6-5.2l-3-5.2 1.5-2.4c1.9-3.1 3.5-2.9 4.9-2.9z"/></svg>Meta</button>
+          <button type="button" data-v="google" class="logo-btn" title="Solo Google (Search, PMax, YouTube), con los demás filtros"><svg class="lg" viewBox="0 0 48 48" aria-hidden="true"><path fill="#EA4335" d="M24 9.5c3.5 0 6.6 1.2 9 3.6l6.8-6.8C35.7 2.5 30.2 0 24 0 14.6 0 6.5 5.4 2.6 13.2l7.9 6.1C12.4 13.6 17.7 9.5 24 9.5z"/><path fill="#4285F4" d="M46.5 24.5c0-1.6-.1-3.1-.4-4.5H24v9h12.7c-.6 2.9-2.2 5.4-4.7 7.1l7.6 5.9c4.4-4.1 6.9-10.1 6.9-17.5z"/><path fill="#FBBC05" d="M10.5 28.7c-.5-1.5-.8-3-.8-4.7s.3-3.2.8-4.7l-7.9-6.1C1 16.4 0 20.1 0 24s1 7.6 2.6 10.8l7.9-6.1z"/><path fill="#34A853" d="M24 48c6.5 0 11.9-2.1 15.9-5.8l-7.6-5.9c-2.1 1.4-4.9 2.3-8.3 2.3-6.3 0-11.6-4.1-13.5-9.9l-7.9 6.1C6.5 42.6 14.6 48 24 48z"/></svg>Google</button>
           <button type="button" data-v="todos">Todos los medios</button>
         </div>
       </div>
