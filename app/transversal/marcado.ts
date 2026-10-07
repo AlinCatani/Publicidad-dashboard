@@ -1,0 +1,192 @@
+// Marcado del Reporte Transversal+Ole, portado de la v14 del artefacto (2026-10-06).
+// Solo estructura y textos: ningún número ni consulta.
+export const MARCADO = `<div class="wrap">
+  <aside class="side">
+    <img class="logo" src="/ingenes-logo.webp" alt="Instituto Ingenes">
+    <nav class="tabs" id="tabsSuc" aria-label="Sucursal"></nav>
+  </aside>
+  <div class="main">
+  <header>
+    <div class="brand">
+      <div>
+        <p class="eyebrow" id="eyebrow">Marketing · Fertilidad</p>
+        <h1>Reporte transversal</h1>
+        <p class="sub">Desde las impresiones hasta las primeras visitas</p>
+      </div>
+    </div>
+    <div class="period-wrap">
+      <button type="button" class="period" id="periodBtn" aria-haspopup="dialog" aria-expanded="false">—</button>
+      <div class="popover" id="periodPop" role="dialog" aria-label="Elegir periodo" hidden>
+        <label>Desde <input type="date" id="dDesde"></label>
+        <label>Hasta <input type="date" id="dHasta"></label>
+        <div class="pop-actions">
+          <button type="button" class="btn ghost" id="pQuick1">Este mes</button>
+          <button type="button" class="btn ghost" id="pQuick2">Últimos 3 meses</button>
+          <button type="button" class="btn ghost" id="pQuick3">Desde marzo</button>
+          <button type="button" class="btn" id="pApply">Aplicar</button>
+        </div>
+        <p class="caveat" style="margin-top:8px">Las fechas son de creación del lead. Los datos empiezan el 1 de marzo de 2026.</p>
+      </div>
+    </div>
+  </header>
+
+  <div class="status" role="status" aria-live="polite">
+    <span class="pill snap" id="statusPill">Conectando</span>
+    <span class="msg" id="statusMsg">Buscando el conector de BigQuery…</span>
+    <button type="button" class="btn" id="btnRefresh" hidden>Actualizar</button>
+  </div>
+
+  <section class="panel sticky-filters" aria-label="Filtros">
+    <div class="filters">
+      <div class="fgroup">
+        <span class="flabel" id="lbl-canal">Canal</span>
+        <div class="seg" role="group" aria-labelledby="lbl-canal" id="fCanal">
+          <button type="button" data-v="pagado">Meta + Google</button>
+          <button type="button" data-v="meta"><span class="dot meta"></span>Meta</button>
+          <button type="button" data-v="google"><span class="dot google"></span>Google</button>
+          <button type="button" data-v="todos">Todos los medios</button>
+        </div>
+      </div>
+      <div class="fgroup">
+        <span class="flabel" id="lbl-mes">Mes</span>
+        <div class="seg" role="group" aria-labelledby="lbl-mes" id="fMes"></div>
+      </div>
+      <p class="caveat" id="filterNote" style="margin:0;flex:1 1 200px;text-align:right"></p>
+    </div>
+    <div class="selects" id="selects1"></div>
+    <div class="selects" id="selects2"></div>
+  </section>
+
+  <section class="kpis" id="kpis" aria-label="Indicadores principales"></section>
+
+  <section class="panel" aria-labelledby="h-perfil">
+    <div class="phead">
+      <div>
+        <h2 id="h-perfil">Costo por resultado según el paciente</h2>
+        <p class="hint" id="perfilHint">CPL, costo por cita y costo por primera visita, abiertos por la característica que elijas. Los filtros de arriba aplican.</p>
+      </div>
+    </div>
+    <div class="seg" role="group" aria-label="Característica" id="fPerfil" style="margin-bottom:12px"></div>
+    <div class="tscroll"><table id="tPerfil"></table></div>
+  </section>
+
+  <section class="panel" aria-labelledby="h-funnel">
+    <div class="phead">
+      <div>
+        <h2 id="h-funnel">Funnel por etapa</h2>
+        <p class="hint">Cada anillo muestra el total de la etapa y su reparto entre canales; su tamaño baja con el volumen (escala logarítmica). Pasa el cursor sobre un segmento para ver el detalle.</p>
+      </div>
+      <div class="legend" id="legFunnel"></div>
+    </div>
+    <div id="funnel"></div>
+  </section>
+
+  <section class="panel" aria-labelledby="h-origen">
+    <div class="phead">
+      <div>
+        <h2 id="h-origen">De qué campañas llegan los leads</h2>
+        <p class="hint" id="origenHint"></p>
+      </div>
+    </div>
+    <div class="tscroll"><table id="tOrigen"></table></div>
+    <p class="caveat" id="origenNote"></p>
+  </section>
+
+  <section class="panel" aria-labelledby="h-local" id="secLocal" hidden>
+    <div class="phead">
+      <div>
+        <h2 id="h-local">Campaña local: ADV vs OPEN</h2>
+        <p class="hint" id="localHint">Campaña pagada de Meta con la región de la sucursal. La segmentación OPEN inició el 10 de agosto de 2026.</p>
+      </div>
+    </div>
+    <div class="tscroll"><table id="tLocal"></table></div>
+    <p class="caveat" id="localNote"></p>
+  </section>
+
+  <section class="panel" aria-labelledby="h-wk" id="secWk" hidden>
+    <div class="phead">
+      <div>
+        <h2 id="h-wk">Comportamiento semanal de la campaña local</h2>
+        <p class="hint" id="wkHint">Semana por semana (lunes a domingo). La línea punteada es el promedio del periodo.</p>
+      </div>
+      <div class="legend" id="legWk"></div>
+    </div>
+    <div class="seg" role="group" aria-label="Métrica" id="fWk" style="margin-bottom:12px">
+      <button type="button" data-v="cita">Costo por cita</button>
+      <button type="button" data-v="cpl">CPL</button>
+      <button type="button" data-v="share">% leads de la sucursal</button>
+      <button type="button" data-v="leads">Leads de la sucursal</button>
+      <button type="button" data-v="pvr">Primeras visitas</button>
+    </div>
+    <div id="cWk"></div>
+    <p class="caveat" id="wkNote"></p>
+  </section>
+
+  <section class="panel" aria-labelledby="h-reg">
+    <div class="phead">
+      <div><h2 id="h-reg">Registros por mes</h2><p class="hint">Formularios apilados por canal. El tooltip muestra cuántos pasaron a lead.</p></div>
+      <div class="legend" id="legReg"></div>
+    </div>
+    <div id="cReg"></div>
+    <p class="caveat" id="regNote"></p>
+  </section>
+
+  <section class="panel" aria-labelledby="h-cag">
+    <div class="phead">
+      <div><h2 id="h-cag">Costo por cita</h2><p class="hint">Inversión asignada ÷ citas, por mes y canal, en MXN.</p></div>
+      <div class="legend" id="legCag"></div>
+    </div>
+    <div id="cCag"></div>
+  </section>
+
+  <section class="panel" aria-labelledby="h-cpvr">
+    <div class="phead">
+      <div><h2 id="h-cpvr">Costo por primera visita</h2><p class="hint">Inversión asignada ÷ PVRs, por mes y canal, en MXN.</p></div>
+      <div class="legend" id="legCpvr"></div>
+    </div>
+    <div id="cCpvr"></div>
+  </section>
+
+  <section class="panel" aria-labelledby="h-canal">
+    <div class="phead">
+      <div><h2 id="h-canal">Meta vs Google</h2><p class="hint" id="canalHint"></p></div>
+    </div>
+    <div class="tscroll"><table id="tCanal"></table></div>
+  </section>
+
+  <section class="panel" aria-labelledby="h-desg">
+    <div class="phead">
+      <div>
+        <h2 id="h-desg">Desglose por campaña</h2>
+        <p class="hint" id="desgHint">Elige por qué dimensión abrir los resultados. Los filtros de arriba aplican.</p>
+      </div>
+    </div>
+    <div class="seg" role="group" aria-label="Dimensión" id="fDim" style="margin-bottom:12px"></div>
+    <div class="tscroll"><table id="tDesg"></table></div>
+  </section>
+
+  <section class="panel" aria-labelledby="h-mes">
+    <div class="phead">
+      <div><h2 id="h-mes">Por mes</h2><p class="hint">Leads por mes apilados por canal; la tabla trae costos y conversiones de cada cohorte.</p></div>
+      <div class="legend" id="legMes"></div>
+    </div>
+    <div id="cMes"></div>
+    <div class="tscroll" style="margin-top:14px"><table id="tMes"></table></div>
+  </section>
+
+  <section class="panel notes" aria-label="Cómo se calculó" id="notes">
+    <div><h3>Fuente</h3><p>BigQuery, proyecto <code>gtm-pvkx9p9-ndk3z</code>, vista <code>looker_dashboard.claude_reporte_transversal</code>: una fila por lead, <b>sin nombre, correo ni teléfono</b>. Se consulta en vivo con los filtros elegidos; no hay cortes guardados en esta página.</p></div>
+    <div><h3>Qué hay detrás de la vista</h3><p>Leads de <code>leads_historico</code> (Airtable). Citas de <code>BIC</code> y primeras visitas de <code>BIP</code> (clínica), cruzadas con el lead por correo normalizado, dentro de BigQuery; una cita y una visita por correo, la más reciente. Inversión de <code>inversion_diaria</code>: el gasto de cada día y combinación de campaña, medio, landing, anuncio, mensaje y región se reparte entre los leads de esa misma combinación (inversión asignada). USD × 18.</p></div>
+    <div><h3>Sucursal real</h3><p id="noteSucursal">La sucursal es la de la visita cuando la hubo (<code>BIP.nom_suc</code>); si no, la que eligió el lead al registrarse. La cita no aporta sucursal.</p></div>
+    <div><h3>Cohorte</h3><p>El periodo filtra por fecha de <b>creación</b> del lead; sus citas y visitas se cuentan aunque ocurran después. Los últimos meses siguen madurando y sus tasas subirán.</p></div>
+    <div><h3>Paciente</h3><p><b>Leading</b> = edad mayor de 30 y sin hijos (misma regla que <code>costo_por_lead</code>). <b>Grupo de edad</b> = quinquenios sobre la edad declarada (25–29, 30–34…). Perfil (Azul/Verde), tipo de paciente (LS/LP), score y user persona vienen tal cual del formulario.</p></div>
+    <div><h3>Canales</h3><p>Meta: facebook, instagram, socialmedia. Google: google_search, pmax, dgen, google, youtube, display. «Todos los medios» agrega web, orgánico y lo que no trae medio.</p></div>
+    <div><h3>Límites del dato</h3><p id="noteLimites">Enero y febrero de 2026 no tienen correo en los leads, así que no cruzan con cita ni visita: por eso el reporte empieza en marzo. El gasto llega hasta la última carga de <code>inversion_diaria</code>. Los leads con <code>posible_duplicado</code> se cuentan.</p></div>
+    <div><h3>Registros</h3><p>De <code>registros_historico</code> (formularios enviados). No trae correo ni perfil Azul/Verde, así que no se cruza con citas y los filtros de perfil y leading no le aplican; la sucursal es la que eligió la persona.</p></div>
+    <div><h3>Origen y campaña local</h3><p>Origen: «local» = campaña pagada cuya región coincide con la sucursal elegida; «nacional» = región nacional; «otras» = otras regiones; «sin campaña» = sin UTM de pago. La campaña local se mide en Meta; «% leads de la sucursal» = leads de la campaña local que son de esta sucursal ÷ todos los leads que genera esa campaña.</p></div>
+    <div><h3>Pendiente</h3><p>Impresiones, alcance, clics, CTR y costo por clic: se cargarán a BigQuery por día y anuncio desde la API de Meta y Google (tabla <code>inversion_y_metricas_anuncio_diaria</code>). Hasta entonces, esas tarjetas y la tabla de atracción de Meta no se muestran.</p></div>
+  </section>
+  </div>
+</div>
+
+<div class="tip" id="tip" hidden></div>`;

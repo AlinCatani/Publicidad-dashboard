@@ -8,4 +8,9 @@ export const TABLEROS: Tablero[] = [
     nombre: "Funnel Ingenes Monterrey",
     descripcion: "Registros, leads, agendas y PVRs de Meta y Google en Monterrey, con su costo por etapa.",
   },
+  {
+    ruta: "/transversal",
+    nombre: "Reporte Transversal+Ole",
+    descripcion: "De las impresiones a las primeras visitas, por sucursal real, campaña y perfil del paciente. Abre en Monterrey.",
+  },
 ];

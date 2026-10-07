@@ -19,13 +19,19 @@ function bigquery(): BigQuery {
 }
 
 // Memoria de 5 minutos por consulta: recargar la página no vuelve a cobrar BigQuery.
+// `forzar` la salta (botón «Actualizar» de un tablero) y guarda el resultado nuevo.
 const MEMORIA_MS = 5 * 60 * 1000;
-const memoria = new Map<string, { hasta: number; filas: Record<string, unknown>[] }>();
+const memoria = new Map<string, { hasta: number; filas: Record<string, unknown>[]; en: string }>();
+
+export async function consultarCon(sql: string, forzar = false): Promise<{ filas: Record<string, unknown>[]; en: string }> {
+  const guardado = memoria.get(sql);
+  if (!forzar && guardado && guardado.hasta > Date.now()) return { filas: guardado.filas, en: guardado.en };
+  const [filas] = await bigquery().query({ query: sql, location: "US" });
+  const en = new Date().toISOString();
+  memoria.set(sql, { hasta: Date.now() + MEMORIA_MS, filas, en });
+  return { filas, en };
+}
 
 export async function consultar(sql: string): Promise<Record<string, unknown>[]> {
-  const guardado = memoria.get(sql);
-  if (guardado && guardado.hasta > Date.now()) return guardado.filas;
-  const [filas] = await bigquery().query({ query: sql, location: "US" });
-  memoria.set(sql, { hasta: Date.now() + MEMORIA_MS, filas });
-  return filas;
+  return (await consultarCon(sql)).filas;
 }
