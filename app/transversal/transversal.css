@@ -199,4 +199,8 @@ tr.rate td { color: var(--ink-2); } tr.rate td:first-child { padding-left: 12px;
 td.chg { font-size: 12.5px; color: var(--muted); }
 td.better { color: var(--good); font-weight: 700; } td.better::before { content: "● "; font-size: 9px; vertical-align: 1px; }
 th small { display: block; font-weight: 400; font-size: 11px; color: var(--muted); text-transform: none; letter-spacing: 0; }
+.trio { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; }
+.trio .mini h3 { font-family: var(--font-serif); font-size: 18px; font-weight: 600; color: var(--primary); margin: 0 0 4px; }
+@media (max-width: 980px) { .trio { grid-template-columns: 1fr; } }
+.tab-all { display: flex; gap: 6px; } .tab-all .tab { flex: 1; justify-content: center; }
 }

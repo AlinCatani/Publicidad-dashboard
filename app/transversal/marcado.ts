@@ -59,6 +59,14 @@ export const MARCADO = `<div class="wrap">
 
   <section class="kpis" id="kpis" aria-label="Indicadores principales"></section>
 
+  <section class="panel" aria-labelledby="h-diario">
+    <div class="phead">
+      <div><h2 id="h-diario">Evolución diaria</h2><p class="hint">Leads, citas y primeras visitas según la fecha de creación del lead, con los filtros, el canal y el mes elegidos.</p></div>
+      <div class="seg" role="group" aria-label="Granularidad" id="fGran"><button type="button" data-v="dia">Por día</button><button type="button" data-v="semana">Por semana</button></div>
+    </div>
+    <div class="trio" id="cDiario"></div>
+  </section>
+
   <section class="panel" aria-labelledby="h-perfil">
     <div class="phead">
       <div>
@@ -178,6 +186,7 @@ export const MARCADO = `<div class="wrap">
     <div><h3>Fuente</h3><p>BigQuery, proyecto <code>gtm-pvkx9p9-ndk3z</code>, vista <code>looker_dashboard.claude_reporte_transversal</code>: una fila por lead, <b>sin nombre, correo ni teléfono</b>. Se consulta en vivo con los filtros elegidos; no hay cortes guardados en esta página.</p></div>
     <div><h3>Qué hay detrás de la vista</h3><p>Leads de <code>leads_historico</code> (Airtable). Citas de <code>BIC</code> y primeras visitas de <code>BIP</code> (clínica), cruzadas con el lead por correo normalizado, dentro de BigQuery; una cita y una visita por correo, la más reciente. Inversión de <code>inversion_diaria</code>: el gasto de cada día y combinación de campaña, medio, landing, anuncio, mensaje y región se reparte entre los leads de esa misma combinación (inversión asignada). USD × 18.</p></div>
     <div><h3>Sucursal real</h3><p id="noteSucursal">La sucursal es la de la visita cuando la hubo (<code>BIP.nom_suc</code>); si no, la que eligió el lead al registrarse. La cita no aporta sucursal.</p></div>
+    <div><h3>TAL%</h3><p>Tasa de asistencia de leads: primeras visitas ÷ leads del periodo. Es la conversión completa de lead a PVR.</p></div>
     <div><h3>Cohorte</h3><p>El periodo filtra por fecha de <b>creación</b> del lead; sus citas y visitas se cuentan aunque ocurran después. Los últimos meses siguen madurando y sus tasas subirán.</p></div>
     <div><h3>Paciente</h3><p><b>Leading</b> = edad mayor de 30 y sin hijos (misma regla que <code>costo_por_lead</code>). <b>Grupo de edad</b> = quinquenios sobre la edad declarada (25–29, 30–34…). Perfil (Azul/Verde), tipo de paciente (LS/LP), score y user persona vienen tal cual del formulario.</p></div>
     <div><h3>Canales</h3><p>Meta: facebook, instagram, socialmedia. Google: google_search, pmax, dgen, google, youtube, display. «Todos los medios» agrega web, orgánico y lo que no trae medio.</p></div>

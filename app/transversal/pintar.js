@@ -12,7 +12,9 @@ const CH = { meta: "Meta", google: "Google", otros: "Otros medios" };
 const OPEN_START = "2026-08-10";
 /* Región de campaña que corresponde a cada sucursal (valores de utm region, en minúsculas). */
 const SUC_REGION = { "CIUDAD DE MEXICO": ["mexico", "cdmx", "ciudad_de_mexico"], "MONTERREY": ["monterrey", "mty"], "GUADALAJARA": ["guadalajara", "gdl"], "PUEBLA": ["puebla"], "TIJUANA": ["tijuana"], "CANCUN": ["cancun"], "MERIDA": ["merida"], "QUERETARO": ["queretaro"], "VERACRUZ": ["veracruz"], "TOLUCA": ["toluca"], "CIUDAD JUAREZ": ["juarez", "ciudad_juarez", "cd_juarez"], "LEON": ["leon", "bajio"], "MORELIA": ["morelia"], "MEXICALI": ["mexicali"], "CHIHUAHUA": ["chihuahua", "chuhuahua"], "AGUASCALIENTES": ["aguascalientes"], "HERMOSILLO": ["hermosillo"], "MAZATLAN": ["mazatlan"], "PUERTO VALLARTA": ["vallarta", "puerto_vallarta"], "HOUSTON": ["texas", "houston", "usa_south"], "ORANGE COUNTY": ["california", "orange_county"], "NEW YORK": ["newyork", "new_york"], "MIAMI": ["florida", "miami"] };
-const localRegions = () => { const s = state.f.sucursal_real; if (!s) return []; const base = SUC_REGION[s] || [s.toLowerCase().replace(/\s+/g, "_")]; return base.concat(base.map(x => x.replace(/_/g, " "))); };
+const localRegions = () => { const out = []; state.sucs.forEach(s => { const base = SUC_REGION[s] || [s.toLowerCase().replace(/\s+/g, "_")]; base.concat(base.map(x => x.replace(/_/g, " "))).forEach(r => { if (!out.includes(r)) out.push(r); }); }); return out; };
+const soloMty = () => state.sucs.length === 1 && state.sucs[0] === "MONTERREY";
+const sucsLabel = () => state.sucs.length === 0 ? "Todas las sucursales" : state.sucs.length === 1 ? `Sucursal ${sucName(state.sucs[0])}` : `${state.sucs.length} sucursales`;
 const ORIGENES = [
   { k: "local", name: "Campaña local", sub: "región de la sucursal" },
   { k: "nacional", name: "Campañas nacionales", sub: "región nacional" },
@@ -20,6 +22,7 @@ const ORIGENES = [
   { k: "sin_campana", name: "Sin campaña pagada", sub: "orgánico o sin UTM" }
 ];
 /* Dimensiones: filtro (select), desglose por campaña (tabla) y desglose por paciente (tabla). */
+const VACIO = "__vacio__"; // valor del select para «(vacío)»: distinto de "" (= Todas)
 const DIMS = {
   sucursal_real: { label: "Sucursal" }, campaign: { label: "Campaña" }, medium: { label: "Medio" }, landing: { label: "Landing", top: 300 },
   region: { label: "Región" }, anuncio: { label: "Anuncio", top: 300 }, mensaje: { label: "Mensaje" },
@@ -27,7 +30,7 @@ const DIMS = {
   grupo_edad: { label: "Grupo de edad", sortKey: true }, es_leading: { label: "Leading", fixed: ["Leading", "No leading"] },
   canal: { label: "Canal" }, mes: { label: "Mes" }
 };
-const FILTER_ROW1 = ["sucursal_real", "campaign", "medium", "landing", "region", "anuncio", "mensaje"];
+const FILTER_ROW1 = ["campaign", "medium", "landing", "region", "anuncio", "mensaje"];
 const FILTER_ROW2 = ["tipo_de_paciente", "perfil", "score", "user_persona", "grupo_edad", "es_leading"];
 const FILTER_DIMS = FILTER_ROW1.concat(FILTER_ROW2);
 const DESG_DIMS = ["campaign", "medium", "landing", "region", "anuncio", "mensaje", "sucursal_real", "canal", "mes"];
@@ -59,11 +62,12 @@ const fmtDate = s => new Date(s + "T12:00:00").toLocaleDateString("es-MX", { day
 const today = iso(new Date());
 
 /* ===== Estado ===== */
-const state = { desde: MIN_DATE, hasta: today, mes: "todo", canal: "pagado", dim: "campaign", pdim: "tipo_de_paciente", f: {} };
+const state = { desde: MIN_DATE, hasta: today, mes: "todo", canal: "pagado", gran: "dia", dim: "campaign", pdim: "tipo_de_paciente", sucs: ["MONTERREY"], f: {} };
 FILTER_DIMS.forEach(k => state.f[k] = "");
-state.f.sucursal_real = "MONTERREY";
 try {
-  const s = JSON.parse(localStorage.getItem("reporte-transversal-v2") || "{}");
+  const s = JSON.parse(localStorage.getItem("reporte-transversal-v3") || "{}");
+  if (Array.isArray(s.sucs)) state.sucs = s.sucs.filter(v => typeof v === "string" && v).slice(0, 40);
+  if (s.gran === "semana") state.gran = "semana";
   if (/^\d{4}-\d\d-\d\d$/.test(s.desde || "")) state.desde = s.desde < MIN_DATE ? MIN_DATE : s.desde;
   if (/^\d{4}-\d\d-\d\d$/.test(s.hasta || "")) state.hasta = s.hasta;
   if (s.canal) state.canal = s.canal;
@@ -73,7 +77,7 @@ try {
   if (s.f) FILTER_DIMS.forEach(k => { if (typeof s.f[k] === "string") state.f[k] = s.f[k]; });
 } catch (e) {}
 if (state.hasta < state.desde) state.hasta = state.desde;
-const save = () => { try { localStorage.setItem("reporte-transversal-v2", JSON.stringify(state)); } catch (e) {} };
+const save = () => { try { localStorage.setItem("reporte-transversal-v3", JSON.stringify(state)); } catch (e) {} };
 const channels = () => state.canal === "pagado" ? ["meta", "google"] : state.canal === "todos" ? ["meta", "google", "otros"] : [state.canal];
 /* Meses dentro del periodo elegido */
 function monthsSel() {
@@ -85,7 +89,7 @@ function monthsSel() {
 
 const REG_SKIP = { perfil: 1, es_leading: 1 };
 /* ===== Datos ===== */
-let ALL = [], ROWS = [], PROWS = [], RROWS = [], WEEKS = [], OPTIONS = null;
+let ALL = [], ROWS = [], PROWS = [], RROWS = [], WEEKS = [], DROWS = [], OPTIONS = null;
 let MROWS = [];
 const inMes = r => state.mes === "todo" || r.mes === state.mes;
 const applyCanal = () => { const chs = channels(); MROWS = ALL.filter(r => chs.includes(r.canal)); ROWS = MROWS.filter(inMes); };
@@ -128,28 +132,28 @@ function renderMesButtons() {
   if (state.mes !== "todo" && !ms.some(m => m.key === state.mes)) state.mes = "todo";
   fMes.innerHTML = `<button type="button" data-v="todo">Todo</button>` + ms.map(m => `<button type="button" data-v="${m.key}">${cap(m.short)}</button>`).join("");
 }
-fMes.addEventListener("click", e => { const b = e.target.closest("button"); if (!b) return; state.mes = b.dataset.v; save(); applyCanal(); render(); refreshPerfil(false); });
+fMes.addEventListener("click", e => { const b = e.target.closest("button"); if (!b) return; state.mes = b.dataset.v; save(); applyCanal(); render(); refreshPerfil(false); refreshDiario(false); });
 
 /* ===== Canal, desglose, perfil ===== */
-document.getElementById("fCanal").addEventListener("click", e => { const b = e.target.closest("button"); if (!b) return; state.canal = b.dataset.v; save(); applyCanal(); render(); refreshPerfil(false); refreshReg(false); });
+document.getElementById("fCanal").addEventListener("click", e => { const b = e.target.closest("button"); if (!b) return; state.canal = b.dataset.v; save(); applyCanal(); render(); refreshPerfil(false); refreshDiario(false); refreshReg(false); });
 const fDim = document.getElementById("fDim");
 fDim.innerHTML = DESG_DIMS.map(k => `<button type="button" data-v="${k}">${DIMS[k].label}</button>`).join("");
 fDim.addEventListener("click", e => { const b = e.target.closest("button"); if (!b) return; state.dim = b.dataset.v; save(); paintFilters(); refresh(false); });
 const fPerfil = document.getElementById("fPerfil");
 fPerfil.innerHTML = PERFIL_DIMS.map(k => `<button type="button" data-v="${k}">${DIMS[k].label}</button>`).join("");
-fPerfil.addEventListener("click", e => { const b = e.target.closest("button"); if (!b) return; state.pdim = b.dataset.v; save(); paintFilters(); refreshPerfil(false); });
+fPerfil.addEventListener("click", e => { const b = e.target.closest("button"); if (!b) return; state.pdim = b.dataset.v; save(); paintFilters(); refreshPerfil(false); refreshDiario(false); });
 
 /* ===== Selects ===== */
 function selectHtml(k) {
   const d = DIMS[k];
   let opts = d.fixed ? d.fixed.map(v => ({ v, n: null })) : ((OPTIONS && OPTIONS[k]) || []).slice(0, d.top || 200);
   if (d.sortKey) opts = opts.slice().sort((a, b) => a.v.localeCompare(b.v, "es", { numeric: true }));
-  const cur = state.f[k];
-  const extra = cur && !opts.some(o => o.v === cur) ? [{ v: cur, n: null }] : [];
-  const label = o => k === "sucursal_real" ? sucName(o.v) : (o.v || "(vacío)");
+  const cur = state.f[k], val = o => o.v === "" ? VACIO : o.v;
+  const extra = cur && !opts.some(o => val(o) === cur) ? [{ v: cur === VACIO ? "" : cur, n: null }] : [];
+  const label = o => o.v || "(vacío)";
   return `<label class="sel"><span>${d.label}</span><select data-k="${k}">
     <option value="">Todas</option>
-    ${extra.concat(opts).map(o => `<option value="${esc(o.v)}"${o.v === cur ? " selected" : ""}>${esc(label(o))}${o.n != null ? ` · ${compact.format(o.n)}` : ""}</option>`).join("")}
+    ${extra.concat(opts).map(o => `<option value="${esc(val(o))}"${val(o) === cur ? " selected" : ""}>${esc(label(o))}${o.n != null ? ` · ${compact.format(o.n)}` : ""}</option>`).join("")}
   </select></label>`;
 }
 function renderSelects() {
@@ -168,10 +172,12 @@ function renderTabs() {
   list.sort((a, b) => order[sucInfo(a.v)[1]] - order[sucInfo(b.v)[1]] || (b.n || 0) - (a.n || 0));
   let lastG = null;
   host.innerHTML = list.map(o => { const [ab, g] = sucInfo(o.v); const head = g !== lastG ? `<div class="tgroup">${{ mx: "México", us: "Estados Unidos", tur: "Turismo médico" }[g]}</div>` : ""; lastG = g;
-    return head + `<button type="button" class="tab g-${g}" data-v="${esc(o.v)}" aria-pressed="${String(state.f.sucursal_real === o.v)}" title="${esc(sucName(o.v))}${o.n ? ` · ${nf.format(o.n)} leads` : ""}"><b>${ab}</b><span>${esc(sucName(o.v))}</span></button>`; }).join("") +
-    `<div class="tgroup"></div><button type="button" class="tab g-all" data-v="" aria-pressed="${String(state.f.sucursal_real === "")}" title="Todas las sucursales"><b>Todas</b><span>sin filtro de sucursal</span></button>`;
+    return head + `<button type="button" class="tab g-${g}" data-v="${esc(o.v)}" aria-pressed="${String(state.sucs.includes(o.v))}" title="${esc(sucName(o.v))}${o.n ? ` · ${nf.format(o.n)} leads` : ""}"><b>${ab}</b><span>${esc(sucName(o.v))}</span></button>`; }).join("") +
+    `<div class="tgroup"></div><div class="tab-all"><button type="button" class="tab g-all" data-all="1" aria-pressed="${String(state.sucs.length === 0)}" title="Quitar el filtro de sucursal"><b>Todas</b></button><button type="button" class="tab g-all" data-none="1" aria-pressed="false" title="Desmarcar todas"><b>Ninguna</b></button></div>`;
   host.querySelectorAll(".tab").forEach(b => b.addEventListener("click", () => {
-    state.f.sucursal_real = b.dataset.v; save(); paintFilters(); renderTabs(); renderSelects(); refresh(false);
+    if (b.dataset.all || b.dataset.none) state.sucs = [];
+    else { const v = b.dataset.v, i = state.sucs.indexOf(v); if (i >= 0) state.sucs.splice(i, 1); else state.sucs.push(v); }
+    save(); paintFilters(); renderTabs(); refresh(false);
   }));
 }
 
@@ -181,9 +187,8 @@ function paintFilters() {
   fDim.querySelectorAll("button").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.v === state.dim)));
   fPerfil.querySelectorAll("button").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.v === state.pdim)));
   periodBtn.textContent = `${fmtDate(state.desde)} – ${fmtDate(state.hasta)} ▾`;
-  const suc = state.f.sucursal_real;
-  document.getElementById("eyebrow").textContent = suc ? `Marketing · Sucursal ${sucName(suc)}` : "Marketing · Todas las sucursales";
-  const active = FILTER_DIMS.filter(k => state.f[k] !== "").map(k => `${DIMS[k].label}: ${k === "sucursal_real" ? sucName(state.f[k]) : state.f[k] || "(vacío)"}`);
+  document.getElementById("eyebrow").textContent = `Marketing · ${sucsLabel()}`;
+  const active = FILTER_DIMS.filter(k => state.f[k] !== "").map(k => `${DIMS[k].label}: ${state.f[k] === VACIO ? "(vacío)" : state.f[k]}`);
   document.getElementById("filterNote").textContent = active.length ? "Filtros activos: " + active.join(" · ") + "." : "Sin filtros: se muestran todas las sucursales, campañas y perfiles.";
 }
 
@@ -204,7 +209,7 @@ function renderKpis() {
     { k: "Costo por cita", v: div(a.inversion, a.citas), f: money, prev: has && div(p.inversion, p.citas), cost: true },
     { k: "Primeras visitas", v: a.pvr, f: nf.format, prev: has && p.pvr, sub: `${pct(div(a.pvr, a.citas))} de citas` },
     { k: "Costo por PVR", v: div(a.inversion, a.pvr), f: money, prev: has && div(p.inversion, p.pvr), cost: true },
-    { k: "Lead → PVR", v: div(a.pvr, a.leads), f: pct, prev: has && div(p.pvr, p.leads) },
+    { k: "TAL% · lead → PVR", v: div(a.pvr, a.leads), f: pct, prev: has && div(p.pvr, p.leads) },
     { k: "OLE · leads orgánicos", v: ole().leads, f: nf.format, sub: `${nf.format(ole().citas)} citas · ${nf.format(ole().pvr)} PVR`, cls: "ole" }
   ];
   const prevName = pk ? new Date(pk + "-01T12:00:00").toLocaleDateString("es-MX", { month: "short" }).replace(".", "") : "";
@@ -237,7 +242,7 @@ function resultTable(rows, label, nameFn) {
       <td>${nf.format(a.pvr)}</td><td>${pct(div(a.pvr, a.leads))}</td>
       <td>${money(a.inversion)}</td><td class="hl">${money(div(a.inversion, a.leads))}</td><td class="hl">${money(div(a.inversion, a.citas))}</td><td class="hl">${money(div(a.inversion, a.pvr))}</td>
     </tr>`;
-  return { html: `<thead><tr><th>${label}</th><th>Leads</th><th>% leads</th><th>Citas</th><th>Lead → cita</th><th>PVR</th><th>Lead → PVR</th><th>Inversión</th><th>CPL</th><th>Costo/cita</th><th>Costo/PVR</th></tr></thead>
+  return { html: `<thead><tr><th>${label}</th><th>Leads</th><th>% leads</th><th>Citas</th><th>Lead → cita</th><th>PVR</th><th>TAL%</th><th>Inversión</th><th>CPL</th><th>Costo/cita</th><th>Costo/PVR</th></tr></thead>
      <tbody>${shown.map(x => row(x.raw ? x.k : nameFn(x.k), x.a)).join("")}${row("Total", tot, "total")}</tbody>`, n: list.length, rest: rest.length };
 }
 const monthName = key => { const m = monthsSel().find(x => x.key === key); return m ? cap(m.long) : key; };
@@ -307,7 +312,7 @@ function renderFunnel() {
       ${split}${conv}<div class="dline">${st.cost} ${money(div(a.inversion, total))}</div></div>`;
     prevM = st.m;
   });
-  html += `</div><div class="overall">${regTotal() ? `<span>Registro → PVR <b>${pct(div(a.pvr, regTotal()))}</b></span>` : ""}<span>Lead → cita <b>${pct(div(a.citas, a.leads))}</b></span><span>Cita → PVR <b>${pct(div(a.pvr, a.citas))}</b></span><span>Lead → PVR <b>${pct(div(a.pvr, a.leads))}</b></span><span>Inversión asignada <b>${money(a.inversion)}</b></span></div>`;
+  html += `</div><div class="overall">${regTotal() ? `<span>Registro → PVR <b>${pct(div(a.pvr, regTotal()))}</b></span>` : ""}<span>Lead → cita <b>${pct(div(a.citas, a.leads))}</b></span><span>Cita → PVR <b>${pct(div(a.pvr, a.citas))}</b></span><span>TAL% <b>${pct(div(a.pvr, a.leads))}</b></span><span>Inversión asignada <b>${money(a.inversion)}</b></span></div>`;
   document.getElementById("funnel").innerHTML = html;
   document.getElementById("legFunnel").innerHTML = legendHtml(chs);
 }
@@ -322,10 +327,10 @@ function renderOrigen() {
       <td><span class="share">${pct(share)}<span class="bar"><i style="width:${(share * 100 || 0).toFixed(1)}%"></i></span></span></td>
       <td>${nf.format(a.citas)}</td><td>${nf.format(a.pvr)}</td><td>${pct(div(a.pvr, a.leads))}</td>
       <td>${paid ? money(a.inversion) : "—"}</td><td>${paid ? money(div(a.inversion, a.leads)) : "—"}</td><td>${paid ? money(div(a.inversion, a.pvr)) : "—"}</td></tr>`; }).join("");
-  document.getElementById("tOrigen").innerHTML = `<thead><tr><th>Origen</th><th>Registros</th><th>Leads</th><th>% de leads</th><th>Citas</th><th>PVRs</th><th>Lead → PVR</th><th>Inversión</th><th>CPL</th><th>Costo/PVR</th></tr></thead>
+  document.getElementById("tOrigen").innerHTML = `<thead><tr><th>Origen</th><th>Registros</th><th>Leads</th><th>% de leads</th><th>Citas</th><th>PVRs</th><th>TAL%</th><th>Inversión</th><th>CPL</th><th>Costo/PVR</th></tr></thead>
     <tbody>${body}<tr class="total"><td>Total</td><td>${nf.format(regT)}</td><td>${nf.format(tot.leads)}</td><td>100%</td><td>${nf.format(tot.citas)}</td><td>${nf.format(tot.pvr)}</td><td>${pct(div(tot.pvr, tot.leads))}</td><td>${money(tot.inversion)}</td><td>${money(div(tot.inversion, tot.leads))}</td><td>${money(div(tot.inversion, tot.pvr))}</td></tr></tbody>`;
-  const suc = state.f.sucursal_real, nac = sum(ROWS.filter(r => r.origen === "nacional")), loc = sum(ROWS.filter(r => r.origen === "local"));
-  document.getElementById("origenHint").textContent = suc ? `Leads de ${sucName(suc)}: las campañas nacionales aportan ${pct(div(nac.leads, tot.leads))} y la campaña local ${pct(div(loc.leads, tot.leads))}.` : "Elige una sucursal en las pestañas para separar su campaña local de las nacionales.";
+  const suc = state.sucs.length ? sucsLabel() : "", nac = sum(ROWS.filter(r => r.origen === "nacional")), loc = sum(ROWS.filter(r => r.origen === "local"));
+  document.getElementById("origenHint").textContent = suc ? `Leads de ${suc.toLowerCase()}: las campañas nacionales aportan ${pct(div(nac.leads, tot.leads))} y la campaña local ${pct(div(loc.leads, tot.leads))}.` : "Elige una sucursal en las pestañas para separar su campaña local de las nacionales.";
   document.getElementById("origenNote").textContent = suc && localRegions().length ? `«Campaña local» agrupa todo lo etiquetado con región ${localRegions().slice(0, 2).join(" o ")} en campañas pagadas. Si una campaña cambió de segmentación sin cambiar sus UTM, aquí se ve junta.` : "";
 }
 
@@ -342,7 +347,7 @@ document.getElementById("fWk").addEventListener("click", e => { const b = e.targ
 const shortDate = s => new Date(s + "T12:00:00").toLocaleDateString("es-MX", { day: "numeric", month: "short" }).replace(".", "");
 function renderLocal() {
   const sec = document.getElementById("secLocal");
-  const isMty = state.f.sucursal_real === "MONTERREY" && WEEKS.length;
+  const isMty = soloMty() && WEEKS.length;
   sec.hidden = !isMty; if (!isMty) return;
   const agg = ws => ws.reduce((o, w) => { ["leads", "citas", "pvr", "inv_asig", "leads_all", "inv_all"].forEach(k => o[k] += w[k]); return o; }, { leads: 0, citas: 0, pvr: 0, inv_asig: 0, leads_all: 0, inv_all: 0 });
   const A = agg(WEEKS.filter(w => w.semana < OPEN_START)), O = agg(WEEKS.filter(w => w.semana >= OPEN_START));
@@ -351,7 +356,7 @@ function renderLocal() {
     ["Leads de Monterrey", x => x.leads, nf.format], ["Leads por día", (x, d) => x.leads / d, v => v.toFixed(1), true],
     ["% leads de la campaña que son de Mty", x => div(x.leads, x.leads_all), pct, true],
     ["Citas", x => x.citas, nf.format], ["Lead → cita", x => div(x.citas, x.leads), pct, true],
-    ["Primeras visitas", x => x.pvr, nf.format], ["Lead → PVR", x => div(x.pvr, x.leads), pct, true],
+    ["Primeras visitas", x => x.pvr, nf.format], ["TAL% (lead → PVR)", x => div(x.pvr, x.leads), pct, true],
     ["Inversión asignada a Mty", x => x.inv_asig, money], ["Inversión total de la campaña", x => x.inv_all, money],
     ["CPL (asignada)", x => div(x.inv_asig, x.leads), money, true], ["Costo por cita (asignada)", x => div(x.inv_asig, x.citas), money, true], ["Costo por PVR (asignada)", x => div(x.inv_asig, x.pvr), money, true],
     ["Costo por lead Mty (inversión total)", x => div(x.inv_all, x.leads), money, true]
@@ -363,12 +368,12 @@ function renderLocal() {
 }
 function renderWeekly() {
   const sec = document.getElementById("secWk");
-  sec.hidden = !(state.f.sucursal_real && WEEKS.length);
+  sec.hidden = !(state.sucs.length && WEEKS.length);
   if (sec.hidden) return;
   document.querySelectorAll("#fWk button").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.v === state.wk)));
   const cfg = wkMetrics[state.wk], host = document.getElementById("cWk");
   setDims(host); H = W < 520 ? 240 : 270; ih = H - M.t - M.b;
-  const ws = WEEKS, isMty = state.f.sucursal_real === "MONTERREY";
+  const ws = WEEKS, isMty = soloMty();
   const openIdx = isMty ? ws.findIndex(w => w.semana >= OPEN_START) : -1;
   const vals = ws.map(cfg.val);
   const segs = openIdx > 0 ? [[0, openIdx - 1, "a"], [openIdx, ws.length - 1, "b"]] : [[0, ws.length - 1, "a"]];
@@ -411,7 +416,7 @@ function renderReg() {
   host.innerHTML = `<svg class="chart" viewBox="0 0 ${W} ${H}" role="img" aria-label="Registros por mes">${s}</svg>`;
   document.getElementById("legReg").innerHTML = legendHtml(chs);
   const skipped = FILTER_DIMS.filter(k => state.f[k] !== "" && REG_SKIP[k]).map(k => DIMS[k].label);
-  document.getElementById("regNote").textContent = (state.f.sucursal_real ? "Registros por la sucursal que eligió la persona (el formulario no sabe dónde terminará la visita). " : "") + (skipped.length ? `Los filtros de ${skipped.join(" y ")} no aplican a registros.` : "");
+  document.getElementById("regNote").textContent = (state.sucs.length ? "Registros por la sucursal que eligió la persona (el formulario no sabe dónde terminará la visita). " : "") + (skipped.length ? `Los filtros de ${skipped.join(" y ")} no aplican a registros.` : "");
 }
 
 /* ===== Líneas de costo por mes y canal ===== */
@@ -480,11 +485,43 @@ function renderMes() {
   });
   host.innerHTML = `<svg class="chart" viewBox="0 0 ${W} ${H}" role="img" aria-label="Leads por mes">${s}</svg>`;
   document.getElementById("legMes").innerHTML = legendHtml(chs);
-  const cols = [["Registros", (a, i) => nf.format(i == null ? regSum(RROWS) : regBy(null, ms[i].key))], ["Leads", a => nf.format(a.leads)], ["Citas", a => nf.format(a.citas)], ["Lead → cita", a => pct(div(a.citas, a.leads))], ["PVR", a => nf.format(a.pvr)], ["Lead → PVR", a => pct(div(a.pvr, a.leads))],
+  const cols = [["Registros", (a, i) => nf.format(i == null ? regSum(RROWS) : regBy(null, ms[i].key))], ["Leads", a => nf.format(a.leads)], ["Citas", a => nf.format(a.citas)], ["Lead → cita", a => pct(div(a.citas, a.leads))], ["PVR", a => nf.format(a.pvr)], ["TAL%", a => pct(div(a.pvr, a.leads))],
     ["Inversión", a => money(a.inversion)], ["CPL", a => money(div(a.inversion, a.leads))], ["Costo/cita", a => money(div(a.inversion, a.citas))], ["Costo/PVR", a => money(div(a.inversion, a.pvr))]];
   document.getElementById("tMes").innerHTML = `<thead><tr><th>Mes</th>${cols.map(c => `<th>${c[0]}</th>`).join("")}</tr></thead><tbody>` +
     ms.map((mo, i) => `<tr${state.mes === mo.key ? ' class="hl"' : ""}><td>${cap(mo.long)}</td>${cols.map(c => `<td>${c[1](per[i].all, i)}</td>`).join("")}</tr>`).join("") +
     `<tr class="total"><td>${state.mes === "todo" ? "Total" : "Total del periodo"}</td>${cols.map(c => `<td>${c[1](sum(MROWS), null)}</td>`).join("")}</tr></tbody>`;
+}
+
+/* ===== Evolución diaria: tres gráficas pequeñas (leads, citas, PVR), por día o por semana ===== */
+const fGran = document.getElementById("fGran");
+fGran.addEventListener("click", e => { const b = e.target.closest("button"); if (!b) return; state.gran = b.dataset.v; save(); renderDiario(); });
+function monday(d) { const x = new Date(d + "T12:00:00"); x.setDate(x.getDate() - ((x.getDay() + 6) % 7)); return iso(x); }
+function renderDiario() {
+  fGran.querySelectorAll("button").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.v === state.gran)));
+  const host = document.getElementById("cDiario");
+  const sem = state.gran === "semana";
+  const map = new Map();
+  DROWS.forEach(r => { const k = sem ? monday(r.dia) : r.dia; const o = map.get(k) || { k, leads: 0, citas: 0, pvr: 0 }; o.leads += r.leads; o.citas += r.citas; o.pvr += r.pvr; map.set(k, o); });
+  const pts = [...map.values()].sort((a, b) => a.k < b.k ? -1 : 1);
+  const series = [["leads", "Leads", "meta"], ["citas", "Citas", "google"], ["pvr", "Primeras visitas", "otros"]];
+  if (!pts.length) { host.innerHTML = `<p class="hint">Sin datos con estos filtros.</p>`; return; }
+  const fmtK = k => sem ? `Semana del ${fmtDate(k)}` : fmtDate(k);
+  host.innerHTML = series.map(([m, label]) => `<div class="mini"><h3>${label}</h3><div id="cDia-${m}"></div></div>`).join("");
+  series.forEach(([m, label, cls]) => {
+    const el = document.getElementById("cDia-" + m); setDims(el); H = 180; ih = H - M.t - M.b;
+    const yMax = niceMax(Math.max(1, ...pts.map(p => p[m])) * 1.15);
+    const n = pts.length, x = i => M.l + (n > 1 ? iw * i / (n - 1) : iw / 2), y = v => M.t + ih - v / yMax * ih;
+    let s = axes(yMax, v => nf.format(v));
+    const every = Math.max(1, Math.ceil(n / (W < 420 ? 4 : 6)));
+    pts.forEach((p, i) => { if (i % every === 0 || i === n - 1) s += `<text x="${x(i)}" y="${H - 8}" text-anchor="middle">${new Date(p.k + "T12:00:00").toLocaleDateString("es-MX", { day: "numeric", month: "short" }).replace(".", "")}</text>`; });
+    let d = ""; pts.forEach((p, i) => d += `${i ? "L" : "M"}${x(i).toFixed(1)},${y(p[m]).toFixed(1)}`);
+    s += `<path d="${d}" fill="none" class="s-${cls}" stroke-width="2" stroke-linejoin="round" pointer-events="none"/>`;
+    if (n <= 60) pts.forEach((p, i) => s += `<circle class="f-${cls} mk" cx="${x(i)}" cy="${y(p[m])}" r="3" pointer-events="none"/>`);
+    const step = n > 1 ? iw / (n - 1) : iw;
+    pts.forEach((p, i) => { const tip = `<div class="tt">${fmtK(p.k)}</div>` + tipRows(series.map(([mm, ll]) => [ll, nf.format(p[mm])]));
+      s += `<g class="col" data-tip="${encodeURIComponent(tip)}"><rect class="hit" x="${x(i) - step / 2}" y="${M.t}" width="${step}" height="${ih}"/><line class="guide" x1="${x(i)}" x2="${x(i)}" y1="${M.t}" y2="${M.t + ih}"/></g>`; });
+    el.innerHTML = `<svg class="chart" viewBox="0 0 ${W} ${H}" role="img" aria-label="${label} por ${sem ? "semana" : "día"}">${s}</svg>`;
+  });
 }
 
 /* ===== Notas al pie con datos en vivo ===== */
@@ -507,7 +544,7 @@ on(document, "mousemove", e => {
   tip.style.top = Math.min(e.clientY + 14, window.innerHeight - r.height - 8) + "px";
 });
 
-function renderCharts() { renderMes(); renderReg(); renderLine("cCag", "legCag", "citas", "Costo por cita"); renderLine("cCpvr", "legCpvr", "pvr", "Costo por primera visita"); renderWeekly(); }
+function renderCharts() { renderDiario(); renderMes(); renderReg(); renderLine("cCag", "legCag", "citas", "Costo por cita"); renderLine("cCpvr", "legCpvr", "pvr", "Costo por primera visita"); renderWeekly(); }
 function render() { paintFilters(); renderKpis(); renderFunnel(); renderOrigen(); renderLocal(); renderCanal(); renderDesglose(); renderCharts(); renderNotes(); }
 on(window, "resize", () => { clearTimeout(resizeT); resizeT = setTimeout(renderCharts, 150); });
 renderMesButtons(); renderSelects(); renderTabs(); render(); renderPerfil();
@@ -540,11 +577,21 @@ async function refreshReg(force) {
   } catch (e) { /* registros se quedan en cero */ }
 }
 async function refreshWeekly(force) {
-  if (!state.f.sucursal_real || !localRegions().length) { WEEKS = []; renderLocal(); renderWeekly(); return; }
+  if (!state.sucs.length || !localRegions().length) { WEEKS = []; renderLocal(); renderWeekly(); return; }
   try { const { rows } = await runSql("semanal", force); if (!rows) return;
     WEEKS = rows.map(r => ({ semana: String(r.semana).slice(0, 10), leads: +r.leads || 0, citas: +r.citas || 0, pvr: +r.pvr || 0, inv_asig: +r.inv_asig || 0, leads_all: +r.leads_all || 0, inv_all: +r.inv_all || 0 })).sort((a, b) => a.semana < b.semana ? -1 : 1);
     renderLocal(); renderWeekly();
   } catch (e) { WEEKS = []; renderLocal(); renderWeekly(); }
+}
+let dseq = 0;
+async function refreshDiario(force) {
+  const my = ++dseq;
+  try {
+    const { rows } = await runSql("diario", force);
+    if (my !== dseq || !rows) return;
+    DROWS = rows.map(r => ({ dia: String(r.dia).slice(0, 10), leads: +r.leads || 0, citas: +r.citas || 0, pvr: +r.pvr || 0 })).sort((a, b) => a.dia < b.dia ? -1 : 1);
+    renderDiario();
+  } catch (e) { /* la sección conserva lo anterior */ }
 }
 async function refreshPerfil(force) {
   const my = ++pseq;
@@ -558,7 +605,7 @@ async function refresh(force) {
   const my = ++seq;
   btn.disabled = true;
   setStatus("snap", "Consultando", "Consultando BigQuery…");
-  refreshPerfil(force); refreshReg(force); refreshWeekly(force);
+  refreshPerfil(force); refreshReg(force); refreshWeekly(force); refreshDiario(force);
   try {
     const { rows, at } = await runSql("principal", force);
     if (my !== seq) return;
