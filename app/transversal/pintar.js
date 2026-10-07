@@ -7,6 +7,7 @@ let vivo = true, resizeT = 0;
 const escuchas = [];
 const on = (t, ev, fn) => { t.addEventListener(ev, fn); escuchas.push([t, ev, fn]); };
 /* ===== Configuración ===== */
+const MIN_DATE = "2026-03-01";
 const CH = { meta: "Meta", google: "Google", otros: "Otros medios" };
 const OPEN_START = "2026-08-10";
 /* Región de campaña que corresponde a cada sucursal (valores de utm region, en minúsculas). */
@@ -82,6 +83,7 @@ function monthsSel() {
   return out;
 }
 
+const REG_SKIP = { perfil: 1, es_leading: 1 };
 /* ===== Datos ===== */
 let ALL = [], ROWS = [], PROWS = [], RROWS = [], WEEKS = [], OPTIONS = null;
 let MROWS = [];
