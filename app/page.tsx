@@ -9,7 +9,10 @@ export default async function Inicio() {
   return (
     <main className="contenedor">
       <header className="barra">
-        <h1>Tableros Ingenes</h1>
+        <div style={{ display: "flex", alignItems: "center", gap: 18 }}>
+          <img src="/ingenes-logo.webp" alt="Instituto Ingenes" />
+          <h1>Tableros Ingenes</h1>
+        </div>
         <form
           action={async () => {
             "use server";

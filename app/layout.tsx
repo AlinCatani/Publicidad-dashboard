@@ -1,5 +1,10 @@
 import type { Metadata } from "next";
+import { Cormorant_Garamond, Quattrocento_Sans } from "next/font/google";
 import "./globals.css";
+
+// Mismas fuentes que ingenes.com.
+const serif = Cormorant_Garamond({ subsets: ["latin"], weight: ["500", "600", "700"], style: ["normal", "italic"], variable: "--f-serif" });
+const sans = Quattrocento_Sans({ subsets: ["latin"], weight: ["400", "700"], style: ["normal", "italic"], variable: "--f-sans" });
 
 export const metadata: Metadata = {
   title: "Tableros Ingenes",
@@ -9,7 +14,7 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
-    <html lang="es">
+    <html lang="es" className={`${serif.variable} ${sans.variable}`}>
       <body>{children}</body>
     </html>
   );
