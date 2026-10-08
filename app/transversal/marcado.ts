@@ -62,7 +62,7 @@ export const MARCADO = `<div class="wrap">
 
   <section class="panel" aria-labelledby="h-diario">
     <div class="phead">
-      <div><h2 id="h-diario">Evolución diaria</h2><p class="hint">Leads, citas y primeras visitas según la fecha de creación del lead, con los filtros, el canal y el mes elegidos.</p></div>
+      <div><h2 id="h-diario">Evolución diaria</h2><p class="hint">Leads, citas agendadas y primeras visitas según la fecha de creación del lead, con los filtros, el canal y el mes elegidos.</p></div>
       <div class="seg" role="group" aria-label="Granularidad" id="fGran"><button type="button" data-v="dia">Por día</button><button type="button" data-v="semana">Por semana</button></div>
     </div>
     <div class="trio" id="cDiario"></div>
@@ -72,7 +72,7 @@ export const MARCADO = `<div class="wrap">
     <div class="phead">
       <div>
         <h2 id="h-perfil">Costo por resultado según el paciente</h2>
-        <p class="hint" id="perfilHint">CPL, costo por cita y costo por primera visita, abiertos por la característica que elijas. Los filtros de arriba aplican.</p>
+        <p class="hint" id="perfilHint">CPL, costo por cita agendada y costo por primera visita, abiertos por la característica que elijas. Los filtros de arriba aplican.</p>
       </div>
     </div>
     <div class="seg" role="group" aria-label="Característica" id="fPerfil" style="margin-bottom:12px"></div>
@@ -121,7 +121,7 @@ export const MARCADO = `<div class="wrap">
       <div class="legend" id="legWk"></div>
     </div>
     <div class="seg" role="group" aria-label="Métrica" id="fWk" style="margin-bottom:12px">
-      <button type="button" data-v="cita">Costo por cita</button>
+      <button type="button" data-v="cita">Costo por cita agendada</button>
       <button type="button" data-v="cpl">CPL</button>
       <button type="button" data-v="share">% leads de la sucursal</button>
       <button type="button" data-v="leads">Leads de la sucursal</button>
@@ -142,7 +142,7 @@ export const MARCADO = `<div class="wrap">
 
   <section class="panel" aria-labelledby="h-cag">
     <div class="phead">
-      <div><h2 id="h-cag">Costo por cita</h2><p class="hint">Inversión asignada ÷ citas, por mes y canal, en MXN.</p></div>
+      <div><h2 id="h-cag">Costo por cita agendada</h2><p class="hint">Inversión asignada ÷ citas agendadas, por mes y canal, en MXN.</p></div>
       <div class="legend" id="legCag"></div>
     </div>
     <div id="cCag"></div>
@@ -185,14 +185,14 @@ export const MARCADO = `<div class="wrap">
 
   <section class="panel notes" aria-label="Cómo se calculó" id="notes">
     <div><h3>Fuente</h3><p>BigQuery, proyecto <code>gtm-pvkx9p9-ndk3z</code>, vista <code>looker_dashboard.claude_reporte_transversal</code>: una fila por lead, <b>sin nombre, correo ni teléfono</b>. Se consulta en vivo con los filtros elegidos; no hay cortes guardados en esta página.</p></div>
-    <div><h3>Qué hay detrás de la vista</h3><p>Leads de <code>leads_historico</code> (Airtable). Citas de <code>BIC</code> y primeras visitas de <code>BIP</code> (clínica), cruzadas con el lead por correo normalizado, dentro de BigQuery; una cita y una visita por correo, la más reciente. Inversión de <code>inversion_diaria</code>: el gasto de cada día y combinación de campaña, medio, landing, anuncio, mensaje y región se reparte entre los leads de esa misma combinación (inversión asignada). USD × 18.</p></div>
+    <div><h3>Qué hay detrás de la vista</h3><p>Leads de <code>leads_historico</code> (Airtable). Citas agendadas de <code>BIC</code> y primeras visitas de <code>BIP</code> (clínica), cruzadas con el lead por correo normalizado, dentro de BigQuery; una cita y una visita por correo, la más reciente. Inversión de <code>inversion_diaria</code>: el gasto de cada día y combinación de campaña, medio, landing, anuncio, mensaje y región se reparte entre los leads de esa misma combinación (inversión asignada). USD × 18.</p></div>
     <div><h3>Sucursal real</h3><p id="noteSucursal">La sucursal es la de la visita cuando la hubo (<code>BIP.nom_suc</code>); si no, la que eligió el lead al registrarse. La cita no aporta sucursal.</p></div>
     <div><h3>TAL%</h3><p>Tasa de asistencia de leads: primeras visitas ÷ leads del periodo. Es la conversión completa de lead a PVR.</p></div>
-    <div><h3>Cohorte</h3><p>El periodo filtra por fecha de <b>creación</b> del lead; sus citas y visitas se cuentan aunque ocurran después. Los últimos meses siguen madurando y sus tasas subirán.</p></div>
+    <div><h3>Cohorte</h3><p>El periodo filtra por fecha de <b>creación</b> del lead; sus citas agendadas y visitas se cuentan aunque ocurran después. Los últimos meses siguen madurando y sus tasas subirán.</p></div>
     <div><h3>Paciente</h3><p><b>Leading</b> = edad mayor de 30 y sin hijos (misma regla que <code>costo_por_lead</code>). <b>Grupo de edad</b> = quinquenios sobre la edad declarada (25–29, 30–34…). Perfil (Azul/Verde), tipo de paciente (LS/LP), score y user persona vienen tal cual del formulario.</p></div>
     <div><h3>Canales</h3><p>Meta: facebook, instagram, socialmedia. Google: google_search, pmax, dgen, google, youtube, display. «Todos los medios» agrega web, orgánico y lo que no trae medio.</p></div>
     <div><h3>Límites del dato</h3><p id="noteLimites">Enero y febrero de 2026 no tienen correo en los leads, así que no cruzan con cita ni visita: por eso el reporte empieza en marzo. El gasto llega hasta la última carga de <code>inversion_diaria</code>. Los leads con <code>posible_duplicado</code> se cuentan.</p></div>
-    <div><h3>Registros</h3><p>De <code>registros_historico</code> (formularios enviados). No trae correo ni perfil Azul/Verde, así que no se cruza con citas y los filtros de perfil y leading no le aplican; la sucursal es la que eligió la persona.</p></div>
+    <div><h3>Registros</h3><p>De <code>registros_historico</code> (formularios enviados). No trae correo ni perfil Azul/Verde, así que no se cruza con citas agendadas y los filtros de perfil y leading no le aplican; la sucursal es la que eligió la persona.</p></div>
     <div><h3>Origen y campaña local</h3><p>Origen: «local» = campaña pagada cuya región coincide con la sucursal elegida; «nacional» = región nacional; «otras» = otras regiones; «sin campaña» = sin UTM de pago. La campaña local se mide en Meta; «% leads de la sucursal» = leads de la campaña local que son de esta sucursal ÷ todos los leads que genera esa campaña.</p></div>
     <div><h3>Pendiente</h3><p>Impresiones, alcance, clics, CTR y costo por clic: se cargarán a BigQuery por día y anuncio desde la API de Meta y Google (tabla <code>inversion_y_metricas_anuncio_diaria</code>). Hasta entonces, esas tarjetas y la tabla de atracción de Meta no se muestran.</p></div>
   </section>

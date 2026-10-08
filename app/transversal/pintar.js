@@ -206,12 +206,12 @@ function renderKpis() {
     { k: "Registros", v: reg, f: nf.format, prev: has && preg },
     { k: "Leads", v: a.leads, f: nf.format, prev: has && p.leads, sub: reg ? `${pct(div(a.leads, reg))} de registros` : "" },
     { k: "CPL", v: div(a.inversion, a.leads), f: money, prev: has && div(p.inversion, p.leads), cost: true },
-    { k: "Citas", v: a.citas, f: nf.format, prev: has && p.citas, sub: `${pct(div(a.citas, a.leads))} de leads` },
-    { k: "Costo por cita", v: div(a.inversion, a.citas), f: money, prev: has && div(p.inversion, p.citas), cost: true },
-    { k: "Primeras visitas", v: a.pvr, f: nf.format, prev: has && p.pvr, sub: `${pct(div(a.pvr, a.citas))} de citas` },
+    { k: "Citas agendadas", v: a.citas, f: nf.format, prev: has && p.citas, sub: `${pct(div(a.citas, a.leads))} de leads` },
+    { k: "Costo por cita agendada", v: div(a.inversion, a.citas), f: money, prev: has && div(p.inversion, p.citas), cost: true },
+    { k: "Primeras visitas", v: a.pvr, f: nf.format, prev: has && p.pvr, sub: `${pct(div(a.pvr, a.citas))} de citas agendadas` },
     { k: "Costo por PVR", v: div(a.inversion, a.pvr), f: money, prev: has && div(p.inversion, p.pvr), cost: true },
     { k: "TAL% · lead → PVR", v: div(a.pvr, a.leads), f: pct, prev: has && div(p.pvr, p.leads) },
-    { k: "OLE · leads orgánicos", v: ole().leads, f: nf.format, sub: `${nf.format(ole().citas)} citas · ${nf.format(ole().pvr)} PVR`, cls: "ole" }
+    { k: "OLE · leads orgánicos", v: ole().leads, f: nf.format, sub: `${nf.format(ole().citas)} citas agendadas · ${nf.format(ole().pvr)} PVR`, cls: "ole" }
   ];
   const prevName = pk ? new Date(pk + "-01T12:00:00").toLocaleDateString("es-MX", { month: "short" }).replace(".", "") : "";
   document.getElementById("kpis").innerHTML = items.map(it => {
@@ -243,7 +243,7 @@ function resultTable(rows, label, nameFn) {
       <td>${nf.format(a.pvr)}</td><td>${pct(div(a.pvr, a.leads))}</td>
       <td>${money(a.inversion)}</td><td class="hl">${money(div(a.inversion, a.leads))}</td><td class="hl">${money(div(a.inversion, a.citas))}</td><td class="hl">${money(div(a.inversion, a.pvr))}</td>
     </tr>`;
-  return { html: `<thead><tr><th>${label}</th><th>Leads</th><th>% leads</th><th>Citas</th><th>Lead → cita</th><th>PVR</th><th>TAL%</th><th>Inversión</th><th>CPL</th><th>Costo/cita</th><th>Costo/PVR</th></tr></thead>
+  return { html: `<thead><tr><th>${label}</th><th>Leads</th><th>% leads</th><th>Citas agendadas</th><th>Lead → cita agendada</th><th>PVR</th><th>TAL%</th><th>Inversión</th><th>CPL</th><th>Costo/cita agendada</th><th>Costo/PVR</th></tr></thead>
      <tbody>${shown.map(x => row(x.raw ? x.k : nameFn(x.k), x.a)).join("")}${row("Total", tot, "total")}</tbody>`, n: list.length, rest: rest.length };
 }
 const monthName = key => { const m = monthsSel().find(x => x.key === key); return m ? cap(m.long) : key; };
@@ -259,14 +259,14 @@ function renderPerfil() {
   const d = DIMS[state.pdim];
   const t = resultTable(PROWS, d.label, k => dimName(state.pdim, k));
   document.getElementById("tPerfil").innerHTML = t.html;
-  document.getElementById("perfilHint").textContent = `CPL, costo por cita y costo por primera visita por ${d.label.toLowerCase()}. Los filtros de arriba aplican.`;
+  document.getElementById("perfilHint").textContent = `CPL, costo por cita agendada y costo por primera visita por ${d.label.toLowerCase()}. Los filtros de arriba aplican.`;
 }
 
 /* ===== Funnel ===== */
 const STAGES = [
   { m: "leads", name: "Leads", sub: "Airtable", cost: "CPL" },
-  { m: "citas", name: "Citas", sub: "programadas", conv: "de leads", cost: "Costo por cita" },
-  { m: "pvr", name: "Primeras visitas", sub: "realizadas", conv: "de citas", cost: "Costo por PVR" }
+  { m: "citas", name: "Citas agendadas", sub: "en BIC", conv: "de leads", cost: "Costo por cita agendada" },
+  { m: "pvr", name: "Primeras visitas", sub: "realizadas", conv: "de citas agendadas", cost: "Costo por PVR" }
 ];
 const legendHtml = chs => chs.map(c => `<span><i class="dot ${c}"></i>${CH[c]}</span>`).join("");
 const tipRows = rows => rows.map(r => `<div class="row"><span>${r[0]}</span><b>${r[1]}</b></div>`).join("");
@@ -313,7 +313,7 @@ function renderFunnel() {
       ${split}${conv}<div class="dline">${st.cost} ${money(div(a.inversion, total))}</div></div>`;
     prevM = st.m;
   });
-  html += `</div><div class="overall">${regTotal() ? `<span>Registro → PVR <b>${pct(div(a.pvr, regTotal()))}</b></span>` : ""}<span>Lead → cita <b>${pct(div(a.citas, a.leads))}</b></span><span>Cita → PVR <b>${pct(div(a.pvr, a.citas))}</b></span><span>TAL% <b>${pct(div(a.pvr, a.leads))}</b></span><span>Inversión asignada <b>${money(a.inversion)}</b></span></div>`;
+  html += `</div><div class="overall">${regTotal() ? `<span>Registro → PVR <b>${pct(div(a.pvr, regTotal()))}</b></span>` : ""}<span>Lead → cita agendada <b>${pct(div(a.citas, a.leads))}</b></span><span>Cita agendada → PVR <b>${pct(div(a.pvr, a.citas))}</b></span><span>TAL% <b>${pct(div(a.pvr, a.leads))}</b></span><span>Inversión asignada <b>${money(a.inversion)}</b></span></div>`;
   document.getElementById("funnel").innerHTML = html;
   document.getElementById("legFunnel").innerHTML = legendHtml(chs);
 }
@@ -328,7 +328,7 @@ function renderOrigen() {
       <td><span class="share">${pct(share)}<span class="bar"><i style="width:${(share * 100 || 0).toFixed(1)}%"></i></span></span></td>
       <td>${nf.format(a.citas)}</td><td>${nf.format(a.pvr)}</td><td>${pct(div(a.pvr, a.leads))}</td>
       <td>${paid ? money(a.inversion) : "—"}</td><td>${paid ? money(div(a.inversion, a.leads)) : "—"}</td><td>${paid ? money(div(a.inversion, a.pvr)) : "—"}</td></tr>`; }).join("");
-  document.getElementById("tOrigen").innerHTML = `<thead><tr><th>Origen</th><th>Registros</th><th>Leads</th><th>% de leads</th><th>Citas</th><th>PVRs</th><th>TAL%</th><th>Inversión</th><th>CPL</th><th>Costo/PVR</th></tr></thead>
+  document.getElementById("tOrigen").innerHTML = `<thead><tr><th>Origen</th><th>Registros</th><th>Leads</th><th>% de leads</th><th>Citas agendadas</th><th>PVRs</th><th>TAL%</th><th>Inversión</th><th>CPL</th><th>Costo/PVR</th></tr></thead>
     <tbody>${body}<tr class="total"><td>Total</td><td>${nf.format(regT)}</td><td>${nf.format(tot.leads)}</td><td>100%</td><td>${nf.format(tot.citas)}</td><td>${nf.format(tot.pvr)}</td><td>${pct(div(tot.pvr, tot.leads))}</td><td>${money(tot.inversion)}</td><td>${money(div(tot.inversion, tot.leads))}</td><td>${money(div(tot.inversion, tot.pvr))}</td></tr></tbody>`;
   const suc = state.sucs.length ? sucsLabel() : "", nac = sum(ROWS.filter(r => r.origen === "nacional")), loc = sum(ROWS.filter(r => r.origen === "local"));
   document.getElementById("origenHint").textContent = suc ? `Leads de ${suc.toLowerCase()}: las campañas nacionales aportan ${pct(div(nac.leads, tot.leads))} y la campaña local ${pct(div(loc.leads, tot.leads))}.` : "Elige una sucursal en las pestañas para separar su campaña local de las nacionales.";
@@ -337,7 +337,7 @@ function renderOrigen() {
 
 /* ===== Campaña local: ADV vs OPEN (solo Monterrey) + semanal ===== */
 const wkMetrics = {
-  cita: { title: "Costo por cita", fmt: money, axis: v => "$" + compact.format(v), val: w => w.inv_asig > 0 && w.citas > 0 ? w.inv_asig / w.citas : NaN, avg: ws => { const i = ws.filter(w => w.inv_asig > 0); return div(i.reduce((s, w) => s + w.inv_asig, 0), i.reduce((s, w) => s + w.citas, 0)); }, note: "Costo por cita = inversión asignada a los leads de la sucursal ÷ citas de esos leads, por semana de creación. Con pocas citas por semana la línea brinca; guíate por el promedio." },
+  cita: { title: "Costo por cita agendada", fmt: money, axis: v => "$" + compact.format(v), val: w => w.inv_asig > 0 && w.citas > 0 ? w.inv_asig / w.citas : NaN, avg: ws => { const i = ws.filter(w => w.inv_asig > 0); return div(i.reduce((s, w) => s + w.inv_asig, 0), i.reduce((s, w) => s + w.citas, 0)); }, note: "Costo por cita agendada = inversión asignada a los leads de la sucursal ÷ citas agendadas de esos leads, por semana de creación. Con pocas citas agendadas por semana la línea brinca; guíate por el promedio." },
   cpl: { title: "CPL", fmt: money, axis: v => "$" + compact.format(v), val: w => w.inv_asig > 0 && w.leads > 0 ? w.inv_asig / w.leads : NaN, avg: ws => { const i = ws.filter(w => w.inv_asig > 0); return div(i.reduce((s, w) => s + w.inv_asig, 0), i.reduce((s, w) => s + w.leads, 0)); }, note: "CPL = inversión asignada ÷ leads de la sucursal creados esa semana." },
   share: { title: "% de leads de la campaña que son de la sucursal", fmt: pct, axis: v => Math.round(v * 100) + "%", val: w => w.leads_all > 0 ? w.leads / w.leads_all : NaN, avg: ws => div(ws.reduce((s, w) => s + w.leads, 0), ws.reduce((s, w) => s + w.leads_all, 0)), note: "Del total de leads que genera la campaña local en todas las sucursales, qué parte terminó en esta sucursal." },
   leads: { title: "Leads de la sucursal", fmt: v => nf.format(Math.round(v)), axis: v => nf.format(v), val: w => w.leads, avg: ws => div(ws.reduce((s, w) => s + w.leads, 0), ws.length), note: "Leads de la sucursal generados por la campaña local cada semana." },
@@ -356,7 +356,7 @@ function renderLocal() {
   const rows = [
     ["Leads de Monterrey", x => x.leads, nf.format], ["Leads por día", (x, d) => x.leads / d, v => v.toFixed(1), true],
     ["% leads de la campaña que son de Mty", x => div(x.leads, x.leads_all), pct, true],
-    ["Citas", x => x.citas, nf.format], ["Lead → cita", x => div(x.citas, x.leads), pct, true],
+    ["Citas agendadas", x => x.citas, nf.format], ["Lead → cita agendada", x => div(x.citas, x.leads), pct, true],
     ["Primeras visitas", x => x.pvr, nf.format], ["TAL% (lead → PVR)", x => div(x.pvr, x.leads), pct, true],
     ["Inversión asignada a Mty", x => x.inv_asig, money], ["Inversión total de la campaña", x => x.inv_all, money],
     ["CPL (asignada)", x => div(x.inv_asig, x.leads), money, true], ["Costo por cita (asignada)", x => div(x.inv_asig, x.citas), money, true], ["Costo por PVR (asignada)", x => div(x.inv_asig, x.pvr), money, true],
@@ -392,7 +392,7 @@ function renderWeekly() {
     s += `<path d="${d}" fill="none" class="s-${c}" stroke-width="2.25" stroke-linejoin="round" stroke-linecap="round" pointer-events="none"/>`;
   });
   ws.forEach((w, i) => { const v = vals[i], c = openIdx > 0 && i >= openIdx ? "b" : "a";
-    const tip = `<div class="tt">Semana del ${shortDate(w.semana)}${openIdx > 0 ? ` · ${i >= openIdx ? "OPEN" : "ADV"}` : ""}</div>` + tipRows([[cfg.title, isFinite(v) ? cfg.fmt(v) : "Sin dato"], ["Leads de la sucursal", nf.format(w.leads)], ["Citas", nf.format(w.citas)], ["PVR", nf.format(w.pvr)], ["% leads de la sucursal", pct(div(w.leads, w.leads_all))], ["Inversión asignada", w.inv_asig > 0 ? money(w.inv_asig) : "—"]]);
+    const tip = `<div class="tt">Semana del ${shortDate(w.semana)}${openIdx > 0 ? ` · ${i >= openIdx ? "OPEN" : "ADV"}` : ""}</div>` + tipRows([[cfg.title, isFinite(v) ? cfg.fmt(v) : "Sin dato"], ["Leads de la sucursal", nf.format(w.leads)], ["Citas agendadas", nf.format(w.citas)], ["PVR", nf.format(w.pvr)], ["% leads de la sucursal", pct(div(w.leads, w.leads_all))], ["Inversión asignada", w.inv_asig > 0 ? money(w.inv_asig) : "—"]]);
     s += `<g class="col" data-tip="${encodeURIComponent(tip)}"><rect class="hit" x="${M.l + step * i}" y="${M.t}" width="${step}" height="${ih}"/>${isFinite(v) ? `<circle class="f-${c} mk" cx="${x(i)}" cy="${y(v)}" r="4.5"/>` : `<text x="${x(i)}" y="${M.t + ih - 6}" text-anchor="middle" class="gap-mark">sin dato</text>`}</g>`; });
   host.innerHTML = `<svg class="chart" viewBox="0 0 ${W} ${H}" role="img" aria-label="${cfg.title} semanal">${s}</svg>`;
   document.getElementById("legWk").innerHTML = openIdx > 0 ? `<span><i class="dot" style="background:var(--seg-a)"></i>ADV</span><span><i class="dot" style="background:var(--seg-b)"></i>OPEN</span>` : "";
@@ -445,7 +445,7 @@ function renderCanal() {
   const rows = [
     ["Inversión asignada", x => x.inversion, money], ["Registros", (x, r) => r, nf.format], ["Leads", x => x.leads, nf.format],
     ["Registro → lead", (x, r) => div(x.leads, r), pct, "high"], ["CPL", x => div(x.inversion, x.leads), money, "low"],
-    ["Citas", x => x.citas, nf.format], ["Lead → cita", x => div(x.citas, x.leads), pct, "high"], ["Costo por cita", x => div(x.inversion, x.citas), money, "low"],
+    ["Citas agendadas", x => x.citas, nf.format], ["Lead → cita agendada", x => div(x.citas, x.leads), pct, "high"], ["Costo por cita agendada", x => div(x.inversion, x.citas), money, "low"],
     ["PVRs", x => x.pvr, nf.format], ["Cita → PVR", x => div(x.pvr, x.citas), pct, "high"], ["Costo por PVR", x => div(x.inversion, x.pvr), money, "low"]
   ];
   const body = rows.map(([label, fn, f, better]) => { const vm = fn(m, rm), vg = fn(g, rg); let bm = "", bg = "";
@@ -479,14 +479,14 @@ function renderMes() {
     chs.forEach(c => { const v = per[i][c].leads; if (!v) return; const h = v / yMax * ih; yTop -= h; s += `<rect class="f-${c}" x="${x}" y="${yTop}" width="${bw}" height="${h}"/>`; });
     const a = per[i].all;
     const tip = `<div class="tt">${cap(mo.long)}</div>` + tipRows(chs.map(c => [`<i class="dot ${c}"></i>${CH[c]}`, `${nf.format(per[i][c].leads)} · CPL ${money(div(per[i][c].inversion, per[i][c].leads))}`])
-      .concat([["Citas", `${nf.format(a.citas)} (${pct(div(a.citas, a.leads))})`], ["PVR", `${nf.format(a.pvr)} (${pct(div(a.pvr, a.leads))})`], ["Costo por PVR", money(div(a.inversion, a.pvr))]]));
+      .concat([["Citas agendadas", `${nf.format(a.citas)} (${pct(div(a.citas, a.leads))})`], ["PVR", `${nf.format(a.pvr)} (${pct(div(a.pvr, a.leads))})`], ["Costo por PVR", money(div(a.inversion, a.pvr))]]));
     s += `<g class="col" data-tip="${encodeURIComponent(tip)}"><rect class="hit" x="${M.l + step * i}" y="${M.t}" width="${step}" height="${ih}"/></g>`;
     s += `<text x="${x + bw / 2}" y="${H - 8}" text-anchor="middle">${cap(mo.short)}</text>`;
     if (a.leads) s += `<text x="${x + bw / 2}" y="${yTop - 5}" text-anchor="middle" class="lbl">${nf.format(a.leads)}</text>`;
   });
   host.innerHTML = `<svg class="chart" viewBox="0 0 ${W} ${H}" role="img" aria-label="Leads por mes">${s}</svg>`;
   document.getElementById("legMes").innerHTML = legendHtml(chs);
-  const cols = [["Registros", (a, i) => nf.format(i == null ? regSum(RROWS) : regBy(null, ms[i].key))], ["Leads", a => nf.format(a.leads)], ["Citas", a => nf.format(a.citas)], ["Lead → cita", a => pct(div(a.citas, a.leads))], ["PVR", a => nf.format(a.pvr)], ["TAL%", a => pct(div(a.pvr, a.leads))],
+  const cols = [["Registros", (a, i) => nf.format(i == null ? regSum(RROWS) : regBy(null, ms[i].key))], ["Leads", a => nf.format(a.leads)], ["Citas agendadas", a => nf.format(a.citas)], ["Lead → cita agendada", a => pct(div(a.citas, a.leads))], ["PVR", a => nf.format(a.pvr)], ["TAL%", a => pct(div(a.pvr, a.leads))],
     ["Inversión", a => money(a.inversion)], ["CPL", a => money(div(a.inversion, a.leads))], ["Costo/cita", a => money(div(a.inversion, a.citas))], ["Costo/PVR", a => money(div(a.inversion, a.pvr))]];
   document.getElementById("tMes").innerHTML = `<thead><tr><th>Mes</th>${cols.map(c => `<th>${c[0]}</th>`).join("")}</tr></thead><tbody>` +
     ms.map((mo, i) => `<tr${state.mes === mo.key ? ' class="hl"' : ""}><td>${cap(mo.long)}</td>${cols.map(c => `<td>${c[1](per[i].all, i)}</td>`).join("")}</tr>`).join("") +
@@ -504,7 +504,7 @@ function renderDiario() {
   const map = new Map();
   DROWS.forEach(r => { const k = sem ? monday(r.dia) : r.dia; const o = map.get(k) || { k, leads: 0, citas: 0, pvr: 0 }; o.leads += r.leads; o.citas += r.citas; o.pvr += r.pvr; map.set(k, o); });
   const pts = [...map.values()].sort((a, b) => a.k < b.k ? -1 : 1);
-  const series = [["leads", "Leads", "meta"], ["citas", "Citas", "google"], ["pvr", "Primeras visitas", "otros"]];
+  const series = [["leads", "Leads", "meta"], ["citas", "Citas agendadas", "google"], ["pvr", "Primeras visitas", "otros"]];
   if (!pts.length) { host.innerHTML = `<p class="hint">Sin datos con estos filtros.</p>`; return; }
   const fmtK = k => sem ? `Semana del ${fmtDate(k)}` : fmtDate(k);
   host.innerHTML = series.map(([m, label]) => `<div class="mini"><h3>${label}</h3><div id="cDia-${m}"></div></div>`).join("");
@@ -545,7 +545,7 @@ on(document, "mousemove", e => {
   tip.style.top = Math.min(e.clientY + 14, window.innerHeight - r.height - 8) + "px";
 });
 
-function renderCharts() { renderDiario(); renderMes(); renderReg(); renderLine("cCag", "legCag", "citas", "Costo por cita"); renderLine("cCpvr", "legCpvr", "pvr", "Costo por primera visita"); renderWeekly(); }
+function renderCharts() { renderDiario(); renderMes(); renderReg(); renderLine("cCag", "legCag", "citas", "Costo por cita agendada"); renderLine("cCpvr", "legCpvr", "pvr", "Costo por primera visita"); renderWeekly(); }
 function render() { paintFilters(); renderKpis(); renderFunnel(); renderOrigen(); renderLocal(); renderCanal(); renderDesglose(); renderCharts(); renderNotes(); }
 /* Menú lateral plegable (preferencia de pantalla, aparte de los filtros) */
 const wrapEl = document.querySelector(".wrap"), sideToggle = document.getElementById("sideToggle"), sideEl = document.querySelector(".side");
