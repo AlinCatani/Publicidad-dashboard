@@ -86,8 +86,29 @@ h1 { font-family: var(--font-serif); font-size: 34px; line-height: 1.1; margin: 
 .selects { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 10px 14px; margin-top: 14px; }
 .sel { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
 .sel span { font-size: 11.5px; color: var(--muted); text-transform: uppercase; letter-spacing: .1em; font-weight: 700; }
-.sel select { font: inherit; font-size: 13.5px; color: var(--ink); background: var(--surface); border: 1px solid var(--line); border-radius: var(--r-sm); padding: 7px 10px; min-width: 0; width: 100%; }
-.sel select:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+.sel { position: relative; }
+.sel-btn { font: inherit; font-size: 13.5px; color: var(--ink); background: var(--surface); border: 1px solid var(--line); border-radius: var(--r-sm); padding: 7px 10px; min-width: 0; width: 100%; display: flex; align-items: center; justify-content: space-between; gap: 6px; cursor: pointer; text-align: left; }
+.sel-btn em { font-style: normal; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.sel-btn i { font-style: normal; color: var(--muted); font-size: 11px; }
+.sel-btn:hover { border-color: var(--primary); }
+.sel-btn.on { background: #dbe6f8; border-color: var(--primary); color: var(--primary); font-weight: 700; }
+.sel-btn.on i { color: var(--primary); }
+.sel-btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+.sel-pop { position: absolute; top: calc(100% + 4px); left: 0; z-index: 30; min-width: 100%; width: max-content; max-width: min(340px, 90vw); background: var(--surface); border: 1px solid #bfcde8; border-radius: var(--r-md); box-shadow: 0 12px 32px rgba(37,63,120,.22); padding: 6px; }
+.sel-top { display: flex; gap: 6px; align-items: center; padding: 2px 2px 6px; border-bottom: 1px solid var(--line); margin-bottom: 4px; }
+.sel-all { font: inherit; font-size: 12px; font-weight: 700; color: var(--primary); background: #e6eef9; border: 1px solid #bfcde8; border-radius: 999px; padding: 3px 10px; cursor: pointer; white-space: nowrap; }
+.sel-all:disabled { opacity: .45; cursor: default; }
+.sel-q { font: inherit; font-size: 12.5px; flex: 1; min-width: 80px; border: 1px solid var(--line); border-radius: 999px; padding: 3px 10px; }
+.sel-list { max-height: 280px; overflow-y: auto; display: flex; flex-direction: column; }
+.sel-opt { display: flex; align-items: center; gap: 8px; padding: 5px 8px; border-radius: 8px; cursor: pointer; font-size: 13px; color: var(--ink); text-transform: none; letter-spacing: 0; }
+.sel-opt b { font-weight: 400; flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.sel-opt small { color: var(--muted); font-size: 11.5px; }
+.sel-opt input { accent-color: var(--primary); margin: 0; }
+.sel-opt:hover { background: var(--soft); }
+.sel-opt.on { background: #dbe6f8; color: var(--primary); } .sel-opt.on b { font-weight: 700; }
+.sel-solo { font: inherit; font-size: 11px; font-weight: 700; color: var(--primary); background: transparent; border: 1px solid transparent; border-radius: 999px; padding: 1px 7px; cursor: pointer; visibility: hidden; }
+.sel-opt:hover .sel-solo { visibility: visible; border-color: #bfcde8; background: var(--surface); }
+.sel-nada { padding: 8px; color: var(--muted); font-size: 12.5px; }
 
 .kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 1px; background: var(--line); border: 1px solid var(--line); border-radius: var(--r-lg); overflow: hidden; box-shadow: var(--shadow); }
 .kpi { background: var(--surface); padding: 16px 18px 17px; display: flex; flex-direction: column; gap: 4px; min-width: 0; }
@@ -198,10 +219,10 @@ tr.total td { font-weight: 700; color: var(--primary); border-top: 1px solid var
 /* Filtros congelados al hacer scroll */
 .sticky-filters { position: sticky; top: 0; z-index: 6; padding: 12px 16px 12px; background: #e6eef9; border-color: #bfcde8; box-shadow: 0 6px 16px rgba(37,63,120,.12); }
 .sticky-filters .seg { background: #ffffff; border-color: #bfcde8; }
-.sticky-filters .sel select { border-color: #bfcde8; }
+.sticky-filters .sel-btn { border-color: #bfcde8; }
 .sticky-filters .selects { margin-top: 8px; gap: 6px 10px; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); }
 .sticky-filters .sel span { font-size: 10.5px; }
-.sticky-filters .sel select { font-size: 12.5px; padding: 4px 8px; }
+.sticky-filters .sel-btn { font-size: 12.5px; padding: 4px 8px; }
 .sticky-filters .seg button { padding: 4px 11px; font-size: 13px; }
 td.hl { color: var(--primary); font-weight: 700; }
 & { --seg-a: #4a3aa7; --seg-b: #eb6834; }

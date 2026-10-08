@@ -48,9 +48,10 @@ const CANALES = ["pagado", "todos", "meta", "google", "otros"];
 export const TIPOS = ["principal", "registros", "semanal", "perfil", "opciones", "diario"] as const;
 const VACIO = "__vacio__"; // el select manda esto para «(vacío)»; en SQL es ''
 const MAX_SUCS = 40;
+const MAX_VALS = 60; // valores por filtro
 export type Tipo = (typeof TIPOS)[number];
 
-export type Estado = { desde: string; hasta: string; mes: string; canal: string; dim: string; pdim: string; sucs: string[]; f: Record<string, string> };
+export type Estado = { desde: string; hasta: string; mes: string; canal: string; dim: string; pdim: string; sucs: string[]; f: Record<string, string[]> };
 
 /* Valida lo que manda el navegador. Devuelve null si no tiene forma de estado. */
 export function validarEstado(x: unknown): Estado | null {
@@ -66,14 +67,16 @@ export function validarEstado(x: unknown): Estado | null {
   const dim = typeof o.dim === "string" && DESG_DIMS.includes(o.dim) ? o.dim : "campaign";
   const pdim = typeof o.pdim === "string" && PERFIL_DIMS.includes(o.pdim) ? o.pdim : "tipo_de_paciente";
   const sucs = Array.isArray(o.sucs) ? (o.sucs as unknown[]).filter((v): v is string => typeof v === "string" && v.length > 0 && v.length <= 60).slice(0, MAX_SUCS) : [];
-  const f: Record<string, string> = {};
+  const f: Record<string, string[]> = {};
   const fx = o.f && typeof o.f === "object" ? (o.f as Record<string, unknown>) : {};
-  FILTER_DIMS.forEach((k) => { const v = fx[k]; f[k] = typeof v === "string" && v.length <= 200 ? v : ""; });
+  const esVal = (v: unknown): v is string => typeof v === "string" && v.length > 0 && v.length <= 200;
+  FILTER_DIMS.forEach((k) => { const v = fx[k]; f[k] = Array.isArray(v) ? (v as unknown[]).filter(esVal).slice(0, MAX_VALS) : esVal(v) ? [v] : []; });
   return { desde, hasta, mes, canal, dim, pdim, sucs, f };
 }
 
 const sqlStr = (s: string) => "'" + (s === VACIO ? "" : s).replace(/\\/g, "\\\\").replace(/'/g, "\\'") + "'";
 const sucsIn = (e: Estado, col: string) => (e.sucs.length ? `${col} IN (${e.sucs.map(sqlStr).join(",")})` : null);
+const filtroIn = (k: string, vals: string[]) => `${DIMS[k].sql} IN (${vals.map(sqlStr).join(",")})`;
 const channels = (e: Estado) => (e.canal === "pagado" ? ["meta", "google"] : e.canal === "todos" ? ["meta", "google", "otros"] : [e.canal]);
 const AGG = `SUM(leads) leads, SUM(citas) citas, SUM(pvr) pvr, SUM(sucursal_cambio) cambio, ROUND(SUM(gasto_mxn_unif)) inversion`;
 
@@ -81,7 +84,7 @@ function whereSql(e: Estado, withCanal: boolean) {
   const w = [`tipo_fila = 'lead'`, `fecha BETWEEN '${e.desde}' AND '${e.hasta}'`];
   const si = sucsIn(e, "sucursal_real"); if (si) w.push(si);
   if (withCanal) { const chs = channels(e); if (chs.length < 3) w.push(`${CANAL_SQL} IN (${inList(chs)})`); if (e.mes !== "todo") w.push(`FORMAT_DATE('%Y-%m', fecha) = '${e.mes}'`); }
-  FILTER_DIMS.forEach((k) => { if (e.f[k] !== "") w.push(`${DIMS[k].sql} = ${sqlStr(e.f[k])}`); });
+  FILTER_DIMS.forEach((k) => { if (e.f[k].length) w.push(filtroIn(k, e.f[k])); });
   return w.join("\n  AND ");
 }
 const mainSql = (e: Estado) => `SELECT FORMAT_DATE('%Y-%m', fecha) mes, ${CANAL_SQL} canal, ${ORIGEN_SQL("campaign", "region", localRegions(e.sucs))} origen, ${DIMS[e.dim].sql} dim, ${AGG}
@@ -97,8 +100,8 @@ function regWhereSql(e: Estado) {
   const chs = channels(e);
   if (chs.length < 3) w.push(`${CANAL_SQL} IN (${inList(chs)})`);
   FILTER_DIMS.forEach((k) => {
-    if (e.f[k] === "" || REG_SKIP[k]) return;
-    w.push(`${DIMS[k].sql} = ${sqlStr(e.f[k])}`);
+    if (!e.f[k].length || REG_SKIP[k]) return;
+    w.push(filtroIn(k, e.f[k]));
   });
   return w.join("\n  AND ");
 }

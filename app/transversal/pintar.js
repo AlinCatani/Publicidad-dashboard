@@ -63,7 +63,7 @@ const today = iso(new Date());
 
 /* ===== Estado ===== */
 const state = { desde: MIN_DATE, hasta: today, mes: "todo", canal: "pagado", gran: "dia", dim: "campaign", pdim: "tipo_de_paciente", sucs: ["MONTERREY"], f: {} };
-FILTER_DIMS.forEach(k => state.f[k] = "");
+FILTER_DIMS.forEach(k => state.f[k] = []);
 try {
   const s = JSON.parse(localStorage.getItem("reporte-transversal-v3") || "{}");
   if (Array.isArray(s.sucs)) state.sucs = s.sucs.filter(v => typeof v === "string" && v).slice(0, 40);
@@ -74,7 +74,7 @@ try {
   if (typeof s.mes === "string") state.mes = s.mes;
   if (s.dim && DESG_DIMS.includes(s.dim)) state.dim = s.dim;
   if (s.pdim && PERFIL_DIMS.includes(s.pdim)) state.pdim = s.pdim;
-  if (s.f) FILTER_DIMS.forEach(k => { if (typeof s.f[k] === "string") state.f[k] = s.f[k]; });
+  if (s.f) FILTER_DIMS.forEach(k => { const v = s.f[k]; if (Array.isArray(v)) state.f[k] = v.filter(x => typeof x === "string" && x).slice(0, 60); else if (typeof v === "string" && v) state.f[k] = [v]; });
 } catch (e) {}
 if (state.hasta < state.desde) state.hasta = state.desde;
 const save = () => { try { localStorage.setItem("reporte-transversal-v3", JSON.stringify(state)); } catch (e) {} };
@@ -143,26 +143,61 @@ const fPerfil = document.getElementById("fPerfil");
 fPerfil.innerHTML = PERFIL_DIMS.map(k => `<button type="button" data-v="${k}">${DIMS[k].label}</button>`).join("");
 fPerfil.addEventListener("click", e => { const b = e.target.closest("button"); if (!b) return; state.pdim = b.dataset.v; save(); paintFilters(); refreshPerfil(false); refreshDiario(false); });
 
-/* ===== Selects ===== */
-function selectHtml(k) {
+/* ===== Filtros de varias opciones: botón + desplegable con casillas, «Todas» y «Solo» ===== */
+const selVal = o => o.v === "" ? VACIO : o.v, selLabel = v => v === VACIO ? "(vacío)" : v;
+function selOpts(k) {
   const d = DIMS[k];
   let opts = d.fixed ? d.fixed.map(v => ({ v, n: null })) : ((OPTIONS && OPTIONS[k]) || []).slice(0, d.top || 200);
   if (d.sortKey) opts = opts.slice().sort((a, b) => a.v.localeCompare(b.v, "es", { numeric: true }));
-  const cur = state.f[k], val = o => o.v === "" ? VACIO : o.v;
-  const extra = cur && !opts.some(o => val(o) === cur) ? [{ v: cur === VACIO ? "" : cur, n: null }] : [];
-  const label = o => o.v || "(vacío)";
-  return `<label class="sel"><span>${d.label}</span><select data-k="${k}">
-    <option value="">Todas</option>
-    ${extra.concat(opts).map(o => `<option value="${esc(val(o))}"${val(o) === cur ? " selected" : ""}>${esc(label(o))}${o.n != null ? ` · ${compact.format(o.n)}` : ""}</option>`).join("")}
-  </select></label>`;
+  const faltan = state.f[k].filter(v => !opts.some(o => selVal(o) === v)).map(v => ({ v: v === VACIO ? "" : v, n: null }));
+  return faltan.concat(opts);
+}
+function selResumen(k) { const c = state.f[k]; return c.length === 0 ? "Todas" : c.length === 1 ? selLabel(c[0]) : `${c.length} elegidas`; }
+function selectHtml(k) {
+  const n = state.f[k].length;
+  return `<div class="sel" data-k="${k}"><span>${DIMS[k].label}</span><button type="button" class="sel-btn${n ? " on" : ""}" aria-haspopup="listbox" aria-expanded="false"><em>${esc(selResumen(k))}</em><i>▾</i></button></div>`;
+}
+function pintarSelBtn(host) { const k = host.dataset.k, b = host.querySelector(".sel-btn"); b.classList.toggle("on", state.f[k].length > 0); b.querySelector("em").textContent = selResumen(k); }
+let selAbierto = null;
+function cerrarSel() { if (!selAbierto) return; const pop = selAbierto.querySelector(".sel-pop"); if (pop) pop.remove(); selAbierto.querySelector(".sel-btn").setAttribute("aria-expanded", "false"); selAbierto = null; }
+function pintarSelLista(host) {
+  const k = host.dataset.k, cur = state.f[k], pop = host.querySelector(".sel-pop"), q = (pop.querySelector(".sel-q") || {}).value || "";
+  const qn = q.trim().toLowerCase();
+  const opts = selOpts(k).filter(o => !qn || selLabel(selVal(o)).toLowerCase().includes(qn));
+  pop.querySelector(".sel-all").disabled = cur.length === 0;
+  pop.querySelector(".sel-list").innerHTML = opts.map(o => { const v = selVal(o), on = cur.includes(v);
+    return `<label class="sel-opt${on ? " on" : ""}"><input type="checkbox" value="${esc(v)}"${on ? " checked" : ""}><b>${esc(selLabel(v))}</b>${o.n != null ? `<small>${compact.format(o.n)}</small>` : ""}<button type="button" class="sel-solo" data-v="${esc(v)}" title="Solo esta opción">Solo</button></label>`; }).join("") || `<div class="sel-nada">Sin coincidencias</div>`;
+}
+function abrirSel(host) {
+  if (selAbierto === host) { cerrarSel(); return; }
+  cerrarSel();
+  const k = host.dataset.k;
+  const pop = document.createElement("div"); pop.className = "sel-pop"; pop.setAttribute("role", "listbox"); pop.setAttribute("aria-label", DIMS[k].label);
+  pop.innerHTML = `<div class="sel-top"><button type="button" class="sel-all">Todas</button>${selOpts(k).length > 8 ? `<input type="search" class="sel-q" placeholder="Buscar…" aria-label="Buscar opción">` : ""}</div><div class="sel-list"></div>`;
+  host.appendChild(pop); host.querySelector(".sel-btn").setAttribute("aria-expanded", "true"); selAbierto = host;
+  pintarSelLista(host);
+  const aplicar = () => { save(); pintarSelBtn(host); paintFilters(); renderTabs(); refresh(false); };
+  pop.addEventListener("change", e => {
+    const cb = e.target; if (cb.type !== "checkbox") return;
+    const cur = state.f[k], i = cur.indexOf(cb.value);
+    if (cb.checked && i < 0) cur.push(cb.value); if (!cb.checked && i >= 0) cur.splice(i, 1);
+    cb.closest(".sel-opt").classList.toggle("on", cb.checked); pop.querySelector(".sel-all").disabled = cur.length === 0; aplicar();
+  });
+  pop.addEventListener("click", e => {
+    const b = e.target.closest("button"); if (!b) return; e.preventDefault();
+    if (b.classList.contains("sel-all")) state.f[k] = []; else if (b.classList.contains("sel-solo")) state.f[k] = [b.dataset.v]; else return;
+    pintarSelLista(host); aplicar();
+  });
+  const q = pop.querySelector(".sel-q"); if (q) { q.addEventListener("input", () => pintarSelLista(host)); q.focus(); }
 }
 function renderSelects() {
+  cerrarSel();
   document.getElementById("selects1").innerHTML = FILTER_ROW1.map(selectHtml).join("");
   document.getElementById("selects2").innerHTML = FILTER_ROW2.map(selectHtml).join("");
-  document.querySelectorAll("#selects1 select, #selects2 select").forEach(s => s.addEventListener("change", () => {
-    state.f[s.dataset.k] = s.value; save(); paintFilters(); renderTabs(); refresh(false);
-  }));
+  document.querySelectorAll("#selects1 .sel-btn, #selects2 .sel-btn").forEach(b => b.addEventListener("click", () => abrirSel(b.parentElement)));
 }
+on(document, "click", e => { if (selAbierto && !selAbierto.contains(e.target)) cerrarSel(); });
+on(document, "keydown", e => { if (e.key === "Escape") cerrarSel(); });
 
 /* ===== Pestañas de sucursal ===== */
 function renderTabs() {
@@ -189,7 +224,7 @@ function paintFilters() {
   periodBtn.textContent = `${fmtDate(state.desde)} – ${fmtDate(state.hasta)} ▾`;
   document.getElementById("eyebrow").textContent = `Marketing · ${sucsLabel()}`;
   pintarPliegue();
-  const active = FILTER_DIMS.filter(k => state.f[k] !== "").map(k => `${DIMS[k].label}: ${state.f[k] === VACIO ? "(vacío)" : state.f[k]}`);
+  const active = FILTER_DIMS.filter(k => state.f[k].length).map(k => `${DIMS[k].label}: ${state.f[k].map(selLabel).join(", ")}`);
   document.getElementById("filterNote").textContent = active.length ? "Filtros activos: " + active.join(" · ") + "." : "Sin filtros: se muestran todas las sucursales, campañas y perfiles.";
 }
 
@@ -416,7 +451,7 @@ function renderReg() {
     if (per[i].all) s += `<text x="${x + bw / 2}" y="${yTop - 5}" text-anchor="middle" class="lbl">${nf.format(per[i].all)}</text>`; });
   host.innerHTML = `<svg class="chart" viewBox="0 0 ${W} ${H}" role="img" aria-label="Registros por mes">${s}</svg>`;
   document.getElementById("legReg").innerHTML = legendHtml(chs);
-  const skipped = FILTER_DIMS.filter(k => state.f[k] !== "" && REG_SKIP[k]).map(k => DIMS[k].label);
+  const skipped = FILTER_DIMS.filter(k => state.f[k].length && REG_SKIP[k]).map(k => DIMS[k].label);
   document.getElementById("regNote").textContent = (state.sucs.length ? "Registros por la sucursal que eligió la persona (el formulario no sabe dónde terminará la visita). " : "") + (skipped.length ? `Los filtros de ${skipped.join(" y ")} no aplican a registros.` : "");
 }
 
