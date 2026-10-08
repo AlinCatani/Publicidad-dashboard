@@ -27,7 +27,7 @@ const DIMS = {
   sucursal_real: { label: "Sucursal" }, campaign: { label: "Campaña" }, medium: { label: "Medio" }, landing: { label: "Landing", top: 300 },
   region: { label: "Región" }, anuncio: { label: "Anuncio", top: 300 }, mensaje: { label: "Mensaje" },
   tipo_de_paciente: { label: "Tipo de paciente" }, perfil: { label: "Perfil" }, score: { label: "Score" }, user_persona: { label: "User persona" },
-  grupo_edad: { label: "Grupo de edad", sortKey: true }, es_leading: { label: "Leading", fixed: ["Leading", "No leading"] },
+  grupo_edad: { label: "Grupo de edad", sortKey: true }, es_leading: { label: "LeadING", fixed: ["LeadING", "No LeadING"] },
   canal: { label: "Canal" }, mes: { label: "Mes" }
 };
 const FILTER_ROW1 = ["campaign", "medium", "landing", "region", "anuncio", "mensaje"];
@@ -75,6 +75,7 @@ try {
   if (s.dim && DESG_DIMS.includes(s.dim)) state.dim = s.dim;
   if (s.pdim && PERFIL_DIMS.includes(s.pdim)) state.pdim = s.pdim;
   if (s.f) FILTER_DIMS.forEach(k => { const v = s.f[k]; if (Array.isArray(v)) state.f[k] = v.filter(x => typeof x === "string" && x).slice(0, 60); else if (typeof v === "string" && v) state.f[k] = [v]; });
+  const viejo = { Leading: "LeadING", "No leading": "No LeadING" }; state.f.es_leading = state.f.es_leading.map(v => viejo[v] || v);
 } catch (e) {}
 if (state.hasta < state.desde) state.hasta = state.desde;
 const save = () => { try { localStorage.setItem("reporte-transversal-v3", JSON.stringify(state)); } catch (e) {} };

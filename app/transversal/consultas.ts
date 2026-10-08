@@ -37,7 +37,7 @@ const DIMS: Record<string, { sql: string; fixed?: boolean }> = {
   score: { sql: "IFNULL(score,'')" },
   user_persona: { sql: "IFNULL(user_persona,'')" },
   grupo_edad: { sql: EDAD_SQL },
-  es_leading: { sql: "IF(es_leading=1,'Leading','No leading')", fixed: true },
+  es_leading: { sql: "IF(es_leading=1,'LeadING','No LeadING')", fixed: true },
   canal: { sql: CANAL_SQL },
   mes: { sql: "FORMAT_DATE('%Y-%m', fecha)" },
 };
@@ -92,7 +92,7 @@ FROM ${VIEW}
 WHERE ${whereSql(e, false)}
 GROUP BY 1,2,3,4`;
 
-/* Registros: misma lógica de filtros sobre registros_historico (sin perfil ni leading; sucursal = la elegida). */
+/* Registros: misma lógica de filtros sobre registros_historico (sin perfil ni LeadING; sucursal = la elegida). */
 const REG_SKIP: Record<string, 1> = { perfil: 1, es_leading: 1 };
 function regWhereSql(e: Estado) {
   const w = [`Fecha BETWEEN '${e.desde}' AND '${e.hasta}'`];
