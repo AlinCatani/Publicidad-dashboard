@@ -102,6 +102,13 @@ const PLANTILLA = `<div class="wrap">
     <p class="caveat" id="origenNote"></p>
   </section>
 
+  <section class="panel" aria-labelledby="h-canal" data-sec="canal">
+    <div class="phead">
+      <div><h2 id="h-canal">Meta vs Google</h2><p class="hint" id="canalHint"></p></div>
+    </div>
+    <div class="tscroll"><table id="tCanal"></table></div>
+  </section>
+
   <section class="panel" aria-labelledby="h-local" data-sec="local" id="secLocal" hidden>
     <div class="phead">
       <div>
@@ -157,13 +164,6 @@ const PLANTILLA = `<div class="wrap">
     <div id="cCpvr"></div>
   </section>
 
-  <section class="panel" aria-labelledby="h-canal" data-sec="canal">
-    <div class="phead">
-      <div><h2 id="h-canal">Meta vs Google</h2><p class="hint" id="canalHint"></p></div>
-    </div>
-    <div class="tscroll"><table id="tCanal"></table></div>
-  </section>
-
   <section class="panel" aria-labelledby="h-desg" data-sec="desg">
     <div class="phead">
       <div>
@@ -215,8 +215,9 @@ export function armarMarcado(o: { titulo: string; sub: string; secciones: string
   return html.replace("<h1>Reporte transversal</h1>", `<h1>${o.titulo}</h1>`).replace('<p class="sub">Desde las impresiones hasta las primeras visitas</p>', `<p class="sub">${o.sub}</p>`);
 }
 
-/* Reporte Transversal+Ole: todo menos «Meta vs Google», que desde el 2026-10-08 vive en Análisis de campañas. */
-export const MARCADO = armarMarcado({ titulo: "Reporte transversal", sub: "Desde las impresiones hasta las primeras visitas", secciones: SECCIONES.filter((s) => s !== "canal") });
+/* Secciones que desde el 2026-10-08 viven en Análisis de campañas: Meta vs Google y la campaña local ADV vs OPEN con su semanal. */
+const DE_CAMPANAS = ["canal", "local", "wk"];
+export const MARCADO = armarMarcado({ titulo: "Reporte transversal", sub: "Desde las impresiones hasta las primeras visitas", secciones: SECCIONES.filter((s) => !DE_CAMPANAS.includes(s)) });
 
-/* Análisis de campañas: nace con los indicadores y la comparación Meta vs Google; crece con lo que pida Alin. */
-export const MARCADO_CAMPANAS = armarMarcado({ titulo: "Análisis de campañas", sub: "Meta vs Google con los mismos filtros del transversal", secciones: ["kpis", "canal", "notes"] });
+/* Análisis de campañas: indicadores, Meta vs Google y la campaña local ADV vs OPEN (solo con Monterrey sola); crece con lo que pida Alin. */
+export const MARCADO_CAMPANAS = armarMarcado({ titulo: "Análisis de campañas", sub: "Meta vs Google y campaña local, con los mismos filtros del transversal", secciones: ["kpis", "canal", "local", "wk", "notes"] });
