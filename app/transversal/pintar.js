@@ -93,7 +93,7 @@ function monthsSel() {
 
 const REG_SKIP = { perfil: 1, es_leading: 1, internacional: 1 };
 /* ===== Datos ===== */
-let ALL = [], ROWS = [], PROWS = [], RROWS = [], WEEKS = [], DROWS = [], OPTIONS = null;
+let ALL = [], ROWS = [], PROWS = [], RROWS = [], WEEKS = [], DROWS = [], AROWS = [], OPTIONS = null;
 let MROWS = [];
 const inMes = r => state.mes === "todo" || r.mes === state.mes;
 const applyCanal = () => { const chs = channels(); MROWS = ALL.filter(r => chs.includes(r.canal)); ROWS = MROWS.filter(inMes); };
@@ -136,10 +136,10 @@ function renderMesButtons() {
   if (state.mes !== "todo" && !ms.some(m => m.key === state.mes)) state.mes = "todo";
   fMes.innerHTML = `<button type="button" data-v="todo">Todo</button>` + ms.map(m => `<button type="button" data-v="${m.key}">${cap(m.short)}</button>`).join("");
 }
-fMes.addEventListener("click", e => { const b = e.target.closest("button"); if (!b) return; state.mes = b.dataset.v; save(); applyCanal(); render(); refreshPerfil(false); refreshDiario(false); });
+fMes.addEventListener("click", e => { const b = e.target.closest("button"); if (!b) return; state.mes = b.dataset.v; save(); applyCanal(); render(); refreshPerfil(false); refreshDiario(false); refreshAds(false); });
 
 /* ===== Canal, desglose, perfil ===== */
-byId("fCanal").addEventListener("click", e => { const b = e.target.closest("button"); if (!b) return; state.canal = b.dataset.v; save(); applyCanal(); render(); refreshPerfil(false); refreshDiario(false); refreshReg(false); });
+byId("fCanal").addEventListener("click", e => { const b = e.target.closest("button"); if (!b) return; state.canal = b.dataset.v; save(); applyCanal(); render(); refreshPerfil(false); refreshDiario(false); refreshReg(false); refreshAds(false); });
 const fDim = byId("fDim");
 fDim.innerHTML = DESG_DIMS.map(k => `<button type="button" data-v="${k}">${DIMS[k].label}</button>`).join("");
 fDim.addEventListener("click", e => { const b = e.target.closest("button"); if (!b) return; state.dim = b.dataset.v; save(); paintFilters(); refresh(false); });
@@ -241,6 +241,23 @@ function paintFilters() {
     : "Sin filtros: se muestran todas las sucursales, campañas y perfiles.";
 }
 
+/* ===== Publicidad: inversión real y métricas de atracción de los anuncios ===== */
+function renderAds() {
+  const t = AROWS.reduce((o, r) => { o.inversion += r.inversion; o.impresiones += r.impresiones; o.alcance += r.alcance; o.clics += r.clics; if (r.visitas != null) { o.visitas += r.visitas; o.conVisitas = true; } return o; }, { inversion: 0, impresiones: 0, alcance: 0, clics: 0, visitas: 0, conVisitas: false });
+  const a = sum(ROWS), reg = regTotal();
+  const items = [
+    { k: "Inversión", v: t.inversion, f: money },
+    { k: "Impresiones", v: t.impresiones, f: nf.format, sub: t.alcance ? `${nf.format(t.alcance)} de alcance` : "" },
+    { k: "Clics de enlace", v: t.clics, f: nf.format, sub: `CTR ${isFinite(div(t.clics, t.impresiones)) ? (div(t.clics, t.impresiones) * 100).toFixed(2) + "%" : "—"}` },
+    { k: "CPC", v: div(t.inversion, t.clics), f: money },
+    { k: "Vistas de landing", v: t.conVisitas ? t.visitas : NaN, f: nf.format, sub: t.conVisitas ? `${pct(div(t.visitas, t.clics))} de clics · solo Meta` : "Solo Meta la reporta" },
+    { k: "Registros", v: reg, f: nf.format, sub: t.clics ? `${pct(div(reg, t.clics))} de clics` : "" },
+    { k: "Leads", v: a.leads, f: nf.format, sub: reg ? `${pct(div(a.leads, reg))} de registros` : "" },
+    { k: "Costo por lead", v: div(t.inversion, a.leads), f: money, sub: "inversión real ÷ leads" }
+  ];
+  byId("kpisAds").innerHTML = items.map(it => `<div class="kpi"><span class="k">${it.k}</span><span class="v">${AROWS.length && isFinite(it.v) ? it.f(it.v) : "—"}</span><span class="d">${it.sub || ""}</span></div>`).join("");
+}
+
 /* ===== KPIs ===== */
 function renderKpis() {
   const a = sum(ROWS), reg = regTotal();
@@ -250,7 +267,6 @@ function renderKpis() {
   const preg = pk ? regSum(RROWS.filter(r => r.mes === pk)) : 0;
   const has = p && (p.leads || preg);
   const items = [
-    { k: "Inversión asignada", v: a.inversion, f: money, prev: has && p.inversion, neutral: true },
     { k: "Registros", v: reg, f: nf.format, prev: has && preg },
     { k: "Leads", v: a.leads, f: nf.format, prev: has && p.leads, sub: reg ? `${pct(div(a.leads, reg))} de registros` : "" },
     { k: "CPL", v: div(a.inversion, a.leads), f: money, prev: has && div(p.inversion, p.leads), cost: true },
@@ -594,7 +610,7 @@ on(document, "mousemove", e => {
 });
 
 function renderCharts() { renderDiario(); renderMes(); renderReg(); renderLine("cCag", "legCag", "citas", "Costo por cita agendada"); renderLine("cCpvr", "legCpvr", "pvr", "Costo por primera visita"); renderWeekly(); }
-function render() { paintFilters(); renderKpis(); renderFunnel(); renderOrigen(); renderLocal(); renderCanal(); renderDesglose(); renderCharts(); renderNotes(); }
+function render() { paintFilters(); renderAds(); renderKpis(); renderFunnel(); renderOrigen(); renderLocal(); renderCanal(); renderDesglose(); renderCharts(); renderNotes(); }
 /* Menú lateral plegable (preferencia de pantalla, aparte de los filtros) */
 const wrapEl = document.querySelector(".wrap"), sideToggle = byId("sideToggle"), sideEl = document.querySelector(".side");
 const sideBadge = document.createElement("button"); sideBadge.type = "button"; sideBadge.className = "side-badge"; sideEl.appendChild(sideBadge);
@@ -657,6 +673,17 @@ async function refreshWeekly(force) {
     renderLocal(); renderWeekly();
   } catch (e) { WEEKS = []; renderLocal(); renderWeekly(); }
 }
+let aseq = 0;
+async function refreshAds(force) {
+  if (!hay("ads")) return;
+  const my = ++aseq;
+  try {
+    const { rows } = await runSql("publicidad", force);
+    if (my !== aseq || !rows) return;
+    AROWS = rows.map(r => ({ mes: String(r.mes), canal: String(r.canal), inversion: +r.inversion || 0, impresiones: +r.impresiones || 0, alcance: +r.alcance || 0, clics: +r.clics || 0, visitas: r.visitas == null ? null : +r.visitas }));
+    renderAds();
+  } catch (e) { /* la sección conserva lo anterior */ }
+}
 let dseq = 0;
 async function refreshDiario(force) {
   if (!hay("diario")) return;
@@ -681,7 +708,7 @@ async function refresh(force) {
   const my = ++seq;
   btn.disabled = true;
   setStatus("snap", "Consultando", "Consultando BigQuery…");
-  refreshPerfil(force); refreshReg(force); refreshWeekly(force); refreshDiario(force);
+  refreshPerfil(force); refreshReg(force); refreshWeekly(force); refreshDiario(force); refreshAds(force);
   try {
     const { rows, at } = await runSql("principal", force);
     if (my !== seq) return;

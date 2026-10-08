@@ -14,7 +14,11 @@ export const MIN_DATE = "2026-03-01";
 const META_M = ["facebook", "instagram", "socialmedia", "social_media"];
 const GOOGLE_M = ["google_search", "pmax", "dgen", "google", "youtube", "display"];
 const inList = (a: string[]) => a.map((m) => `'${m}'`).join(",");
-const CANAL_SQL = `CASE WHEN LOWER(TRIM(IFNULL(medium,''))) IN (${inList(META_M)}) THEN 'meta' WHEN LOWER(TRIM(IFNULL(medium,''))) IN (${inList(GOOGLE_M)}) THEN 'google' ELSE 'otros' END`;
+const canalSql = (col: string) => `CASE WHEN LOWER(TRIM(IFNULL(${col},''))) IN (${inList(META_M)}) THEN 'meta' WHEN LOWER(TRIM(IFNULL(${col},''))) IN (${inList(GOOGLE_M)}) THEN 'google' ELSE 'otros' END`;
+const CANAL_SQL = canalSql("medium");
+/* Publicidad: inversión, impresiones, clics y vistas por anuncio × día (la arma extraccion-de-gasto/). Sin sucursal ni perfil. */
+const ADS = "`gtm-pvkx9p9-ndk3z.looker_dashboard.inversion_y_metricas_anuncio_diaria`";
+const ADS_DIMS: Record<string, string> = { campaign: "IFNULL(campaing,'')", medium: "LOWER(TRIM(IFNULL(medio,'')))", landing: "IFNULL(landing,'')", region: "LOWER(TRIM(IFNULL(region,'')))", anuncio: "IFNULL(anuncio,'')", mensaje: "IFNULL(mensaje,'')" };
 
 /* Región de campaña que corresponde a cada sucursal (valores de utm region, en minúsculas). */
 const SUC_REGION: Record<string, string[]> = { "CIUDAD DE MEXICO": ["mexico", "cdmx", "ciudad_de_mexico"], "MONTERREY": ["monterrey", "mty"], "GUADALAJARA": ["guadalajara", "gdl"], "PUEBLA": ["puebla"], "TIJUANA": ["tijuana"], "CANCUN": ["cancun"], "MERIDA": ["merida"], "QUERETARO": ["queretaro"], "VERACRUZ": ["veracruz"], "TOLUCA": ["toluca"], "CIUDAD JUAREZ": ["juarez", "ciudad_juarez", "cd_juarez"], "LEON": ["leon", "bajio"], "MORELIA": ["morelia"], "MEXICALI": ["mexicali"], "CHIHUAHUA": ["chihuahua", "chuhuahua"], "AGUASCALIENTES": ["aguascalientes"], "HERMOSILLO": ["hermosillo"], "MAZATLAN": ["mazatlan"], "PUERTO VALLARTA": ["vallarta", "puerto_vallarta"], "HOUSTON": ["texas", "houston", "usa_south"], "ORANGE COUNTY": ["california", "orange_county"], "NEW YORK": ["newyork", "new_york"], "MIAMI": ["florida", "miami"] };
@@ -47,7 +51,7 @@ const FILTER_DIMS = ["campaign", "medium", "landing", "region", "anuncio", "mens
 const DESG_DIMS = ["campaign", "medium", "landing", "region", "anuncio", "mensaje", "sucursal_real", "canal", "mes"];
 const PERFIL_DIMS = ["tipo_de_paciente", "perfil", "score", "user_persona", "es_leading", "grupo_edad"];
 const CANALES = ["pagado", "todos", "meta", "google", "otros"];
-export const TIPOS = ["principal", "registros", "semanal", "perfil", "opciones", "diario"] as const;
+export const TIPOS = ["principal", "registros", "semanal", "perfil", "opciones", "diario", "publicidad"] as const;
 const VACIO = "__vacio__"; // el select manda esto para «(vacío)»; en SQL es ''
 const MAX_SUCS = 40;
 const MAX_VALS = 60; // valores por filtro
@@ -139,6 +143,18 @@ const optionsSql = () => ["sucursal_real", ...FILTER_DIMS].filter((k) => !DIMS[k
 ).join("\nUNION ALL\n") + "\nORDER BY k, n DESC";
 
 /* El SQL de cada tipo de consulta. null = no aplica con ese estado (semanal sin sucursal). */
+/* Publicidad por mes y medio: solo filtran periodo, medio, mes y los 6 UTM; USD × 18 como en la vista. */
+function adsSql(e: Estado) {
+  const w = [`dia BETWEEN '${e.desde}' AND '${e.hasta}'`, `impresiones > 0`];
+  const chs = channels(e); if (chs.length < 3) w.push(`${canalSql("medio")} IN (${inList(chs)})`);
+  if (e.mes !== "todo") w.push(`FORMAT_DATE('%Y-%m', dia) = '${e.mes}'`);
+  Object.keys(ADS_DIMS).forEach((k) => { if (e.f[k].length) w.push(`${ADS_DIMS[k]} IN (${e.f[k].map(sqlStr).join(",")})`); });
+  return `SELECT FORMAT_DATE('%Y-%m', dia) mes, ${canalSql("medio")} canal, ROUND(SUM(IF(moneda = 'USD', costo * 18, costo))) inversion, SUM(impresiones) impresiones, SUM(alcance) alcance, SUM(clics_enlace) clics, SUM(vistas_landing) visitas
+FROM ${ADS}
+WHERE ${w.join("\n  AND ")}
+GROUP BY 1,2`;
+}
+
 export function construirSql(tipo: Tipo, e: Estado): string | null {
   switch (tipo) {
     case "principal": return mainSql(e);
@@ -147,5 +163,6 @@ export function construirSql(tipo: Tipo, e: Estado): string | null {
     case "perfil": return perfilSql(e);
     case "opciones": return optionsSql();
     case "diario": return diarioSql(e);
+    case "publicidad": return adsSql(e);
   }
 }

@@ -59,6 +59,12 @@ const PLANTILLA = `<div class="wrap">
     <div class="selects" id="selects2"></div>
   </section>
 
+  <section class="panel" aria-labelledby="h-ads" data-sec="ads">
+    <div class="phead">
+      <div><h2 id="h-ads">Publicidad</h2><p class="hint" id="adsHint">Inversión y métricas de atracción de los anuncios (Meta y Google), por el periodo, medio, mes y UTM elegidos. La sucursal y los filtros de perfil no aplican aquí.</p></div>
+    </div>
+    <div class="kpis" id="kpisAds" aria-label="Publicidad"></div>
+  </section>
   <section class="kpis" id="kpis" data-sec="kpis" aria-label="Indicadores principales"></section>
 
   <section class="panel" aria-labelledby="h-diario" data-sec="diario">
@@ -195,7 +201,7 @@ const PLANTILLA = `<div class="wrap">
     <div><h3>Límites del dato</h3><p id="noteLimites">Enero y febrero de 2026 no tienen correo en los leads, así que no cruzan con cita ni visita: por eso el reporte empieza en marzo. El gasto llega hasta la última carga de <code>inversion_diaria</code>. Los leads con <code>posible_duplicado</code> se cuentan.</p></div>
     <div><h3>Registros</h3><p>De <code>registros_historico</code> (formularios enviados). No trae correo, perfil Azul/Verde ni teléfono, así que no se cruza con citas agendadas y los filtros de perfil, LeadING y Nacional / Internacional no le aplican; la sucursal es la que eligió la persona.</p></div>
     <div><h3>Origen y campaña local</h3><p>Origen: «local» = campaña pagada cuya región coincide con la sucursal elegida; «nacional» = región nacional; «otras» = otras regiones; «sin campaña» = sin UTM de pago. La campaña local se mide en Meta; «% leads de la sucursal» = leads de la campaña local que son de esta sucursal ÷ todos los leads que genera esa campaña.</p></div>
-    <div><h3>Pendiente</h3><p>Impresiones, alcance, clics, CTR y costo por clic: se cargarán a BigQuery por día y anuncio desde la API de Meta y Google (tabla <code>inversion_y_metricas_anuncio_diaria</code>). Hasta entonces, esas tarjetas y la tabla de atracción de Meta no se muestran.</p></div>
+    <div><h3>Publicidad</h3><p>Inversión, impresiones, alcance, clics de enlace y vistas de landing vienen de <code>inversion_y_metricas_anuncio_diaria</code> (una fila por anuncio y día, desde la API de Meta y Google; USD × 18). Es la inversión real del periodo, no la asignada a leads; por eso puede diferir del CPL de abajo. Registros y leads son los mismos del reporte. Las vistas de landing solo las reporta Meta.</p></div>
   </section>
   </div>
 </div>
@@ -207,7 +213,7 @@ const PLANTILLA = `<div class="wrap">
 </nav>
 <div class="tip" id="tip" hidden></div>`;
 
-export const SECCIONES = ["kpis", "diario", "perfil", "funnel", "origen", "local", "wk", "reg", "cag", "cpvr", "canal", "desg", "mes", "notes"];
+export const SECCIONES = ["ads", "kpis", "diario", "perfil", "funnel", "origen", "local", "wk", "reg", "cag", "cpvr", "canal", "desg", "mes", "notes"];
 
 /* Arma el marcado de un reporte: mismo cascarón (menú, cabecera, filtros, botones) con las secciones elegidas. */
 export function armarMarcado(o: { titulo: string; sub: string; secciones: string[] }) {
