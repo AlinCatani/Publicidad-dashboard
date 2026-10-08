@@ -188,6 +188,7 @@ function paintFilters() {
   fPerfil.querySelectorAll("button").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.v === state.pdim)));
   periodBtn.textContent = `${fmtDate(state.desde)} – ${fmtDate(state.hasta)} ▾`;
   document.getElementById("eyebrow").textContent = `Marketing · ${sucsLabel()}`;
+  pintarPliegue();
   const active = FILTER_DIMS.filter(k => state.f[k] !== "").map(k => `${DIMS[k].label}: ${state.f[k] === VACIO ? "(vacío)" : state.f[k]}`);
   document.getElementById("filterNote").textContent = active.length ? "Filtros activos: " + active.join(" · ") + "." : "Sin filtros: se muestran todas las sucursales, campañas y perfiles.";
 }
@@ -546,6 +547,22 @@ on(document, "mousemove", e => {
 
 function renderCharts() { renderDiario(); renderMes(); renderReg(); renderLine("cCag", "legCag", "citas", "Costo por cita"); renderLine("cCpvr", "legCpvr", "pvr", "Costo por primera visita"); renderWeekly(); }
 function render() { paintFilters(); renderKpis(); renderFunnel(); renderOrigen(); renderLocal(); renderCanal(); renderDesglose(); renderCharts(); renderNotes(); }
+/* Menú lateral plegable (preferencia de pantalla, aparte de los filtros) */
+const wrapEl = document.querySelector(".wrap"), sideToggle = document.getElementById("sideToggle"), sideEl = document.querySelector(".side");
+const sideBadge = document.createElement("button"); sideBadge.type = "button"; sideBadge.className = "side-badge"; sideEl.appendChild(sideBadge);
+let plegado = false;
+try { plegado = localStorage.getItem("reporte-transversal-menu") === "plegado"; } catch (e) {}
+function pintarPliegue() {
+  wrapEl.classList.toggle("plegado", plegado);
+  sideToggle.setAttribute("aria-expanded", String(!plegado));
+  sideToggle.title = plegado ? "Mostrar el menú de sucursales" : "Plegar el menú de sucursales";
+  sideToggle.firstElementChild.textContent = plegado ? "›" : "‹";
+  sideBadge.textContent = state.sucs.length === 0 ? "∀" : String(state.sucs.length);
+  sideBadge.title = `${sucsLabel()} · clic para abrir el menú`;
+}
+const alternarPliegue = () => { plegado = !plegado; try { localStorage.setItem("reporte-transversal-menu", plegado ? "plegado" : "abierto"); } catch (e) {} pintarPliegue(); clearTimeout(resizeT); resizeT = setTimeout(renderCharts, 200); };
+on(sideToggle, "click", alternarPliegue); on(sideBadge, "click", alternarPliegue);
+pintarPliegue();
 on(window, "resize", () => { clearTimeout(resizeT); resizeT = setTimeout(renderCharts, 150); });
 renderMesButtons(); renderSelects(); renderTabs(); render(); renderPerfil();
 

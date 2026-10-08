@@ -2,6 +2,7 @@
 // Solo estructura y textos: ningún número ni consulta.
 export const MARCADO = `<div class="wrap">
   <aside class="side">
+    <button type="button" class="side-toggle" id="sideToggle" aria-expanded="true" aria-controls="tabsSuc" title="Plegar el menú de sucursales"><span aria-hidden="true">‹</span><span class="st-label">Plegar menú</span></button>
     <img class="logo" src="/ingenes-logo.webp" alt="Instituto Ingenes">
     <nav class="tabs" id="tabsSuc" aria-label="Sucursal"></nav>
   </aside>
