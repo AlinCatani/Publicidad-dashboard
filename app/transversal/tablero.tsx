@@ -16,7 +16,7 @@ export default function Tablero() {
     const el = raiz.current;
     if (!el) return;
     el.innerHTML = MARCADO;
-    const limpiar = montar(el);
+    const limpiar = montar(el, { sitio: true });
     return () => { limpiar(); el.innerHTML = ""; };
   }, []);
   return <div ref={raiz} className={`rt ${serif.variable} ${sans.variable}`} />;

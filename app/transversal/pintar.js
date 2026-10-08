@@ -2,7 +2,7 @@
 // Diferencias con el artefacto: (1) el SQL no está aquí, lo arma el servidor en consultas.ts a partir
 // del estado (filtros) que se le manda; (2) los datos llegan por /api/transversal, no por el conector MCP.
 // `montar(raiz)` pinta dentro de `raiz` (que ya trae el marcado) y devuelve la función que limpia.
-export function montar(raiz) {
+export function montar(raiz, opciones) {
 let vivo = true, resizeT = 0;
 const escuchas = [];
 const on = (t, ev, fn) => { t.addEventListener(ev, fn); escuchas.push([t, ev, fn]); };
@@ -563,6 +563,13 @@ function pintarPliegue() {
 const alternarPliegue = () => { plegado = !plegado; try { localStorage.setItem("reporte-transversal-menu", plegado ? "plegado" : "abierto"); } catch (e) {} pintarPliegue(); clearTimeout(resizeT); resizeT = setTimeout(renderCharts, 200); };
 on(sideToggle, "click", alternarPliegue); on(sideBadge, "click", alternarPliegue);
 pintarPliegue();
+/* Botones flotantes: volver al menú (siempre), inicio y salir (solo en el sitio) */
+const irMenu = document.getElementById("irMenu");
+const enSitio = typeof opciones === "object" && !!opciones && !!opciones.sitio;
+document.getElementById("irInicio").hidden = !enSitio; document.getElementById("irSalir").hidden = !enSitio;
+const pintarFlotante = () => { irMenu.hidden = window.scrollY < 240; };
+on(window, "scroll", pintarFlotante); pintarFlotante();
+on(irMenu, "click", () => { if (plegado) alternarPliegue(); window.scrollTo({ top: 0, behavior: "smooth" }); });
 on(window, "resize", () => { clearTimeout(resizeT); resizeT = setTimeout(renderCharts, 150); });
 renderMesButtons(); renderSelects(); renderTabs(); render(); renderPerfil();
 

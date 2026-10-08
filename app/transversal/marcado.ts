@@ -199,4 +199,9 @@ export const MARCADO = `<div class="wrap">
   </div>
 </div>
 
+<nav class="flotante" id="flotante" aria-label="Atajos">
+  <button type="button" class="fl-btn" id="irMenu" hidden title="Volver al inicio y al menú de sucursales">↑ Menú</button>
+  <a class="fl-btn" id="irInicio" href="/" hidden title="Ir a la lista de reportes">⌂ Inicio</a>
+  <a class="fl-btn fl-salir" id="irSalir" href="/salir" hidden title="Cerrar sesión">Salir</a>
+</nav>
 <div class="tip" id="tip" hidden></div>`;
