@@ -39,10 +39,11 @@ const DIMS: Record<string, { sql: string; fixed?: boolean }> = {
   grupo_edad: { sql: EDAD_SQL },
   es_leading: { sql: "IF(es_leading=1,'LeadING','No LeadING')", fixed: true },
   ole: { sql: "IF(STARTS_WITH(LOWER(TRIM(IFNULL(campaign,''))),'paid'),'Con campaña','OLE')", fixed: true }, // OLE = lead orgánico: sin campaña pagada (sin parámetros)
+  internacional: { sql: "IF(LOWER(TRIM(IFNULL(internacional,'')))='internacional','Internacional','Nacional')", fixed: true }, // columna de leads_historico: teléfono fuera de +52 o vive fuera; vacío = Nacional
   canal: { sql: CANAL_SQL },
   mes: { sql: "FORMAT_DATE('%Y-%m', fecha)" },
 };
-const FILTER_DIMS = ["campaign", "medium", "landing", "region", "anuncio", "mensaje", "tipo_de_paciente", "perfil", "score", "user_persona", "grupo_edad", "es_leading", "ole"];
+const FILTER_DIMS = ["campaign", "medium", "landing", "region", "anuncio", "mensaje", "tipo_de_paciente", "perfil", "score", "user_persona", "grupo_edad", "es_leading", "ole", "internacional"];
 const DESG_DIMS = ["campaign", "medium", "landing", "region", "anuncio", "mensaje", "sucursal_real", "canal", "mes"];
 const PERFIL_DIMS = ["tipo_de_paciente", "perfil", "score", "user_persona", "es_leading", "grupo_edad"];
 const CANALES = ["pagado", "todos", "meta", "google", "otros"];
@@ -94,7 +95,7 @@ WHERE ${whereSql(e, false)}
 GROUP BY 1,2,3,4`;
 
 /* Registros: misma lógica de filtros sobre registros_historico (sin perfil ni LeadING; sucursal = la elegida). */
-const REG_SKIP: Record<string, 1> = { perfil: 1, es_leading: 1 };
+const REG_SKIP: Record<string, 1> = { perfil: 1, es_leading: 1, internacional: 1 };
 function regWhereSql(e: Estado) {
   const w = [`Fecha BETWEEN '${e.desde}' AND '${e.hasta}'`];
   const si = sucsIn(e, SUC_NORM_SQL("sucursal")); if (si) w.push(si);
