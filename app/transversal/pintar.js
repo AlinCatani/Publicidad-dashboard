@@ -171,11 +171,11 @@ function renderTabs() {
   const order = { mx: 0, us: 1, tur: 2 };
   list.sort((a, b) => order[sucInfo(a.v)[1]] - order[sucInfo(b.v)[1]] || (b.n || 0) - (a.n || 0));
   let lastG = null;
-  host.innerHTML = list.map(o => { const [ab, g] = sucInfo(o.v); const head = g !== lastG ? `<div class="tgroup">${{ mx: "México", us: "Estados Unidos", tur: "Turismo médico" }[g]}</div>` : ""; lastG = g;
-    return head + `<button type="button" class="tab g-${g}" data-v="${esc(o.v)}" aria-pressed="${String(state.sucs.includes(o.v))}" title="${esc(sucName(o.v))}${o.n ? ` · ${nf.format(o.n)} leads` : ""}"><b>${ab}</b><span>${esc(sucName(o.v))}</span></button>`; }).join("") +
-    `<div class="tgroup"></div><div class="tab-all"><button type="button" class="tab g-all" data-all="1" aria-pressed="${String(state.sucs.length === 0)}" title="Quitar el filtro de sucursal"><b>Todas</b></button><button type="button" class="tab g-all" data-none="1" aria-pressed="false" title="Desmarcar todas"><b>Ninguna</b></button></div>`;
+  host.innerHTML = `<button type="button" class="tab g-all" data-all="1" aria-pressed="${String(state.sucs.length === 0)}" title="Todas las sucursales (sin filtro)"><b>ALL</b></button>` +
+    list.map(o => { const [ab, g] = sucInfo(o.v); const head = g !== lastG ? `<div class="tgroup">${{ mx: "México", us: "Estados Unidos", tur: "Turismo médico" }[g]}</div>` : ""; lastG = g;
+    return head + `<button type="button" class="tab g-${g}" data-v="${esc(o.v)}" aria-pressed="${String(state.sucs.includes(o.v))}" title="${esc(sucName(o.v))}${o.n ? ` · ${nf.format(o.n)} leads` : ""}"><b>${ab}</b></button>`; }).join("");
   host.querySelectorAll(".tab").forEach(b => b.addEventListener("click", () => {
-    if (b.dataset.all || b.dataset.none) state.sucs = [];
+    if (b.dataset.all) state.sucs = [];
     else { const v = b.dataset.v, i = state.sucs.indexOf(v); if (i >= 0) state.sucs.splice(i, 1); else state.sucs.push(v); }
     save(); paintFilters(); renderTabs(); refresh(false);
   }));
