@@ -196,7 +196,9 @@ tr.total td { font-weight: 700; color: var(--primary); border-top: 1px solid var
 .tab:hover { background: var(--soft); } .tab[aria-pressed="true"]:hover { filter: brightness(1.05); }
 .tab:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
 /* Filtros congelados al hacer scroll */
-.sticky-filters { position: sticky; top: 0; z-index: 6; padding: 12px 16px 12px; }
+.sticky-filters { position: sticky; top: 0; z-index: 6; padding: 12px 16px 12px; background: #e6eef9; border-color: #bfcde8; box-shadow: 0 6px 16px rgba(37,63,120,.12); }
+.sticky-filters .seg { background: #ffffff; border-color: #bfcde8; }
+.sticky-filters .sel select { border-color: #bfcde8; }
 .sticky-filters .selects { margin-top: 8px; gap: 6px 10px; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); }
 .sticky-filters .sel span { font-size: 10.5px; }
 .sticky-filters .sel select { font-size: 12.5px; padding: 4px 8px; }
