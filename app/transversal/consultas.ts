@@ -38,10 +38,11 @@ const DIMS: Record<string, { sql: string; fixed?: boolean }> = {
   user_persona: { sql: "IFNULL(user_persona,'')" },
   grupo_edad: { sql: EDAD_SQL },
   es_leading: { sql: "IF(es_leading=1,'LeadING','No LeadING')", fixed: true },
+  ole: { sql: "IF(STARTS_WITH(LOWER(TRIM(IFNULL(campaign,''))),'paid'),'Con campaña','OLE')", fixed: true }, // OLE = lead orgánico: sin campaña pagada (sin parámetros)
   canal: { sql: CANAL_SQL },
   mes: { sql: "FORMAT_DATE('%Y-%m', fecha)" },
 };
-const FILTER_DIMS = ["campaign", "medium", "landing", "region", "anuncio", "mensaje", "tipo_de_paciente", "perfil", "score", "user_persona", "grupo_edad", "es_leading"];
+const FILTER_DIMS = ["campaign", "medium", "landing", "region", "anuncio", "mensaje", "tipo_de_paciente", "perfil", "score", "user_persona", "grupo_edad", "es_leading", "ole"];
 const DESG_DIMS = ["campaign", "medium", "landing", "region", "anuncio", "mensaje", "sucursal_real", "canal", "mes"];
 const PERFIL_DIMS = ["tipo_de_paciente", "perfil", "score", "user_persona", "es_leading", "grupo_edad"];
 const CANALES = ["pagado", "todos", "meta", "google", "otros"];
