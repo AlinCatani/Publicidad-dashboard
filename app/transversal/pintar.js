@@ -200,6 +200,12 @@ function renderSelects() {
   el("selects2").innerHTML = FILTER_ROW2.map(selectHtml).join("");
   document.querySelectorAll("#selects1 .sel-btn, #selects2 .sel-btn").forEach(b => b.addEventListener("click", () => abrirSel(b.parentElement)));
 }
+on(el("filterNote"), "click", e => {
+  const b = e.target.closest(".chip"); if (!b) return;
+  if (b.dataset.all) FILTER_DIMS.forEach(k => state.f[k] = []);
+  else { const cur = state.f[b.dataset.k], i = cur.indexOf(b.dataset.v); if (i >= 0) cur.splice(i, 1); }
+  save(); renderSelects(); paintFilters(); renderTabs(); refresh(false);
+});
 on(document, "click", e => { if (selAbierto && !selAbierto.contains(e.target)) cerrarSel(); });
 on(document, "keydown", e => { if (e.key === "Escape") cerrarSel(); });
 
@@ -228,8 +234,11 @@ function paintFilters() {
   periodBtn.textContent = `${fmtDate(state.desde)} – ${fmtDate(state.hasta)} ▾`;
   el("eyebrow").textContent = `Marketing · ${sucsLabel()}`;
   pintarPliegue();
-  const active = FILTER_DIMS.filter(k => state.f[k].length).map(k => `${DIMS[k].label}: ${state.f[k].map(selLabel).join(", ")}`);
-  el("filterNote").textContent = active.length ? "Filtros activos: " + active.join(" · ") + "." : "Sin filtros: se muestran todas las sucursales, campañas y perfiles.";
+  const chips = [];
+  FILTER_DIMS.forEach(k => state.f[k].forEach(v => chips.push(`<button type="button" class="chip" data-k="${k}" data-v="${esc(v)}" title="Quitar este filtro">${DIMS[k].label}: <b>${esc(selLabel(v))}</b><i>×</i></button>`)));
+  el("filterNote").innerHTML = chips.length
+    ? `<span class="chips-lbl">Filtros activos:</span> ${chips.join("")}${chips.length > 1 ? `<button type="button" class="chip chip-all" data-all="1" title="Quitar todos los filtros">Quitar todos</button>` : ""}`
+    : "Sin filtros: se muestran todas las sucursales, campañas y perfiles.";
 }
 
 /* ===== KPIs ===== */
@@ -605,7 +614,8 @@ pintarPliegue();
 /* Botones flotantes: volver al menú (siempre), inicio y salir (solo en el sitio) */
 const irMenu = el("irMenu");
 const enSitio = typeof opciones === "object" && !!opciones && !!opciones.sitio;
-el("irInicio").hidden = !enSitio; el("irSalir").hidden = !enSitio;
+/* En el artefacto, Inicio y Salir se ven como vista previa (Alin, 2026-10-08) pero no hacen nada: no hay sesión ni lista de reportes. */
+[el("irInicio"), el("irSalir")].forEach(a => { a.hidden = false; if (!enSitio) { a.setAttribute("href", "#"); a.title = "Solo funciona en el sitio publicado"; a.classList.add("fl-preview"); on(a, "click", e => e.preventDefault()); } });
 const pintarFlotante = () => { irMenu.hidden = window.scrollY < 240; };
 on(window, "scroll", pintarFlotante); pintarFlotante();
 on(irMenu, "click", () => { if (plegado) alternarPliegue(); window.scrollTo({ top: 0, behavior: "smooth" }); });

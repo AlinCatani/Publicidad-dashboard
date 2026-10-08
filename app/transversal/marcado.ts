@@ -53,7 +53,7 @@ const PLANTILLA = `<div class="wrap">
         <span class="flabel" id="lbl-mes">Mes</span>
         <div class="seg" role="group" aria-labelledby="lbl-mes" id="fMes"></div>
       </div>
-      <p class="caveat" id="filterNote" style="margin:0;flex:1 1 200px;text-align:right"></p>
+      <p class="caveat chips" id="filterNote" style="margin:0;flex:1 1 200px"></p>
     </div>
     <div class="selects" id="selects1"></div>
     <div class="selects" id="selects2"></div>
@@ -202,8 +202,8 @@ const PLANTILLA = `<div class="wrap">
 
 <nav class="flotante" id="flotante" aria-label="Atajos">
   <button type="button" class="fl-btn" id="irMenu" hidden title="Volver al inicio y al menú de sucursales">↑ Menú</button>
-  <a class="fl-btn" id="irInicio" href="/" hidden title="Ir a la lista de reportes">⌂ Inicio</a>
-  <a class="fl-btn fl-salir" id="irSalir" href="/salir" hidden title="Cerrar sesión">Salir</a>
+  <a class="fl-btn" id="irInicio" href="/" title="Ir a la lista de reportes">⌂ Inicio</a>
+  <a class="fl-btn fl-salir" id="irSalir" href="/salir" title="Cerrar sesión">Salir</a>
 </nav>
 <div class="tip" id="tip" hidden></div>`;
 
