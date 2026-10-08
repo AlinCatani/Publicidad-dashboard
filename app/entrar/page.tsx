@@ -19,12 +19,14 @@ export default async function Entrar({ searchParams }: PageProps<"/entrar">) {
 
   return (
     <main className="entrar">
+      <header className="cabecera">
+        <img src="/ingenes-logo.webp" alt="Instituto Ingenes" />
+        <h1>Reportes de Atracción</h1>
+      </header>
       <section className="portada" aria-hidden="true">
         {HAY_PORTADA && <img src="/portada.webp" alt="" />}
       </section>
       <section className="panel">
-        <img src="/ingenes-logo.webp" alt="Instituto Ingenes" />
-        <h1>Reportes de Atracción</h1>
         {error && (
           <p className="aviso">
             {error === "AccessDenied" ? "Esa cuenta no es @ingenes.com." : "No se pudo iniciar sesión. Intenta de nuevo."}

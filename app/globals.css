@@ -20,19 +20,18 @@ h1, h2 { font-family: var(--font-serif); color: var(--primary); font-weight: 600
 .boton .g { width: 18px; height: 18px; background: #fff; border-radius: 50%; padding: 2px; flex: none; }
 .enlace { background: none; border: 0; color: var(--primary); font: inherit; cursor: pointer; text-decoration: underline; }
 
-/* ---- Entrar: foto completa arriba, acceso abajo ---- */
-.entrar { min-height: 100vh; display: flex; flex-direction: column; }
-.entrar .portada { background: radial-gradient(120% 90% at 20% 10%, #30508f 0%, var(--primary) 45%, #142650 100%); padding: 18px 20px 0; display: flex; justify-content: center; }
-.entrar .portada img { display: block; width: min(100%, 1180px); height: auto; max-height: 58vh; object-fit: contain; border-radius: 20px 20px 0 0; box-shadow: 0 -8px 30px rgba(0,0,0,.25); }
-.entrar .panel { flex: 1; display: flex; flex-direction: column; align-items: center; text-align: center; justify-content: center; gap: 12px; padding: 36px 24px 48px; background: var(--surface); }
-.entrar .panel img { width: 150px; height: auto; }
-.entrar .panel h1 { font-size: 38px; }
-.entrar .panel .sub { color: var(--ink-2); font-family: var(--font-serif); font-style: italic; font-size: 19px; margin-top: -6px; }
+/* ---- Entrar: logo y título arriba, la foto completa en medio, el acceso abajo ---- */
+.entrar { min-height: 100vh; display: flex; flex-direction: column; background: var(--surface); }
+.entrar .cabecera { display: flex; flex-direction: column; align-items: center; gap: 8px; padding: 28px 24px 18px; text-align: center; }
+.entrar .cabecera img { width: 150px; height: auto; }
+.entrar .cabecera h1 { font-size: 38px; }
+.entrar .portada { background: radial-gradient(120% 90% at 20% 10%, #30508f 0%, var(--primary) 45%, #142650 100%); padding: 18px 20px; display: flex; justify-content: center; }
+.entrar .portada img { display: block; width: min(100%, 1100px); height: auto; max-height: 52vh; object-fit: contain; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,.3); }
+.entrar .panel { flex: 1; display: flex; flex-direction: column; align-items: center; text-align: center; justify-content: center; gap: 12px; padding: 32px 24px 44px; }
 .entrar .panel .nota { color: var(--muted); font-size: 13px; }
 @media (max-width: 860px) {
-  .entrar .portada { padding: 12px 12px 0; }
-  .entrar .portada img { max-height: none; border-radius: 12px 12px 0 0; }
-  .entrar .panel h1 { font-size: 30px; }
+  .entrar .cabecera { padding: 20px 16px 12px; } .entrar .cabecera h1 { font-size: 30px; }
+  .entrar .portada { padding: 12px; } .entrar .portada img { max-height: none; border-radius: 12px; }
 }
 
 /* ---- Inicio: lista de tableros ---- */
