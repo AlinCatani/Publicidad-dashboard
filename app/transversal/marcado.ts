@@ -41,7 +41,7 @@ const PLANTILLA = `<div class="wrap">
   <section class="panel sticky-filters" aria-label="Filtros">
     <div class="filters">
       <div class="fgroup">
-        <span class="flabel" id="lbl-canal">Canal</span>
+        <span class="flabel" id="lbl-canal">Medio</span>
         <div class="seg" role="group" aria-labelledby="lbl-canal" id="fCanal">
           <button type="button" data-v="pagado">Meta + Google</button>
           <button type="button" data-v="meta" class="logo-btn" title="Solo Meta (Facebook e Instagram), con los demás filtros"><svg class="lg" viewBox="0 0 48 32" aria-hidden="true"><defs><linearGradient id="lgM" x1="0" x2="1"><stop offset="0" stop-color="#0064e0"/><stop offset="1" stop-color="#0082fb"/></linearGradient></defs><path fill="url(#lgM)" d="M12.3 4C6.4 4 1 11.3 1 19.5 1 25.3 3.9 28 7.8 28c2.9 0 5.3-1.6 8.1-6.3l3.2-5.6 3.4 5.9C25.5 27 28 28 31 28c5.1 0 9-3.7 9-9.5C40 10.4 34.7 4 29.7 4c-3.2 0-6 2-9.3 7.2L19 13.5l-1.3-2.2C14.9 6.6 13.6 4 12.3 4zm-.4 4.6c1 0 2.1 1.8 4.6 6.1L18 17l-2.8 4.9c-2 3.4-3.6 4.7-5.3 4.7-2.1 0-3.7-1.5-3.7-5.3 0-6.3 3.5-12.7 5.7-12.7zm18 0c2.4 0 5.9 5 5.9 11.1 0 3.1-1.5 4.6-3.7 4.6-1.9 0-3.3-1.3-5.6-5.2l-3-5.2 1.5-2.4c1.9-3.1 3.5-2.9 4.9-2.9z"/></svg>Meta</button>
@@ -63,7 +63,7 @@ const PLANTILLA = `<div class="wrap">
 
   <section class="panel" aria-labelledby="h-diario" data-sec="diario">
     <div class="phead">
-      <div><h2 id="h-diario">Evolución diaria</h2><p class="hint">Leads, citas agendadas y primeras visitas según la fecha de creación del lead, con los filtros, el canal y el mes elegidos.</p></div>
+      <div><h2 id="h-diario">Evolución diaria</h2><p class="hint">Leads, citas agendadas y primeras visitas según la fecha de creación del lead, con los filtros, el medio y el mes elegidos.</p></div>
       <div class="seg" role="group" aria-label="Granularidad" id="fGran"><button type="button" data-v="dia">Por día</button><button type="button" data-v="semana">Por semana</button></div>
     </div>
     <div class="trio" id="cDiario"></div>
@@ -84,7 +84,7 @@ const PLANTILLA = `<div class="wrap">
     <div class="phead">
       <div>
         <h2 id="h-funnel">Funnel por etapa</h2>
-        <p class="hint">Cada anillo muestra el total de la etapa y su reparto entre canales; su tamaño baja con el volumen (escala logarítmica). Pasa el cursor sobre un segmento para ver el detalle.</p>
+        <p class="hint">Cada anillo muestra el total de la etapa y su reparto entre medios; su tamaño baja con el volumen (escala logarítmica). Pasa el cursor sobre un segmento para ver el detalle.</p>
       </div>
       <div class="legend" id="legFunnel"></div>
     </div>
@@ -141,7 +141,7 @@ const PLANTILLA = `<div class="wrap">
 
   <section class="panel" aria-labelledby="h-reg" data-sec="reg">
     <div class="phead">
-      <div><h2 id="h-reg">Registros por mes</h2><p class="hint">Formularios apilados por canal. El tooltip muestra cuántos pasaron a lead.</p></div>
+      <div><h2 id="h-reg">Registros por mes</h2><p class="hint">Formularios apilados por medio. El tooltip muestra cuántos pasaron a lead.</p></div>
       <div class="legend" id="legReg"></div>
     </div>
     <div id="cReg"></div>
@@ -150,7 +150,7 @@ const PLANTILLA = `<div class="wrap">
 
   <section class="panel" aria-labelledby="h-cag" data-sec="cag">
     <div class="phead">
-      <div><h2 id="h-cag">Costo por cita agendada</h2><p class="hint">Inversión asignada ÷ citas agendadas, por mes y canal, en MXN.</p></div>
+      <div><h2 id="h-cag">Costo por cita agendada</h2><p class="hint">Inversión asignada ÷ citas agendadas, por mes y medio, en MXN.</p></div>
       <div class="legend" id="legCag"></div>
     </div>
     <div id="cCag"></div>
@@ -158,7 +158,7 @@ const PLANTILLA = `<div class="wrap">
 
   <section class="panel" aria-labelledby="h-cpvr" data-sec="cpvr">
     <div class="phead">
-      <div><h2 id="h-cpvr">Costo por primera visita</h2><p class="hint">Inversión asignada ÷ PVRs, por mes y canal, en MXN.</p></div>
+      <div><h2 id="h-cpvr">Costo por primera visita</h2><p class="hint">Inversión asignada ÷ PVRs, por mes y medio, en MXN.</p></div>
       <div class="legend" id="legCpvr"></div>
     </div>
     <div id="cCpvr"></div>
@@ -177,7 +177,7 @@ const PLANTILLA = `<div class="wrap">
 
   <section class="panel" aria-labelledby="h-mes" data-sec="mes">
     <div class="phead">
-      <div><h2 id="h-mes">Por mes</h2><p class="hint">Leads por mes apilados por canal; la tabla trae costos y conversiones de cada cohorte.</p></div>
+      <div><h2 id="h-mes">Por mes</h2><p class="hint">Leads por mes apilados por medio; la tabla trae costos y conversiones de cada cohorte.</p></div>
       <div class="legend" id="legMes"></div>
     </div>
     <div id="cMes"></div>
@@ -190,8 +190,8 @@ const PLANTILLA = `<div class="wrap">
     <div><h3>Sucursal real</h3><p id="noteSucursal">La sucursal es la de la visita cuando la hubo (<code>BIP.nom_suc</code>); si no, la que eligió el lead al registrarse. La cita no aporta sucursal.</p></div>
     <div><h3>TAL%</h3><p>Tasa de asistencia de leads: primeras visitas ÷ leads del periodo. Es la conversión completa de lead a PVR.</p></div>
     <div><h3>Cohorte</h3><p>El periodo filtra por fecha de <b>creación</b> del lead; sus citas agendadas y visitas se cuentan aunque ocurran después. Los últimos meses siguen madurando y sus tasas subirán.</p></div>
-    <div><h3>Paciente</h3><p><b>OLE</b> = lead orgánico: llegó sin campaña pagada (sin parámetros <code>paid…</code>), de cualquier medio; para verlos, pon el canal en «Todos los medios». <b>Nacional / Internacional</b>: Internacional = el lead vive fuera de México o su teléfono no empieza con +52 (también quien vive en México con número extranjero); viene de la columna <code>internacional</code> de leads, que coincide con esa regla del teléfono; sin dato cuenta como nacional. No aplica a registros porque el formulario no guarda teléfono. <b>LeadING</b> (Lead Ingenes) = edad mayor de 30 y sin hijos (misma regla que <code>costo_por_lead</code>). <b>Grupo de edad</b> = quinquenios sobre la edad declarada (25–29, 30–34…). Perfil (Azul/Verde), tipo de paciente (LS/LP), score y user persona vienen tal cual del formulario.</p></div>
-    <div><h3>Canales</h3><p>Meta: facebook, instagram, socialmedia. Google: google_search, pmax, dgen, google, youtube, display. «Todos los medios» agrega web, orgánico y lo que no trae medio.</p></div>
+    <div><h3>Paciente</h3><p><b>OLE</b> = lead orgánico: llegó sin campaña pagada (sin parámetros <code>paid…</code>), de cualquier medio; para verlos, pon el medio en «Todos los medios». <b>Nacional / Internacional</b>: Internacional = el lead vive fuera de México o su teléfono no empieza con +52 (también quien vive en México con número extranjero); viene de la columna <code>internacional</code> de leads, que coincide con esa regla del teléfono; sin dato cuenta como nacional. No aplica a registros porque el formulario no guarda teléfono. <b>LeadING</b> (Lead Ingenes) = edad mayor de 30 y sin hijos (misma regla que <code>costo_por_lead</code>). <b>Grupo de edad</b> = quinquenios sobre la edad declarada (25–29, 30–34…). Perfil (Azul/Verde), tipo de paciente (LS/LP), score y user persona vienen tal cual del formulario.</p></div>
+    <div><h3>Medios</h3><p>Meta: facebook, instagram, socialmedia. Google: google_search, pmax, dgen, google, youtube, display. «Todos los medios» agrega web, orgánico y lo que no trae medio.</p></div>
     <div><h3>Límites del dato</h3><p id="noteLimites">Enero y febrero de 2026 no tienen correo en los leads, así que no cruzan con cita ni visita: por eso el reporte empieza en marzo. El gasto llega hasta la última carga de <code>inversion_diaria</code>. Los leads con <code>posible_duplicado</code> se cuentan.</p></div>
     <div><h3>Registros</h3><p>De <code>registros_historico</code> (formularios enviados). No trae correo, perfil Azul/Verde ni teléfono, así que no se cruza con citas agendadas y los filtros de perfil, LeadING y Nacional / Internacional no le aplican; la sucursal es la que eligió la persona.</p></div>
     <div><h3>Origen y campaña local</h3><p>Origen: «local» = campaña pagada cuya región coincide con la sucursal elegida; «nacional» = región nacional; «otras» = otras regiones; «sin campaña» = sin UTM de pago. La campaña local se mide en Meta; «% leads de la sucursal» = leads de la campaña local que son de esta sucursal ÷ todos los leads que genera esa campaña.</p></div>

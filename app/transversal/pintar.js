@@ -27,11 +27,11 @@ const byId = id => document.getElementById(id) || document.createElement("div");
 const hay = sec => !!document.querySelector(`[data-sec="${sec}"]`);
 const VACIO = "__vacio__"; // valor del select para «(vacío)»: distinto de "" (= Todas)
 const DIMS = {
-  sucursal_real: { label: "Sucursal" }, campaign: { label: "Campaña" }, medium: { label: "Medio" }, landing: { label: "Landing", top: 300 },
+  sucursal_real: { label: "Sucursal" }, campaign: { label: "Campaña" }, medium: { label: "Medio (UTM)" }, landing: { label: "Landing", top: 300 },
   region: { label: "Región" }, anuncio: { label: "Anuncio", top: 300 }, mensaje: { label: "Mensaje" },
   tipo_de_paciente: { label: "Tipo de paciente" }, perfil: { label: "Perfil" }, score: { label: "Score" }, user_persona: { label: "User persona" },
   grupo_edad: { label: "Grupo de edad", sortKey: true }, es_leading: { label: "LeadING", fixed: ["LeadING", "No LeadING"] }, ole: { label: "OLE", fixed: ["OLE", "Con campaña"] }, internacional: { label: "Nacional / Internacional", fixed: ["Nacional", "Internacional"] },
-  canal: { label: "Canal" }, mes: { label: "Mes" }
+  canal: { label: "Medio" }, mes: { label: "Mes" }
 };
 const FILTER_ROW1 = ["campaign", "medium", "landing", "region", "anuncio", "mensaje"];
 const FILTER_ROW2 = ["tipo_de_paciente", "perfil", "score", "user_persona", "grupo_edad", "es_leading", "ole", "internacional"];
