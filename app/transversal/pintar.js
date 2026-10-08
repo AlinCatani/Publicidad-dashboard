@@ -259,7 +259,7 @@ function renderKpis() {
     { k: "Primeras visitas", v: a.pvr, f: nf.format, prev: has && p.pvr, sub: `${pct(div(a.pvr, a.citas))} de citas agendadas` },
     { k: "Costo por PVR", v: div(a.inversion, a.pvr), f: money, prev: has && div(p.inversion, p.pvr), cost: true },
     { k: "TAL% · lead → PVR", v: div(a.pvr, a.leads), f: pct, prev: has && div(p.pvr, p.leads) },
-    { k: "OLE · leads orgánicos", v: ole().leads, f: nf.format, sub: `${nf.format(ole().citas)} citas agendadas · ${nf.format(ole().pvr)} PVR`, cls: "ole" }
+    { k: "OLE", v: ole().leads, f: nf.format, sub: `Leads NO pagados · ${nf.format(ole().citas)} citas agendadas · ${nf.format(ole().pvr)} PVR`, cls: "ole" }
   ];
   const prevName = pk ? new Date(pk + "-01T12:00:00").toLocaleDateString("es-MX", { month: "short" }).replace(".", "") : "";
   el("kpis").innerHTML = items.map(it => {
