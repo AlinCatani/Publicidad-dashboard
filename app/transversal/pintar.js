@@ -253,7 +253,7 @@ function renderAds() {
     { k: "Vistas de landing", v: t.conVisitas ? t.visitas : NaN, f: nf.format, sub: t.conVisitas ? `${pct(div(t.visitas, t.clics))} de clics · solo Meta` : "Solo Meta la reporta" },
     { k: "Registros", v: reg, f: nf.format, sub: t.clics ? `${pct(div(reg, t.clics))} de clics` : "" },
     { k: "Leads", v: a.leads, f: nf.format, sub: reg ? `${pct(div(a.leads, reg))} de registros` : "" },
-    { k: "Costo por lead", v: div(t.inversion, a.leads), f: money, sub: "inversión real ÷ leads" }
+    { k: "Costo por lead (inversión total)", v: div(t.inversion, a.leads), f: money, sub: state.sucs.length ? "toda la inversión de estos anuncios ÷ leads de la sucursal elegida; el CPL de abajo usa solo la parte asignada a esos leads" : "inversión total ÷ leads; el CPL de abajo usa la inversión asignada" }
   ];
   byId("kpisAds").innerHTML = items.map(it => `<div class="kpi"><span class="k">${it.k}</span><span class="v">${AROWS.length && isFinite(it.v) ? it.f(it.v) : "—"}</span><span class="d">${it.sub || ""}</span></div>`).join("");
 }
