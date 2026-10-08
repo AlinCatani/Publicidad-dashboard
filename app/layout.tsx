@@ -7,7 +7,7 @@ const serif = Cormorant_Garamond({ subsets: ["latin"], weight: ["500", "600", "7
 const sans = Quattrocento_Sans({ subsets: ["latin"], weight: ["400", "700"], style: ["normal", "italic"], variable: "--f-sans" });
 
 export const metadata: Metadata = {
-  title: "Tableros Ingenes",
+  title: "Reportes de Atracción",
   description: "Tableros de publicidad de Ingenes. Solo correos @ingenes.com.",
   robots: { index: false, follow: false },
   // Favicon en .webp (pedido por Alin, 2026-10-07); iOS no lo acepta, por eso el PNG para apple-icon.

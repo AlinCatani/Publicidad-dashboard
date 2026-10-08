@@ -11,7 +11,7 @@ export default async function Inicio() {
       <header className="barra">
         <div style={{ display: "flex", alignItems: "center", gap: 18 }}>
           <img src="/ingenes-logo.webp" alt="Instituto Ingenes" />
-          <h1>Tableros Ingenes</h1>
+          <h1>Reportes de Atracción</h1>
         </div>
         <form
           action={async () => {
