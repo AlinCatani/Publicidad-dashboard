@@ -86,6 +86,17 @@ const PLANTILLA = `<div class="wrap">
     <div class="tscroll"><table id="tPerfil"></table></div>
   </section>
 
+  <section class="panel" aria-labelledby="h-desg" data-sec="desg">
+    <div class="phead">
+      <div>
+        <h2 id="h-desg">Desglose por campaña</h2>
+        <p class="hint" id="desgHint">Elige por qué dimensión abrir los resultados. Los filtros de arriba aplican.</p>
+      </div>
+    </div>
+    <div class="seg" role="group" aria-label="Dimensión" id="fDim" style="margin-bottom:12px"></div>
+    <div class="tscroll"><table id="tDesg"></table></div>
+  </section>
+
   <section class="panel" aria-labelledby="h-funnel" data-sec="funnel">
     <div class="phead">
       <div>
@@ -168,17 +179,6 @@ const PLANTILLA = `<div class="wrap">
       <div class="legend" id="legCpvr"></div>
     </div>
     <div id="cCpvr"></div>
-  </section>
-
-  <section class="panel" aria-labelledby="h-desg" data-sec="desg">
-    <div class="phead">
-      <div>
-        <h2 id="h-desg">Desglose por campaña</h2>
-        <p class="hint" id="desgHint">Elige por qué dimensión abrir los resultados. Los filtros de arriba aplican.</p>
-      </div>
-    </div>
-    <div class="seg" role="group" aria-label="Dimensión" id="fDim" style="margin-bottom:12px"></div>
-    <div class="tscroll"><table id="tDesg"></table></div>
   </section>
 
   <section class="panel" aria-labelledby="h-mes" data-sec="mes">
