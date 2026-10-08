@@ -501,7 +501,7 @@ function renderCanal() {
     if (better === "high") { bm = vm > vg ? "better" : ""; bg = vg > vm ? "better" : ""; }
     return `<tr${better ? ' class="rate"' : ""}><td>${label}</td><td class="${bm}">${f(vm)}</td><td class="${bg}">${f(vg)}</td><td>${f(fn(t, rt))}</td></tr>`; }).join("");
   byId("tCanal").innerHTML = `<thead><tr><th>Métrica</th><th><span class="dot meta"></span>Meta</th><th><span class="dot google"></span>Google</th><th>Total pagado</th></tr></thead><tbody>${body}</tbody>`;
-  byId("canalHint").textContent = `Siempre muestra ambos canales con los demás filtros; ● marca el mejor en tasas y costos.`;
+  byId("canalHint").textContent = `Siempre muestra ambos medios con los demás filtros; ● marca el mejor en tasas y costos.`;
 }
 
 /* ===== Por mes ===== */
