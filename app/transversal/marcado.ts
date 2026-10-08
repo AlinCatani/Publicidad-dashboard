@@ -1,6 +1,7 @@
 // Marcado del Reporte Transversal+Ole, portado de la v14 del artefacto (2026-10-06).
 // Solo estructura y textos: ningún número ni consulta.
-export const MARCADO = `<div class="wrap">
+// Cada <section data-sec="…"> es una pieza; armarMarcado() arma un reporte con las que se pidan.
+const PLANTILLA = `<div class="wrap">
   <aside class="side">
     <button type="button" class="side-toggle" id="sideToggle" aria-expanded="true" aria-controls="tabsSuc" title="Plegar el menú de sucursales"><span aria-hidden="true">‹</span><span class="st-label">Plegar menú</span></button>
     <img class="logo" src="/ingenes-logo.webp" alt="Instituto Ingenes">
@@ -58,9 +59,9 @@ export const MARCADO = `<div class="wrap">
     <div class="selects" id="selects2"></div>
   </section>
 
-  <section class="kpis" id="kpis" aria-label="Indicadores principales"></section>
+  <section class="kpis" id="kpis" data-sec="kpis" aria-label="Indicadores principales"></section>
 
-  <section class="panel" aria-labelledby="h-diario">
+  <section class="panel" aria-labelledby="h-diario" data-sec="diario">
     <div class="phead">
       <div><h2 id="h-diario">Evolución diaria</h2><p class="hint">Leads, citas agendadas y primeras visitas según la fecha de creación del lead, con los filtros, el canal y el mes elegidos.</p></div>
       <div class="seg" role="group" aria-label="Granularidad" id="fGran"><button type="button" data-v="dia">Por día</button><button type="button" data-v="semana">Por semana</button></div>
@@ -68,7 +69,7 @@ export const MARCADO = `<div class="wrap">
     <div class="trio" id="cDiario"></div>
   </section>
 
-  <section class="panel" aria-labelledby="h-perfil">
+  <section class="panel" aria-labelledby="h-perfil" data-sec="perfil">
     <div class="phead">
       <div>
         <h2 id="h-perfil">Costo por resultado según el paciente</h2>
@@ -79,7 +80,7 @@ export const MARCADO = `<div class="wrap">
     <div class="tscroll"><table id="tPerfil"></table></div>
   </section>
 
-  <section class="panel" aria-labelledby="h-funnel">
+  <section class="panel" aria-labelledby="h-funnel" data-sec="funnel">
     <div class="phead">
       <div>
         <h2 id="h-funnel">Funnel por etapa</h2>
@@ -90,7 +91,7 @@ export const MARCADO = `<div class="wrap">
     <div id="funnel"></div>
   </section>
 
-  <section class="panel" aria-labelledby="h-origen">
+  <section class="panel" aria-labelledby="h-origen" data-sec="origen">
     <div class="phead">
       <div>
         <h2 id="h-origen">De qué campañas llegan los leads</h2>
@@ -101,7 +102,7 @@ export const MARCADO = `<div class="wrap">
     <p class="caveat" id="origenNote"></p>
   </section>
 
-  <section class="panel" aria-labelledby="h-local" id="secLocal" hidden>
+  <section class="panel" aria-labelledby="h-local" data-sec="local" id="secLocal" hidden>
     <div class="phead">
       <div>
         <h2 id="h-local">Campaña local: ADV vs OPEN</h2>
@@ -112,7 +113,7 @@ export const MARCADO = `<div class="wrap">
     <p class="caveat" id="localNote"></p>
   </section>
 
-  <section class="panel" aria-labelledby="h-wk" id="secWk" hidden>
+  <section class="panel" aria-labelledby="h-wk" data-sec="wk" id="secWk" hidden>
     <div class="phead">
       <div>
         <h2 id="h-wk">Comportamiento semanal de la campaña local</h2>
@@ -131,7 +132,7 @@ export const MARCADO = `<div class="wrap">
     <p class="caveat" id="wkNote"></p>
   </section>
 
-  <section class="panel" aria-labelledby="h-reg">
+  <section class="panel" aria-labelledby="h-reg" data-sec="reg">
     <div class="phead">
       <div><h2 id="h-reg">Registros por mes</h2><p class="hint">Formularios apilados por canal. El tooltip muestra cuántos pasaron a lead.</p></div>
       <div class="legend" id="legReg"></div>
@@ -140,7 +141,7 @@ export const MARCADO = `<div class="wrap">
     <p class="caveat" id="regNote"></p>
   </section>
 
-  <section class="panel" aria-labelledby="h-cag">
+  <section class="panel" aria-labelledby="h-cag" data-sec="cag">
     <div class="phead">
       <div><h2 id="h-cag">Costo por cita agendada</h2><p class="hint">Inversión asignada ÷ citas agendadas, por mes y canal, en MXN.</p></div>
       <div class="legend" id="legCag"></div>
@@ -148,7 +149,7 @@ export const MARCADO = `<div class="wrap">
     <div id="cCag"></div>
   </section>
 
-  <section class="panel" aria-labelledby="h-cpvr">
+  <section class="panel" aria-labelledby="h-cpvr" data-sec="cpvr">
     <div class="phead">
       <div><h2 id="h-cpvr">Costo por primera visita</h2><p class="hint">Inversión asignada ÷ PVRs, por mes y canal, en MXN.</p></div>
       <div class="legend" id="legCpvr"></div>
@@ -156,14 +157,14 @@ export const MARCADO = `<div class="wrap">
     <div id="cCpvr"></div>
   </section>
 
-  <section class="panel" aria-labelledby="h-canal">
+  <section class="panel" aria-labelledby="h-canal" data-sec="canal">
     <div class="phead">
       <div><h2 id="h-canal">Meta vs Google</h2><p class="hint" id="canalHint"></p></div>
     </div>
     <div class="tscroll"><table id="tCanal"></table></div>
   </section>
 
-  <section class="panel" aria-labelledby="h-desg">
+  <section class="panel" aria-labelledby="h-desg" data-sec="desg">
     <div class="phead">
       <div>
         <h2 id="h-desg">Desglose por campaña</h2>
@@ -174,7 +175,7 @@ export const MARCADO = `<div class="wrap">
     <div class="tscroll"><table id="tDesg"></table></div>
   </section>
 
-  <section class="panel" aria-labelledby="h-mes">
+  <section class="panel" aria-labelledby="h-mes" data-sec="mes">
     <div class="phead">
       <div><h2 id="h-mes">Por mes</h2><p class="hint">Leads por mes apilados por canal; la tabla trae costos y conversiones de cada cohorte.</p></div>
       <div class="legend" id="legMes"></div>
@@ -183,7 +184,7 @@ export const MARCADO = `<div class="wrap">
     <div class="tscroll" style="margin-top:14px"><table id="tMes"></table></div>
   </section>
 
-  <section class="panel notes" aria-label="Cómo se calculó" id="notes">
+  <section class="panel notes" aria-label="Cómo se calculó" id="notes" data-sec="notes">
     <div><h3>Fuente</h3><p>BigQuery, proyecto <code>gtm-pvkx9p9-ndk3z</code>, vista <code>looker_dashboard.claude_reporte_transversal</code>: una fila por lead, <b>sin nombre, correo ni teléfono</b>. Se consulta en vivo con los filtros elegidos; no hay cortes guardados en esta página.</p></div>
     <div><h3>Qué hay detrás de la vista</h3><p>Leads de <code>leads_historico</code> (Airtable). Citas agendadas de <code>BIC</code> y primeras visitas de <code>BIP</code> (clínica), cruzadas con el lead por correo normalizado, dentro de BigQuery; una cita y una visita por correo, la más reciente. Inversión de <code>inversion_diaria</code>: el gasto de cada día y combinación de campaña, medio, landing, anuncio, mensaje y región se reparte entre los leads de esa misma combinación (inversión asignada). USD × 18.</p></div>
     <div><h3>Sucursal real</h3><p id="noteSucursal">La sucursal es la de la visita cuando la hubo (<code>BIP.nom_suc</code>); si no, la que eligió el lead al registrarse. La cita no aporta sucursal.</p></div>
@@ -205,3 +206,17 @@ export const MARCADO = `<div class="wrap">
   <a class="fl-btn fl-salir" id="irSalir" href="/salir" hidden title="Cerrar sesión">Salir</a>
 </nav>
 <div class="tip" id="tip" hidden></div>`;
+
+export const SECCIONES = ["kpis", "diario", "perfil", "funnel", "origen", "local", "wk", "reg", "cag", "cpvr", "canal", "desg", "mes", "notes"];
+
+/* Arma el marcado de un reporte: mismo cascarón (menú, cabecera, filtros, botones) con las secciones elegidas. */
+export function armarMarcado(o: { titulo: string; sub: string; secciones: string[] }) {
+  const html = PLANTILLA.replace(/<section\b[^>]*data-sec="(\w+)"[\s\S]*?<\/section>\n?/g, (bloque, sec) => (o.secciones.includes(sec) ? bloque : ""));
+  return html.replace("<h1>Reporte transversal</h1>", `<h1>${o.titulo}</h1>`).replace('<p class="sub">Desde las impresiones hasta las primeras visitas</p>', `<p class="sub">${o.sub}</p>`);
+}
+
+/* Reporte Transversal+Ole: todo menos «Meta vs Google», que desde el 2026-10-08 vive en Análisis de campañas. */
+export const MARCADO = armarMarcado({ titulo: "Reporte transversal", sub: "Desde las impresiones hasta las primeras visitas", secciones: SECCIONES.filter((s) => s !== "canal") });
+
+/* Análisis de campañas: nace con los indicadores y la comparación Meta vs Google; crece con lo que pida Alin. */
+export const MARCADO_CAMPANAS = armarMarcado({ titulo: "Análisis de campañas", sub: "Meta vs Google con los mismos filtros del transversal", secciones: ["kpis", "canal", "notes"] });

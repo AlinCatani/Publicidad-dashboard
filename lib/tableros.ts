@@ -13,4 +13,9 @@ export const TABLEROS: Tablero[] = [
     nombre: "Reporte Transversal+Ole",
     descripcion: "De las impresiones a las primeras visitas, por sucursal real, campaña y perfil del paciente. Abre en Monterrey.",
   },
+  {
+    ruta: "/campanas",
+    nombre: "Análisis de campañas",
+    descripcion: "Meta vs Google, etapa por etapa, con los mismos filtros del transversal.",
+  },
 ];

@@ -22,6 +22,9 @@ const ORIGENES = [
   { k: "sin_campana", name: "Sin campaña pagada", sub: "orgánico o sin UTM" }
 ];
 /* Dimensiones: filtro (select), desglose por campaña (tabla) y desglose por paciente (tabla). */
+/* Un reporte puede no traer todas las secciones (armarMarcado): lo que no está se pinta en un nodo suelto y no pasa nada. */
+const el = id => document.getElementById(id) || document.createElement("div");
+const hay = sec => !!document.querySelector(`[data-sec="${sec}"]`);
 const VACIO = "__vacio__"; // valor del select para «(vacío)»: distinto de "" (= Todas)
 const DIMS = {
   sucursal_real: { label: "Sucursal" }, campaign: { label: "Campaña" }, medium: { label: "Medio" }, landing: { label: "Landing", top: 300 },
@@ -108,8 +111,8 @@ const parseRows = rows => rows.map(r => ({ mes: r.mes == null ? "" : String(r.me
   leads: +r.leads || 0, citas: +r.citas || 0, pvr: +r.pvr || 0, cambio: +r.cambio || 0, inversion: +r.inversion || 0 }));
 
 /* ===== Periodo ===== */
-const periodBtn = document.getElementById("periodBtn"), periodPop = document.getElementById("periodPop");
-const dDesde = document.getElementById("dDesde"), dHasta = document.getElementById("dHasta");
+const periodBtn = el("periodBtn"), periodPop = el("periodPop");
+const dDesde = el("dDesde"), dHasta = el("dHasta");
 dDesde.min = MIN_DATE; dHasta.min = MIN_DATE; dDesde.max = today; dHasta.max = today;
 function openPop(open) { periodPop.hidden = !open; periodBtn.setAttribute("aria-expanded", String(open)); if (open) { dDesde.value = state.desde; dHasta.value = state.hasta; dDesde.focus(); } }
 periodBtn.addEventListener("click", () => openPop(periodPop.hidden));
@@ -121,13 +124,13 @@ function applyPeriod(desde, hasta) {
   if (hasta < desde) [desde, hasta] = [hasta, desde];
   state.desde = desde; state.hasta = hasta; save(); openPop(false); renderMesButtons(); paintFilters(); refresh(false);
 }
-document.getElementById("pApply").addEventListener("click", () => { if (dDesde.value && dHasta.value) applyPeriod(dDesde.value, dHasta.value); });
-document.getElementById("pQuick1").addEventListener("click", () => applyPeriod(today.slice(0, 7) + "-01", today));
-document.getElementById("pQuick2").addEventListener("click", () => { const d = new Date(); d.setMonth(d.getMonth() - 2); applyPeriod(iso(d).slice(0, 7) + "-01", today); });
-document.getElementById("pQuick3").addEventListener("click", () => applyPeriod(MIN_DATE, today));
+el("pApply").addEventListener("click", () => { if (dDesde.value && dHasta.value) applyPeriod(dDesde.value, dHasta.value); });
+el("pQuick1").addEventListener("click", () => applyPeriod(today.slice(0, 7) + "-01", today));
+el("pQuick2").addEventListener("click", () => { const d = new Date(); d.setMonth(d.getMonth() - 2); applyPeriod(iso(d).slice(0, 7) + "-01", today); });
+el("pQuick3").addEventListener("click", () => applyPeriod(MIN_DATE, today));
 
 /* ===== Mes (filtro rápido dentro del periodo) ===== */
-const fMes = document.getElementById("fMes");
+const fMes = el("fMes");
 function renderMesButtons() {
   const ms = monthsSel();
   if (state.mes !== "todo" && !ms.some(m => m.key === state.mes)) state.mes = "todo";
@@ -136,11 +139,11 @@ function renderMesButtons() {
 fMes.addEventListener("click", e => { const b = e.target.closest("button"); if (!b) return; state.mes = b.dataset.v; save(); applyCanal(); render(); refreshPerfil(false); refreshDiario(false); });
 
 /* ===== Canal, desglose, perfil ===== */
-document.getElementById("fCanal").addEventListener("click", e => { const b = e.target.closest("button"); if (!b) return; state.canal = b.dataset.v; save(); applyCanal(); render(); refreshPerfil(false); refreshDiario(false); refreshReg(false); });
-const fDim = document.getElementById("fDim");
+el("fCanal").addEventListener("click", e => { const b = e.target.closest("button"); if (!b) return; state.canal = b.dataset.v; save(); applyCanal(); render(); refreshPerfil(false); refreshDiario(false); refreshReg(false); });
+const fDim = el("fDim");
 fDim.innerHTML = DESG_DIMS.map(k => `<button type="button" data-v="${k}">${DIMS[k].label}</button>`).join("");
 fDim.addEventListener("click", e => { const b = e.target.closest("button"); if (!b) return; state.dim = b.dataset.v; save(); paintFilters(); refresh(false); });
-const fPerfil = document.getElementById("fPerfil");
+const fPerfil = el("fPerfil");
 fPerfil.innerHTML = PERFIL_DIMS.map(k => `<button type="button" data-v="${k}">${DIMS[k].label}</button>`).join("");
 fPerfil.addEventListener("click", e => { const b = e.target.closest("button"); if (!b) return; state.pdim = b.dataset.v; save(); paintFilters(); refreshPerfil(false); refreshDiario(false); });
 
@@ -193,8 +196,8 @@ function abrirSel(host) {
 }
 function renderSelects() {
   cerrarSel();
-  document.getElementById("selects1").innerHTML = FILTER_ROW1.map(selectHtml).join("");
-  document.getElementById("selects2").innerHTML = FILTER_ROW2.map(selectHtml).join("");
+  el("selects1").innerHTML = FILTER_ROW1.map(selectHtml).join("");
+  el("selects2").innerHTML = FILTER_ROW2.map(selectHtml).join("");
   document.querySelectorAll("#selects1 .sel-btn, #selects2 .sel-btn").forEach(b => b.addEventListener("click", () => abrirSel(b.parentElement)));
 }
 on(document, "click", e => { if (selAbierto && !selAbierto.contains(e.target)) cerrarSel(); });
@@ -202,7 +205,7 @@ on(document, "keydown", e => { if (e.key === "Escape") cerrarSel(); });
 
 /* ===== Pestañas de sucursal ===== */
 function renderTabs() {
-  const host = document.getElementById("tabsSuc");
+  const host = el("tabsSuc");
   const list = ((OPTIONS && OPTIONS.sucursal_real) || Object.keys(SUC).map(v => ({ v, n: 0 }))).filter(o => o.v !== "");
   const order = { mx: 0, us: 1, tur: 2 };
   list.sort((a, b) => order[sucInfo(a.v)[1]] - order[sucInfo(b.v)[1]] || (b.n || 0) - (a.n || 0));
@@ -223,10 +226,10 @@ function paintFilters() {
   fDim.querySelectorAll("button").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.v === state.dim)));
   fPerfil.querySelectorAll("button").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.v === state.pdim)));
   periodBtn.textContent = `${fmtDate(state.desde)} – ${fmtDate(state.hasta)} ▾`;
-  document.getElementById("eyebrow").textContent = `Marketing · ${sucsLabel()}`;
+  el("eyebrow").textContent = `Marketing · ${sucsLabel()}`;
   pintarPliegue();
   const active = FILTER_DIMS.filter(k => state.f[k].length).map(k => `${DIMS[k].label}: ${state.f[k].map(selLabel).join(", ")}`);
-  document.getElementById("filterNote").textContent = active.length ? "Filtros activos: " + active.join(" · ") + "." : "Sin filtros: se muestran todas las sucursales, campañas y perfiles.";
+  el("filterNote").textContent = active.length ? "Filtros activos: " + active.join(" · ") + "." : "Sin filtros: se muestran todas las sucursales, campañas y perfiles.";
 }
 
 /* ===== KPIs ===== */
@@ -250,7 +253,7 @@ function renderKpis() {
     { k: "OLE · leads orgánicos", v: ole().leads, f: nf.format, sub: `${nf.format(ole().citas)} citas agendadas · ${nf.format(ole().pvr)} PVR`, cls: "ole" }
   ];
   const prevName = pk ? new Date(pk + "-01T12:00:00").toLocaleDateString("es-MX", { month: "short" }).replace(".", "") : "";
-  document.getElementById("kpis").innerHTML = items.map(it => {
+  el("kpis").innerHTML = items.map(it => {
     let d = it.sub || "", cls = "";
     if (it.prev && isFinite(it.prev) && isFinite(it.v)) {
       const ch = it.v / it.prev - 1, up = ch >= 0;
@@ -288,14 +291,14 @@ const dimName = (dim, k) => dim === "mes" ? monthName(k) : dim === "canal" ? (CH
 function renderDesglose() {
   const d = DIMS[state.dim];
   const t = resultTable(ROWS, d.label, k => dimName(state.dim, k));
-  document.getElementById("tDesg").innerHTML = t.html;
-  document.getElementById("desgHint").textContent = `${d.label}, ordenado por leads. ${t.n} valores${t.rest ? `; se muestran 30 y el resto se agrupa en «Otros»` : ""}.`;
+  el("tDesg").innerHTML = t.html;
+  el("desgHint").textContent = `${d.label}, ordenado por leads. ${t.n} valores${t.rest ? `; se muestran 30 y el resto se agrupa en «Otros»` : ""}.`;
 }
 function renderPerfil() {
   const d = DIMS[state.pdim];
   const t = resultTable(PROWS, d.label, k => dimName(state.pdim, k));
-  document.getElementById("tPerfil").innerHTML = t.html;
-  document.getElementById("perfilHint").textContent = `CPL, costo por cita agendada y costo por primera visita por ${d.label.toLowerCase()}. Los filtros de arriba aplican.`;
+  el("tPerfil").innerHTML = t.html;
+  el("perfilHint").textContent = `CPL, costo por cita agendada y costo por primera visita por ${d.label.toLowerCase()}. Los filtros de arriba aplican.`;
 }
 
 /* ===== Funnel ===== */
@@ -350,8 +353,8 @@ function renderFunnel() {
     prevM = st.m;
   });
   html += `</div><div class="overall">${regTotal() ? `<span>Registro → PVR <b>${pct(div(a.pvr, regTotal()))}</b></span>` : ""}<span>Lead → cita agendada <b>${pct(div(a.citas, a.leads))}</b></span><span>Cita agendada → PVR <b>${pct(div(a.pvr, a.citas))}</b></span><span>TAL% <b>${pct(div(a.pvr, a.leads))}</b></span><span>Inversión asignada <b>${money(a.inversion)}</b></span></div>`;
-  document.getElementById("funnel").innerHTML = html;
-  document.getElementById("legFunnel").innerHTML = legendHtml(chs);
+  el("funnel").innerHTML = html;
+  el("legFunnel").innerHTML = legendHtml(chs);
 }
 
 /* ===== Origen de los leads ===== */
@@ -364,11 +367,11 @@ function renderOrigen() {
       <td><span class="share">${pct(share)}<span class="bar"><i style="width:${(share * 100 || 0).toFixed(1)}%"></i></span></span></td>
       <td>${nf.format(a.citas)}</td><td>${nf.format(a.pvr)}</td><td>${pct(div(a.pvr, a.leads))}</td>
       <td>${paid ? money(a.inversion) : "—"}</td><td>${paid ? money(div(a.inversion, a.leads)) : "—"}</td><td>${paid ? money(div(a.inversion, a.pvr)) : "—"}</td></tr>`; }).join("");
-  document.getElementById("tOrigen").innerHTML = `<thead><tr><th>Origen</th><th>Registros</th><th>Leads</th><th>% de leads</th><th>Citas agendadas</th><th>PVRs</th><th>TAL%</th><th>Inversión</th><th>CPL</th><th>Costo/PVR</th></tr></thead>
+  el("tOrigen").innerHTML = `<thead><tr><th>Origen</th><th>Registros</th><th>Leads</th><th>% de leads</th><th>Citas agendadas</th><th>PVRs</th><th>TAL%</th><th>Inversión</th><th>CPL</th><th>Costo/PVR</th></tr></thead>
     <tbody>${body}<tr class="total"><td>Total</td><td>${nf.format(regT)}</td><td>${nf.format(tot.leads)}</td><td>100%</td><td>${nf.format(tot.citas)}</td><td>${nf.format(tot.pvr)}</td><td>${pct(div(tot.pvr, tot.leads))}</td><td>${money(tot.inversion)}</td><td>${money(div(tot.inversion, tot.leads))}</td><td>${money(div(tot.inversion, tot.pvr))}</td></tr></tbody>`;
   const suc = state.sucs.length ? sucsLabel() : "", nac = sum(ROWS.filter(r => r.origen === "nacional")), loc = sum(ROWS.filter(r => r.origen === "local"));
-  document.getElementById("origenHint").textContent = suc ? `Leads de ${suc.toLowerCase()}: las campañas nacionales aportan ${pct(div(nac.leads, tot.leads))} y la campaña local ${pct(div(loc.leads, tot.leads))}.` : "Elige una sucursal en las pestañas para separar su campaña local de las nacionales.";
-  document.getElementById("origenNote").textContent = suc && localRegions().length ? `«Campaña local» agrupa todo lo etiquetado con región ${localRegions().slice(0, 2).join(" o ")} en campañas pagadas. Si una campaña cambió de segmentación sin cambiar sus UTM, aquí se ve junta.` : "";
+  el("origenHint").textContent = suc ? `Leads de ${suc.toLowerCase()}: las campañas nacionales aportan ${pct(div(nac.leads, tot.leads))} y la campaña local ${pct(div(loc.leads, tot.leads))}.` : "Elige una sucursal en las pestañas para separar su campaña local de las nacionales.";
+  el("origenNote").textContent = suc && localRegions().length ? `«Campaña local» agrupa todo lo etiquetado con región ${localRegions().slice(0, 2).join(" o ")} en campañas pagadas. Si una campaña cambió de segmentación sin cambiar sus UTM, aquí se ve junta.` : "";
 }
 
 /* ===== Campaña local: ADV vs OPEN (solo Monterrey) + semanal ===== */
@@ -380,10 +383,10 @@ const wkMetrics = {
   pvr: { title: "Primeras visitas", fmt: v => nf.format(Math.round(v)), axis: v => nf.format(v), val: w => w.pvr, avg: ws => div(ws.reduce((s, w) => s + w.pvr, 0), ws.length), note: "Primeras visitas de los leads de la sucursal creados esa semana (cohorte): las últimas semanas siguen madurando." }
 };
 state.wk = state.wk || "cita";
-document.getElementById("fWk").addEventListener("click", e => { const b = e.target.closest("button"); if (!b) return; state.wk = b.dataset.v; save(); renderWeekly(); });
+el("fWk").addEventListener("click", e => { const b = e.target.closest("button"); if (!b) return; state.wk = b.dataset.v; save(); renderWeekly(); });
 const shortDate = s => new Date(s + "T12:00:00").toLocaleDateString("es-MX", { day: "numeric", month: "short" }).replace(".", "");
 function renderLocal() {
-  const sec = document.getElementById("secLocal");
+  const sec = el("secLocal");
   const isMty = soloMty() && WEEKS.length;
   sec.hidden = !isMty; if (!isMty) return;
   const agg = ws => ws.reduce((o, w) => { ["leads", "citas", "pvr", "inv_asig", "leads_all", "inv_all"].forEach(k => o[k] += w[k]); return o; }, { leads: 0, citas: 0, pvr: 0, inv_asig: 0, leads_all: 0, inv_all: 0 });
@@ -400,15 +403,15 @@ function renderLocal() {
   ];
   const body = rows.map(([label, fn, f, rate]) => { const va = fn(A, dA), vo = fn(O, dO); const ch = div(vo, va) - 1; const txt = isFinite(ch) && isFinite(va) && isFinite(vo) ? `${ch >= 0 ? "+" : "−"}${Math.abs(ch * 100).toFixed(0)}%` : "—";
     return `<tr${rate ? ' class="rate"' : ""}><td>${label}</td><td>${f(va)}</td><td>${f(vo)}</td><td class="chg">${txt}</td></tr>`; }).join("");
-  document.getElementById("tLocal").innerHTML = `<thead><tr><th>Métrica</th><th>ADV<small>hasta 9 ago · ${dA} días</small></th><th>OPEN<small>desde 10 ago · ${dO} días</small></th><th>Cambio</th></tr></thead><tbody>${body}</tbody>`;
-  document.getElementById("localNote").textContent = `Con OPEN, ${pct(div(O.leads, O.leads_all))} de los leads de la campaña son de Monterrey (con ADV ${pct(div(A.leads, A.leads_all))}); el resto se va a otras sucursales. Los totales no son comparables directo porque los periodos duran distinto; usa las filas por día y las tasas. Los leads recientes siguen madurando.`;
+  el("tLocal").innerHTML = `<thead><tr><th>Métrica</th><th>ADV<small>hasta 9 ago · ${dA} días</small></th><th>OPEN<small>desde 10 ago · ${dO} días</small></th><th>Cambio</th></tr></thead><tbody>${body}</tbody>`;
+  el("localNote").textContent = `Con OPEN, ${pct(div(O.leads, O.leads_all))} de los leads de la campaña son de Monterrey (con ADV ${pct(div(A.leads, A.leads_all))}); el resto se va a otras sucursales. Los totales no son comparables directo porque los periodos duran distinto; usa las filas por día y las tasas. Los leads recientes siguen madurando.`;
 }
 function renderWeekly() {
-  const sec = document.getElementById("secWk");
+  const sec = el("secWk");
   sec.hidden = !(state.sucs.length && WEEKS.length);
   if (sec.hidden) return;
   document.querySelectorAll("#fWk button").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.v === state.wk)));
-  const cfg = wkMetrics[state.wk], host = document.getElementById("cWk");
+  const cfg = wkMetrics[state.wk], host = el("cWk");
   setDims(host); H = W < 520 ? 240 : 270; ih = H - M.t - M.b;
   const ws = WEEKS, isMty = soloMty();
   const openIdx = isMty ? ws.findIndex(w => w.semana >= OPEN_START) : -1;
@@ -431,16 +434,16 @@ function renderWeekly() {
     const tip = `<div class="tt">Semana del ${shortDate(w.semana)}${openIdx > 0 ? ` · ${i >= openIdx ? "OPEN" : "ADV"}` : ""}</div>` + tipRows([[cfg.title, isFinite(v) ? cfg.fmt(v) : "Sin dato"], ["Leads de la sucursal", nf.format(w.leads)], ["Citas agendadas", nf.format(w.citas)], ["PVR", nf.format(w.pvr)], ["% leads de la sucursal", pct(div(w.leads, w.leads_all))], ["Inversión asignada", w.inv_asig > 0 ? money(w.inv_asig) : "—"]]);
     s += `<g class="col" data-tip="${encodeURIComponent(tip)}"><rect class="hit" x="${M.l + step * i}" y="${M.t}" width="${step}" height="${ih}"/>${isFinite(v) ? `<circle class="f-${c} mk" cx="${x(i)}" cy="${y(v)}" r="4.5"/>` : `<text x="${x(i)}" y="${M.t + ih - 6}" text-anchor="middle" class="gap-mark">sin dato</text>`}</g>`; });
   host.innerHTML = `<svg class="chart" viewBox="0 0 ${W} ${H}" role="img" aria-label="${cfg.title} semanal">${s}</svg>`;
-  document.getElementById("legWk").innerHTML = openIdx > 0 ? `<span><i class="dot" style="background:var(--seg-a)"></i>ADV</span><span><i class="dot" style="background:var(--seg-b)"></i>OPEN</span>` : "";
-  document.getElementById("wkHint").textContent = `Campaña pagada de Meta con región ${localRegions().slice(0, 2).join(" o ")}, semana por semana (lunes a domingo). La línea punteada es el promedio${openIdx > 0 ? " de cada periodo" : ""}.`;
+  el("legWk").innerHTML = openIdx > 0 ? `<span><i class="dot" style="background:var(--seg-a)"></i>ADV</span><span><i class="dot" style="background:var(--seg-b)"></i>OPEN</span>` : "";
+  el("wkHint").textContent = `Campaña pagada de Meta con región ${localRegions().slice(0, 2).join(" o ")}, semana por semana (lunes a domingo). La línea punteada es el promedio${openIdx > 0 ? " de cada periodo" : ""}.`;
   const ch = avgs.length > 1 ? div(avgs[1], avgs[0]) - 1 : NaN;
-  document.getElementById("wkNote").textContent = `${cfg.note}${avgs.length > 1 ? ` Promedio ADV: ${isFinite(avgs[0]) ? cfg.fmt(avgs[0]) : "—"}; promedio OPEN: ${isFinite(avgs[1]) ? cfg.fmt(avgs[1]) : "—"}${isFinite(ch) ? ` (${ch >= 0 ? "+" : "−"}${Math.abs(ch * 100).toFixed(0)}%)` : ""}.` : ""} La última semana puede estar incompleta.`;
+  el("wkNote").textContent = `${cfg.note}${avgs.length > 1 ? ` Promedio ADV: ${isFinite(avgs[0]) ? cfg.fmt(avgs[0]) : "—"}; promedio OPEN: ${isFinite(avgs[1]) ? cfg.fmt(avgs[1]) : "—"}${isFinite(ch) ? ` (${ch >= 0 ? "+" : "−"}${Math.abs(ch * 100).toFixed(0)}%)` : ""}.` : ""} La última semana puede estar incompleta.`;
   H = W < 520 ? 220 : 240; ih = H - M.t - M.b;
 }
 
 /* ===== Registros por mes (apilado) ===== */
 function renderReg() {
-  const chs = channels(), ms = monthsSel(), host = document.getElementById("cReg"); setDims(host);
+  const chs = channels(), ms = monthsSel(), host = el("cReg"); setDims(host);
   const per = ms.map(mo => { const o = {}; chs.forEach(c => o[c] = regBy(c, mo.key)); o.all = regBy(null, mo.key); o.leads = sum(MROWS.filter(r => r.mes === mo.key)).leads; return o; });
   const yMax = niceMax(Math.max(1, ...per.map(p => p.all)) * 1.1);
   const step = iw / ms.length, bw = Math.min(64, step * 0.6);
@@ -451,14 +454,14 @@ function renderReg() {
     s += `<g class="col" data-tip="${encodeURIComponent(tip)}"><rect class="hit" x="${M.l + step * i}" y="${M.t}" width="${step}" height="${ih}"/></g><text x="${x + bw / 2}" y="${H - 8}" text-anchor="middle">${cap(mo.short)}</text>`;
     if (per[i].all) s += `<text x="${x + bw / 2}" y="${yTop - 5}" text-anchor="middle" class="lbl">${nf.format(per[i].all)}</text>`; });
   host.innerHTML = `<svg class="chart" viewBox="0 0 ${W} ${H}" role="img" aria-label="Registros por mes">${s}</svg>`;
-  document.getElementById("legReg").innerHTML = legendHtml(chs);
+  el("legReg").innerHTML = legendHtml(chs);
   const skipped = FILTER_DIMS.filter(k => state.f[k].length && REG_SKIP[k]).map(k => DIMS[k].label);
-  document.getElementById("regNote").textContent = (state.sucs.length ? "Registros por la sucursal que eligió la persona (el formulario no sabe dónde terminará la visita). " : "") + (skipped.length ? `Los filtros de ${skipped.join(" y ")} no aplican a registros.` : "");
+  el("regNote").textContent = (state.sucs.length ? "Registros por la sucursal que eligió la persona (el formulario no sabe dónde terminará la visita). " : "") + (skipped.length ? `Los filtros de ${skipped.join(" y ")} no aplican a registros.` : "");
 }
 
 /* ===== Líneas de costo por mes y canal ===== */
 function renderLine(elId, legId, metric, label) {
-  const chs = channels(), ms = monthsSel(), host = document.getElementById(elId); setDims(host);
+  const chs = channels(), ms = monthsSel(), host = el(elId); setDims(host);
   const val = (c, mo) => { const a = sum(MROWS.filter(r => r.mes === mo.key && r.canal === c)); return a[metric] > 0 && a.inversion > 0 ? a.inversion / a[metric] : NaN; };
   const all = chs.flatMap(c => ms.map(mo => val(c, mo))).filter(isFinite);
   const yMax = niceMax((all.length ? Math.max(...all) : 1) * 1.15);
@@ -471,7 +474,7 @@ function renderLine(elId, legId, metric, label) {
   ms.forEach((mo, i) => { const tip = `<div class="tt">${cap(mo.long)}</div>` + tipRows(chs.map(c => { const a = sum(MROWS.filter(r => r.mes === mo.key && r.canal === c)); return [`<i class="dot ${c}"></i>${CH[c]}`, `${money(val(c, mo))} · ${nf.format(a[metric])}`]; }));
     s += `<g class="col" data-tip="${encodeURIComponent(tip)}"><rect class="hit" x="${M.l + step * i}" y="${M.t}" width="${step}" height="${ih}"/><line class="guide" x1="${x(i)}" x2="${x(i)}" y1="${M.t}" y2="${M.t + ih}"/></g>`; });
   host.innerHTML = `<svg class="chart" viewBox="0 0 ${W} ${H}" role="img" aria-label="${label} por mes">${s}</svg>`;
-  document.getElementById(legId).innerHTML = legendHtml(chs);
+  el(legId).innerHTML = legendHtml(chs);
 }
 
 /* ===== Meta vs Google ===== */
@@ -488,8 +491,8 @@ function renderCanal() {
     if (better === "low") { bm = vm < vg ? "better" : ""; bg = vg < vm ? "better" : ""; }
     if (better === "high") { bm = vm > vg ? "better" : ""; bg = vg > vm ? "better" : ""; }
     return `<tr${better ? ' class="rate"' : ""}><td>${label}</td><td class="${bm}">${f(vm)}</td><td class="${bg}">${f(vg)}</td><td>${f(fn(t, rt))}</td></tr>`; }).join("");
-  document.getElementById("tCanal").innerHTML = `<thead><tr><th>Métrica</th><th><span class="dot meta"></span>Meta</th><th><span class="dot google"></span>Google</th><th>Total pagado</th></tr></thead><tbody>${body}</tbody>`;
-  document.getElementById("canalHint").textContent = `Siempre muestra ambos canales con los demás filtros; ● marca el mejor en tasas y costos.`;
+  el("tCanal").innerHTML = `<thead><tr><th>Métrica</th><th><span class="dot meta"></span>Meta</th><th><span class="dot google"></span>Google</th><th>Total pagado</th></tr></thead><tbody>${body}</tbody>`;
+  el("canalHint").textContent = `Siempre muestra ambos canales con los demás filtros; ● marca el mejor en tasas y costos.`;
 }
 
 /* ===== Por mes ===== */
@@ -505,7 +508,7 @@ function axes(yMax, fmt) {
 function renderMes() {
   const chs = channels(), ms = monthsSel();
   const per = ms.map(mo => { const o = {}; chs.forEach(c => o[c] = sum(MROWS.filter(r => r.mes === mo.key && r.canal === c))); o.all = sum(MROWS.filter(r => r.mes === mo.key)); return o; });
-  const host = document.getElementById("cMes"); setDims(host);
+  const host = el("cMes"); setDims(host);
   const yMax = niceMax(Math.max(1, ...per.map(p => p.all.leads)) * 1.1);
   const step = iw / ms.length, bw = Math.min(64, step * 0.6);
   let s = axes(yMax, v => nf.format(v));
@@ -521,21 +524,21 @@ function renderMes() {
     if (a.leads) s += `<text x="${x + bw / 2}" y="${yTop - 5}" text-anchor="middle" class="lbl">${nf.format(a.leads)}</text>`;
   });
   host.innerHTML = `<svg class="chart" viewBox="0 0 ${W} ${H}" role="img" aria-label="Leads por mes">${s}</svg>`;
-  document.getElementById("legMes").innerHTML = legendHtml(chs);
+  el("legMes").innerHTML = legendHtml(chs);
   const cols = [["Registros", (a, i) => nf.format(i == null ? regSum(RROWS) : regBy(null, ms[i].key))], ["Leads", a => nf.format(a.leads)], ["Citas agendadas", a => nf.format(a.citas)], ["Lead → cita agendada", a => pct(div(a.citas, a.leads))], ["PVR", a => nf.format(a.pvr)], ["TAL%", a => pct(div(a.pvr, a.leads))],
     ["Inversión", a => money(a.inversion)], ["CPL", a => money(div(a.inversion, a.leads))], ["Costo/cita", a => money(div(a.inversion, a.citas))], ["Costo/PVR", a => money(div(a.inversion, a.pvr))]];
-  document.getElementById("tMes").innerHTML = `<thead><tr><th>Mes</th>${cols.map(c => `<th>${c[0]}</th>`).join("")}</tr></thead><tbody>` +
+  el("tMes").innerHTML = `<thead><tr><th>Mes</th>${cols.map(c => `<th>${c[0]}</th>`).join("")}</tr></thead><tbody>` +
     ms.map((mo, i) => `<tr${state.mes === mo.key ? ' class="hl"' : ""}><td>${cap(mo.long)}</td>${cols.map(c => `<td>${c[1](per[i].all, i)}</td>`).join("")}</tr>`).join("") +
     `<tr class="total"><td>${state.mes === "todo" ? "Total" : "Total del periodo"}</td>${cols.map(c => `<td>${c[1](sum(MROWS), null)}</td>`).join("")}</tr></tbody>`;
 }
 
 /* ===== Evolución diaria: tres gráficas pequeñas (leads, citas, PVR), por día o por semana ===== */
-const fGran = document.getElementById("fGran");
+const fGran = el("fGran");
 fGran.addEventListener("click", e => { const b = e.target.closest("button"); if (!b) return; state.gran = b.dataset.v; save(); renderDiario(); });
 function monday(d) { const x = new Date(d + "T12:00:00"); x.setDate(x.getDate() - ((x.getDay() + 6) % 7)); return iso(x); }
 function renderDiario() {
   fGran.querySelectorAll("button").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.v === state.gran)));
-  const host = document.getElementById("cDiario");
+  const host = el("cDiario");
   const sem = state.gran === "semana";
   const map = new Map();
   DROWS.forEach(r => { const k = sem ? monday(r.dia) : r.dia; const o = map.get(k) || { k, leads: 0, citas: 0, pvr: 0 }; o.leads += r.leads; o.citas += r.citas; o.pvr += r.pvr; map.set(k, o); });
@@ -545,7 +548,7 @@ function renderDiario() {
   const fmtK = k => sem ? `Semana del ${fmtDate(k)}` : fmtDate(k);
   host.innerHTML = series.map(([m, label]) => `<div class="mini"><h3>${label}</h3><div id="cDia-${m}"></div></div>`).join("");
   series.forEach(([m, label, cls]) => {
-    const el = document.getElementById("cDia-" + m); setDims(el); H = 180; ih = H - M.t - M.b;
+    const el = el("cDia-" + m); setDims(el); H = 180; ih = H - M.t - M.b;
     const yMax = niceMax(Math.max(1, ...pts.map(p => p[m])) * 1.15);
     const n = pts.length, x = i => M.l + (n > 1 ? iw * i / (n - 1) : iw / 2), y = v => M.t + ih - v / yMax * ih;
     let s = axes(yMax, v => nf.format(v));
@@ -565,13 +568,13 @@ function renderDiario() {
 function renderNotes() {
   const a = sum(ROWS);
   const base = "La sucursal es la de la visita cuando la hubo (BIP.nom_suc); si no, la que eligió el lead al registrarse. La cita no aporta sucursal.";
-  document.getElementById("noteSucursal").textContent = a.pvr
+  el("noteSucursal").textContent = a.pvr
     ? `${base} Con los filtros actuales, ${nf.format(a.cambio)} de ${nf.format(a.pvr)} primeras visitas (${pct(div(a.cambio, a.pvr))}) ocurrieron en una sucursal distinta a la que eligió el lead; por eso los resultados se leen por sucursal real.`
     : base;
 }
 
 /* ===== Tooltip ===== */
-const tip = document.getElementById("tip");
+const tip = el("tip");
 on(document, "mousemove", e => {
   const t = e.target.closest("[data-tip]");
   if (!t) { tip.hidden = true; return; }
@@ -584,7 +587,7 @@ on(document, "mousemove", e => {
 function renderCharts() { renderDiario(); renderMes(); renderReg(); renderLine("cCag", "legCag", "citas", "Costo por cita agendada"); renderLine("cCpvr", "legCpvr", "pvr", "Costo por primera visita"); renderWeekly(); }
 function render() { paintFilters(); renderKpis(); renderFunnel(); renderOrigen(); renderLocal(); renderCanal(); renderDesglose(); renderCharts(); renderNotes(); }
 /* Menú lateral plegable (preferencia de pantalla, aparte de los filtros) */
-const wrapEl = document.querySelector(".wrap"), sideToggle = document.getElementById("sideToggle"), sideEl = document.querySelector(".side");
+const wrapEl = document.querySelector(".wrap"), sideToggle = el("sideToggle"), sideEl = document.querySelector(".side");
 const sideBadge = document.createElement("button"); sideBadge.type = "button"; sideBadge.className = "side-badge"; sideEl.appendChild(sideBadge);
 let plegado = false;
 try { plegado = localStorage.getItem("reporte-transversal-menu") === "plegado"; } catch (e) {}
@@ -600,9 +603,9 @@ const alternarPliegue = () => { plegado = !plegado; try { localStorage.setItem("
 on(sideToggle, "click", alternarPliegue); on(sideBadge, "click", alternarPliegue);
 pintarPliegue();
 /* Botones flotantes: volver al menú (siempre), inicio y salir (solo en el sitio) */
-const irMenu = document.getElementById("irMenu");
+const irMenu = el("irMenu");
 const enSitio = typeof opciones === "object" && !!opciones && !!opciones.sitio;
-document.getElementById("irInicio").hidden = !enSitio; document.getElementById("irSalir").hidden = !enSitio;
+el("irInicio").hidden = !enSitio; el("irSalir").hidden = !enSitio;
 const pintarFlotante = () => { irMenu.hidden = window.scrollY < 240; };
 on(window, "scroll", pintarFlotante); pintarFlotante();
 on(irMenu, "click", () => { if (plegado) alternarPliegue(); window.scrollTo({ top: 0, behavior: "smooth" }); });
@@ -610,7 +613,7 @@ on(window, "resize", () => { clearTimeout(resizeT); resizeT = setTimeout(renderC
 renderMesButtons(); renderSelects(); renderTabs(); render(); renderPerfil();
 
 /* ===== BigQuery ===== */
-const pill = document.getElementById("statusPill"), msg = document.getElementById("statusMsg"), btn = document.getElementById("btnRefresh");
+const pill = el("statusPill"), msg = el("statusMsg"), btn = el("btnRefresh");
 function setStatus(kind, label, text) { pill.className = "pill " + kind; pill.textContent = label; msg.textContent = text; }
 let retried = false, seq = 0, pseq = 0;
 async function runSql(tipo, force) {
@@ -637,6 +640,7 @@ async function refreshReg(force) {
   } catch (e) { /* registros se quedan en cero */ }
 }
 async function refreshWeekly(force) {
+  if (!hay("local") && !hay("wk")) return;
   if (!state.sucs.length || !localRegions().length) { WEEKS = []; renderLocal(); renderWeekly(); return; }
   try { const { rows } = await runSql("semanal", force); if (!rows) return;
     WEEKS = rows.map(r => ({ semana: String(r.semana).slice(0, 10), leads: +r.leads || 0, citas: +r.citas || 0, pvr: +r.pvr || 0, inv_asig: +r.inv_asig || 0, leads_all: +r.leads_all || 0, inv_all: +r.inv_all || 0 })).sort((a, b) => a.semana < b.semana ? -1 : 1);
@@ -645,6 +649,7 @@ async function refreshWeekly(force) {
 }
 let dseq = 0;
 async function refreshDiario(force) {
+  if (!hay("diario")) return;
   const my = ++dseq;
   try {
     const { rows } = await runSql("diario", force);
@@ -654,6 +659,7 @@ async function refreshDiario(force) {
   } catch (e) { /* la sección conserva lo anterior */ }
 }
 async function refreshPerfil(force) {
+  if (!hay("perfil")) return;
   const my = ++pseq;
   try {
     const { rows } = await runSql("perfil", force);
