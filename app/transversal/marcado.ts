@@ -101,7 +101,7 @@ const PLANTILLA = `<div class="wrap">
     <div class="phead">
       <div>
         <h2 id="h-funnel">Funnel por etapa</h2>
-        <p class="hint">Cada anillo muestra el total de la etapa y su reparto entre medios; su tamaño baja con el volumen (escala logarítmica). Pasa el cursor sobre un segmento para ver el detalle.</p>
+        <p class="hint">Atracción viene de los anuncios (impresiones, clics y vistas de landing, con CPM, CPC y costo por vista sobre la inversión real); conversión, de registros, leads, citas y PVR. Cada anillo muestra el total de la etapa y su reparto entre medios; su tamaño baja con el volumen (escala logarítmica). Pasa el cursor sobre un segmento para ver el detalle.</p>
       </div>
       <div class="legend" id="legFunnel"></div>
     </div>

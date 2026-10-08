@@ -343,8 +343,38 @@ function renderFunnel() {
   const pendingCard = (n, why) => `<div class="dcard pending"><div class="dname">${n}</div>
       <div class="dslot"><div class="dwrap" style="width:100%">${ring(`<circle cx="60" cy="60" r="${R}" fill="none" class="ring-pending" stroke-width="${SW}"/>`, `${n}: pendiente`)}
         <div class="dcenter"><span class="dval na">—</span></div></div></div><div class="dline">${why}</div></div>`;
-  let html = `<div class="fgroup-title">Atracción</div><div class="donuts">`;
-  html += pendingCard("Impresiones y clics", "Pendiente: cargar métricas de Meta y Google a BigQuery");
+  let html = `<div class="fgroup-title">Atracción · anuncios</div><div class="donuts">`;
+  /* Atracción: impresiones, clics y vistas de landing de los anuncios (AROWS), por medio. CPM, CPC y costo por vista con la inversión real. */
+  const ads = {}; chs.forEach(c => ads[c] = AROWS.filter(r => r.canal === c).reduce((o, r) => { o.inversion += r.inversion; o.impresiones += r.impresiones; o.clics += r.clics; if (r.visitas != null) { o.visitas += r.visitas; o.conVisitas = true; } return o; }, { inversion: 0, impresiones: 0, clics: 0, visitas: 0, conVisitas: false }));
+  const adsT = chs.reduce((o, c) => { o.inversion += ads[c].inversion; o.impresiones += ads[c].impresiones; o.clics += ads[c].clics; o.visitas += ads[c].visitas; o.conVisitas = o.conVisitas || ads[c].conVisitas; return o; }, { inversion: 0, impresiones: 0, clics: 0, visitas: 0, conVisitas: false });
+  if (!AROWS.length) html += pendingCard("Impresiones y clics", "Sin datos de anuncios para estos filtros");
+  else {
+    const ATR = [
+      { m: "impresiones", name: "Impresiones", sub: "Meta y Google", cost: "CPM", costFn: (inv, v) => div(inv, v) * 1000 },
+      { m: "clics", name: "Clics de enlace", sub: "al sitio", conv: "CTR", cost: "CPC", costFn: div },
+      { m: "visitas", name: "Vistas de landing", sub: "solo Meta", conv: "de clics", cost: "Costo por vista", costFn: div, solo: c => ads[c].conVisitas }
+    ];
+    let prevA = null;
+    ATR.forEach(st => {
+      const parts = chs.filter(c => !st.solo || st.solo(c)).map(c => ({ c, v: ads[c][st.m] })).filter(p => p.v > 0);
+      const total = parts.reduce((x, p) => x + p.v, 0), invP = parts.reduce((x, p) => x + ads[p.c].inversion, 0);
+      let offset = 0, segs = `<circle cx="60" cy="60" r="${R}" fill="none" class="ring-track" stroke-width="${SW}"/>`;
+      parts.forEach(p => {
+        const frac = div(p.v, total) || 0, gap = parts.length > 1 ? GAP : 0, len = Math.max(0, frac * C - gap);
+        const tip = `<div class="tt">${st.name} · ${CH[p.c]}</div>` + tipRows([["Volumen", nf.format(p.v)], parts.length > 1 ? ["% del total", pct(frac)] : null,
+          prevA ? [st.conv, pct(div(p.v, ads[p.c][prevA]))] : null, [st.cost, money(st.costFn(ads[p.c].inversion, p.v))]].filter(Boolean));
+        segs += `<circle cx="60" cy="60" r="${R}" fill="none" class="s-${p.c}" stroke-width="${SW}" stroke-dasharray="${len.toFixed(2)} ${(C - len).toFixed(2)}" stroke-dashoffset="${(-offset - gap / 2).toFixed(2)}" data-tip="${encodeURIComponent(tip)}"/>`; offset += frac * C; });
+      const split = parts.length > 1 ? `<div class="dsplit">${parts.map(p => `<span><i class="dot ${p.c}"></i>${pct(div(p.v, total))}</span>`).join("")}</div>` : "";
+      const prevTot = prevA ? parts.reduce((x, p) => x + ads[p.c][prevA], 0) : 0;
+      const conv = prevA ? `<div class="dconv">${pct(div(total, prevTot))} ${st.conv}</div>` : `<div class="dconv muted">Inicio de la atracción</div>`;
+      const sc = Math.min(1, Math.max(0.42, 1 + 0.35 * Math.log10(div(total, adsT.impresiones) || 0.001)));
+      html += `<div class="dcard${total ? "" : " pending"}"><div class="dname">${st.name}<small>${st.sub}</small></div>
+      <div class="dslot"><div class="dwrap" style="width:${(sc * 100).toFixed(1)}%">${ring(segs, `${st.name}: ${nf.format(total)}`)}
+        <div class="dcenter"><span class="dval" style="font-size:${(12 + 7 * sc).toFixed(1)}px">${total ? compact.format(total) : "—"}</span></div></div></div>
+      ${split}${conv}<div class="dline">${st.cost} ${total ? money(st.costFn(invP, total)) : "—"}</div></div>`;
+      prevA = st.m;
+    });
+  }
   html += `</div><div class="fgroup-title">Conversión</div><div class="donuts">`;
   let prevM = null;
   /* Registros: primer anillo, por canal */
@@ -354,7 +384,7 @@ function renderFunnel() {
       const tip = `<div class="tt">Registros · ${CH[p.c]}</div>` + tipRows([["Volumen", nf.format(p.v)], ["Pasaron a lead", pct(div(per[p.c].leads, p.v))], ["Costo por registro", money(div(per[p.c].inversion, p.v))]]);
       segs += `<circle cx="60" cy="60" r="${R}" fill="none" class="s-${p.c}" stroke-width="${SW}" stroke-dasharray="${len.toFixed(2)} ${(C - len).toFixed(2)}" stroke-dashoffset="${(-offset - gap / 2).toFixed(2)}" data-tip="${encodeURIComponent(tip)}"/>`; offset += frac * C; });
     html += `<div class="dcard"><div class="dname">Registros<small>formularios</small></div><div class="dslot"><div class="dwrap" style="width:100%">${ring(segs, `Registros: ${nf.format(total)}`)}<div class="dcenter"><span class="dval" style="font-size:19px">${nf.format(total)}</span></div></div></div>
-      ${chs.length > 1 ? `<div class="dsplit">${parts.map(p => `<span><i class="dot ${p.c}"></i>${pct(div(p.v, total))}</span>`).join("")}</div>` : ""}<div class="dconv muted">Inicio del funnel</div><div class="dline">Costo por registro ${money(div(a.inversion, total))}</div></div>`; }
+      ${chs.length > 1 ? `<div class="dsplit">${parts.map(p => `<span><i class="dot ${p.c}"></i>${pct(div(p.v, total))}</span>`).join("")}</div>` : ""}${adsT.clics ? `<div class="dconv">${pct(div(total, adsT.clics))} de clics</div>` : `<div class="dconv muted">Inicio del funnel</div>`}<div class="dline">Costo por registro ${money(div(a.inversion, total))}</div></div>`; }
   STAGES.forEach(st => {
     const total = a[st.m];
     let offset = 0, segs = `<circle cx="60" cy="60" r="${R}" fill="none" class="ring-track" stroke-width="${SW}"/>`;
@@ -681,7 +711,7 @@ async function refreshAds(force) {
     const { rows } = await runSql("publicidad", force);
     if (my !== aseq || !rows) return;
     AROWS = rows.map(r => ({ mes: String(r.mes), canal: String(r.canal), inversion: +r.inversion || 0, impresiones: +r.impresiones || 0, alcance: +r.alcance || 0, clics: +r.clics || 0, visitas: r.visitas == null ? null : +r.visitas }));
-    renderAds();
+    renderAds(); renderFunnel();
   } catch (e) { /* la sección conserva lo anterior */ }
 }
 let dseq = 0;
