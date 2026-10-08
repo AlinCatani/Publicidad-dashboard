@@ -10,6 +10,8 @@ export const metadata: Metadata = {
   title: "Tableros Ingenes",
   description: "Tableros de publicidad de Ingenes. Solo correos @ingenes.com.",
   robots: { index: false, follow: false },
+  // Favicon en .webp (pedido por Alin, 2026-10-07); iOS no lo acepta, por eso el PNG para apple-icon.
+  icons: { icon: [{ url: "/icon.webp", type: "image/webp", sizes: "256x256" }], apple: "/apple-icon.png" },
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
