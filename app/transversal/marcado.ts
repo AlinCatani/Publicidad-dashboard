@@ -183,8 +183,11 @@ const PLANTILLA = `<div class="wrap">
 
   <section class="panel" aria-labelledby="h-mes" data-sec="mes">
     <div class="phead">
-      <div><h2 id="h-mes">Por mes</h2><p class="hint">Leads por mes apilados por medio; la tabla trae costos y conversiones de cada cohorte.</p></div>
-      <div class="legend" id="legMes"></div>
+      <div><h2 id="h-mes">Por mes</h2><p class="hint" id="mesHint">Leads por mes apilados por medio; la tabla trae costos y conversiones de cada cohorte.</p></div>
+      <div style="display:flex;flex-wrap:wrap;gap:10px;align-items:center">
+        <div class="seg" role="group" aria-label="Métrica de la gráfica" id="fMesMet"><button type="button" data-v="leads">Leads</button><button type="button" data-v="citas">Citas agendadas</button><button type="button" data-v="pvr">Primeras visitas</button></div>
+        <div class="legend" id="legMes"></div>
+      </div>
     </div>
     <div id="cMes"></div>
     <div class="tscroll" style="margin-top:14px"><table id="tMes"></table></div>

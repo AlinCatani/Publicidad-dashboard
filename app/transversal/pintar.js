@@ -71,6 +71,7 @@ try {
   const s = JSON.parse(localStorage.getItem("reporte-transversal-v3") || "{}");
   if (Array.isArray(s.sucs)) state.sucs = s.sucs.filter(v => typeof v === "string" && v).slice(0, 40);
   if (s.gran === "semana") state.gran = "semana";
+  if (typeof s.mesMet === "string") state.mesMet = s.mesMet;
   if (/^\d{4}-\d\d-\d\d$/.test(s.desde || "")) state.desde = s.desde < MIN_DATE ? MIN_DATE : s.desde;
   if (/^\d{4}-\d\d-\d\d$/.test(s.hasta || "")) state.hasta = s.hasta;
   if (s.canal) state.canal = s.canal;
@@ -560,25 +561,30 @@ function axes(yMax, fmt) {
   for (let i = 0; i <= 4; i++) { const v = yMax * i / 4, y = M.t + ih - ih * i / 4; s += `<line class="${i === 0 ? "base" : "gridl"}" x1="${M.l}" x2="${W - M.r}" y1="${y}" y2="${y}"/><text x="${M.l - 8}" y="${y + 4}" text-anchor="end">${fmt(v)}</text>`; }
   return s;
 }
+const MES_MET = { leads: "Leads", citas: "Citas agendadas", pvr: "Primeras visitas" };
+state.mesMet = MES_MET[state.mesMet] ? state.mesMet : "leads";
+on(byId("fMesMet"), "click", e => { const b = e.target.closest("button"); if (!b) return; state.mesMet = b.dataset.v; save(); renderMes(); });
 function renderMes() {
-  const chs = channels(), ms = monthsSel();
+  const chs = channels(), ms = monthsSel(), met = state.mesMet, metN = MES_MET[met];
+  byId("fMesMet").querySelectorAll("button").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.v === met)));
+  byId("mesHint").textContent = `${metN} por mes apilados por medio; la tabla trae costos y conversiones de cada cohorte.`;
   const per = ms.map(mo => { const o = {}; chs.forEach(c => o[c] = sum(MROWS.filter(r => r.mes === mo.key && r.canal === c))); o.all = sum(MROWS.filter(r => r.mes === mo.key)); return o; });
   const host = byId("cMes"); setDims(host);
-  const yMax = niceMax(Math.max(1, ...per.map(p => p.all.leads)) * 1.1);
+  const yMax = niceMax(Math.max(1, ...per.map(p => p.all[met])) * 1.1);
   const step = iw / ms.length, bw = Math.min(64, step * 0.6);
   let s = axes(yMax, v => nf.format(v));
   ms.forEach((mo, i) => {
     const x = M.l + step * i + (step - bw) / 2;
     let yTop = M.t + ih;
-    chs.forEach(c => { const v = per[i][c].leads; if (!v) return; const h = v / yMax * ih; yTop -= h; s += `<rect class="f-${c}" x="${x}" y="${yTop}" width="${bw}" height="${h}"/>`; });
+    chs.forEach(c => { const v = per[i][c][met]; if (!v) return; const h = v / yMax * ih; yTop -= h; s += `<rect class="f-${c}" x="${x}" y="${yTop}" width="${bw}" height="${h}"/>`; });
     const a = per[i].all;
-    const tip = `<div class="tt">${cap(mo.long)}</div>` + tipRows(chs.map(c => [`<i class="dot ${c}"></i>${CH[c]}`, `${nf.format(per[i][c].leads)} · CPL ${money(div(per[i][c].inversion, per[i][c].leads))}`])
-      .concat([["Citas agendadas", `${nf.format(a.citas)} (${pct(div(a.citas, a.leads))})`], ["PVR", `${nf.format(a.pvr)} (${pct(div(a.pvr, a.leads))})`], ["Costo por PVR", money(div(a.inversion, a.pvr))]]));
+    const tip = `<div class="tt">${cap(mo.long)} · ${metN}</div>` + tipRows(chs.map(c => [`<i class="dot ${c}"></i>${CH[c]}`, `${nf.format(per[i][c][met])} · ${money(div(per[i][c].inversion, per[i][c][met]))} c/u`])
+      .concat([["Leads", nf.format(a.leads)], ["Citas agendadas", `${nf.format(a.citas)} (${pct(div(a.citas, a.leads))})`], ["PVR", `${nf.format(a.pvr)} (${pct(div(a.pvr, a.leads))})`], ["Costo por PVR", money(div(a.inversion, a.pvr))]]));
     s += `<g class="col" data-tip="${encodeURIComponent(tip)}"><rect class="hit" x="${M.l + step * i}" y="${M.t}" width="${step}" height="${ih}"/></g>`;
     s += `<text x="${x + bw / 2}" y="${H - 8}" text-anchor="middle">${cap(mo.short)}</text>`;
-    if (a.leads) s += `<text x="${x + bw / 2}" y="${yTop - 5}" text-anchor="middle" class="lbl">${nf.format(a.leads)}</text>`;
+    if (a[met]) s += `<text x="${x + bw / 2}" y="${yTop - 5}" text-anchor="middle" class="lbl">${nf.format(a[met])}</text>`;
   });
-  host.innerHTML = `<svg class="chart" viewBox="0 0 ${W} ${H}" role="img" aria-label="Leads por mes">${s}</svg>`;
+  host.innerHTML = `<svg class="chart" viewBox="0 0 ${W} ${H}" role="img" aria-label="${metN} por mes">${s}</svg>`;
   byId("legMes").innerHTML = legendHtml(chs);
   const cols = [["Registros", (a, i) => nf.format(i == null ? regSum(RROWS) : regBy(null, ms[i].key))], ["Leads", a => nf.format(a.leads)], ["Citas agendadas", a => nf.format(a.citas)], ["Lead → cita agendada", a => pct(div(a.citas, a.leads))], ["PVR", a => nf.format(a.pvr)], ["TAL%", a => pct(div(a.pvr, a.leads))],
     ["Inversión", a => money(a.inversion)], ["CPL", a => money(div(a.inversion, a.leads))], ["Costo/cita", a => money(div(a.inversion, a.citas))], ["Costo/PVR", a => money(div(a.inversion, a.pvr))]];
