@@ -57,6 +57,14 @@ const PLANTILLA = `<div class="wrap">
     </div>
     <div class="selects" id="selects1"></div>
     <div class="selects" id="selects2"></div>
+    <div class="modo-row">
+      <span class="flabel" id="lbl-modo">Reporte</span>
+      <div class="seg seg-modo" role="group" aria-labelledby="lbl-modo" id="fModo">
+        <button type="button" data-v="directo" title="Reporte directo">Directo</button>
+        <button type="button" data-v="indirecto" title="Reporte indirecto: cambia toda la data del reporte">Indirecto</button>
+      </div>
+      <span class="caveat" id="modoNote" style="margin:0"></span>
+    </div>
   </section>
 
   <section class="panel" aria-labelledby="h-ads" data-sec="ads">

@@ -65,7 +65,7 @@ const fmtDate = s => new Date(s + "T12:00:00").toLocaleDateString("es-MX", { day
 const today = iso(new Date());
 
 /* ===== Estado ===== */
-const state = { desde: MIN_DATE, hasta: today, mes: "todo", canal: "pagado", gran: "dia", dim: "campaign", pdim: "tipo_de_paciente", sucs: ["MONTERREY"], f: {} };
+const state = { desde: MIN_DATE, hasta: today, mes: "todo", canal: "pagado", modo: "directo", gran: "dia", dim: "campaign", pdim: "tipo_de_paciente", sucs: ["MONTERREY"], f: {} };
 FILTER_DIMS.forEach(k => state.f[k] = []);
 try {
   const s = JSON.parse(localStorage.getItem("reporte-transversal-v3") || "{}");
@@ -75,6 +75,7 @@ try {
   if (/^\d{4}-\d\d-\d\d$/.test(s.desde || "")) state.desde = s.desde < MIN_DATE ? MIN_DATE : s.desde;
   if (/^\d{4}-\d\d-\d\d$/.test(s.hasta || "")) state.hasta = s.hasta;
   if (s.canal) state.canal = s.canal;
+  if (s.modo === "indirecto") state.modo = "indirecto";
   if (typeof s.mes === "string") state.mes = s.mes;
   if (s.dim && DESG_DIMS.includes(s.dim)) state.dim = s.dim;
   if (s.pdim && PERFIL_DIMS.includes(s.pdim)) state.pdim = s.pdim;
@@ -138,6 +139,16 @@ function renderMesButtons() {
   fMes.innerHTML = `<button type="button" data-v="todo">Todo</button>` + ms.map(m => `<button type="button" data-v="${m.key}">${cap(m.short)}</button>`).join("");
 }
 fMes.addEventListener("click", e => { const b = e.target.closest("button"); if (!b) return; state.mes = b.dataset.v; save(); applyCanal(); render(); refreshPerfil(false); refreshDiario(false); refreshAds(false); });
+
+/* ===== Reporte Directo / Indirecto: botón maestro; cambia toda la data (regla pendiente de Alin) y el color del reporte ===== */
+const rtEl = document.querySelector(".rt") || document.body;
+function pintarModo() {
+  byId("fModo").querySelectorAll("button").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.v === state.modo)));
+  rtEl.classList.toggle("indirecto", state.modo === "indirecto");
+  byId("modoNote").textContent = state.modo === "indirecto" ? "Reporte indirecto: por ahora muestra la misma data; la regla de cálculo se define con Alin." : "";
+}
+on(byId("fModo"), "click", e => { const b = e.target.closest("button"); if (!b) return; state.modo = b.dataset.v; save(); pintarModo(); loadOptions(false); refresh(false); });
+pintarModo();
 
 /* ===== Canal, desglose, perfil ===== */
 byId("fCanal").addEventListener("click", e => { const b = e.target.closest("button"); if (!b) return; state.canal = b.dataset.v; save(); applyCanal(); render(); refreshPerfil(false); refreshDiario(false); refreshReg(false); refreshAds(false); });

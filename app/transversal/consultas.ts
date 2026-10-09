@@ -57,7 +57,7 @@ const MAX_SUCS = 40;
 const MAX_VALS = 60; // valores por filtro
 export type Tipo = (typeof TIPOS)[number];
 
-export type Estado = { desde: string; hasta: string; mes: string; canal: string; dim: string; pdim: string; sucs: string[]; f: Record<string, string[]> };
+export type Estado = { desde: string; hasta: string; mes: string; canal: string; modo: "directo" | "indirecto"; dim: string; pdim: string; sucs: string[]; f: Record<string, string[]> };
 
 /* Valida lo que manda el navegador. Devuelve null si no tiene forma de estado. */
 export function validarEstado(x: unknown): Estado | null {
@@ -70,6 +70,7 @@ export function validarEstado(x: unknown): Estado | null {
   if (hasta < desde) hasta = desde;
   const mes = typeof o.mes === "string" && /^\d{4}-\d{2}$/.test(o.mes) ? o.mes : "todo";
   const canal = typeof o.canal === "string" && CANALES.includes(o.canal) ? o.canal : "pagado";
+  const modo = o.modo === "indirecto" ? "indirecto" : "directo"; // botón maestro Directo / Indirecto (2026-10-09); aún no cambia el SQL
   const dim = typeof o.dim === "string" && DESG_DIMS.includes(o.dim) ? o.dim : "campaign";
   const pdim = typeof o.pdim === "string" && PERFIL_DIMS.includes(o.pdim) ? o.pdim : "tipo_de_paciente";
   const sucs = Array.isArray(o.sucs) ? (o.sucs as unknown[]).filter((v): v is string => typeof v === "string" && v.length > 0 && v.length <= 60).slice(0, MAX_SUCS) : [];
@@ -77,7 +78,7 @@ export function validarEstado(x: unknown): Estado | null {
   const fx = o.f && typeof o.f === "object" ? (o.f as Record<string, unknown>) : {};
   const esVal = (v: unknown): v is string => typeof v === "string" && v.length > 0 && v.length <= 200;
   FILTER_DIMS.forEach((k) => { const v = fx[k]; f[k] = Array.isArray(v) ? (v as unknown[]).filter(esVal).slice(0, MAX_VALS) : esVal(v) ? [v] : []; });
-  return { desde, hasta, mes, canal, dim, pdim, sucs, f };
+  return { desde, hasta, mes, canal, modo, dim, pdim, sucs, f };
 }
 
 const sqlStr = (s: string) => "'" + (s === VACIO ? "" : s).replace(/\\/g, "\\\\").replace(/'/g, "\\'") + "'";

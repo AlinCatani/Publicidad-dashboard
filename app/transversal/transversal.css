@@ -230,6 +230,16 @@ tr.total td { font-weight: 700; color: var(--primary); border-top: 1px solid var
 .sticky-filters { position: sticky; top: 0; z-index: 6; padding: 12px 16px 12px; background: #e6eef9; border-color: #bfcde8; box-shadow: 0 6px 16px rgba(37,63,120,.12); }
 .sticky-filters .seg { background: #ffffff; border-color: #bfcde8; }
 .sticky-filters .sel-btn { border-color: #bfcde8; }
+/* Botón maestro Directo / Indirecto (Alin, 2026-10-09). Con Indirecto todo el reporte se tiñe de amarillo pastel para que no se confunda con el directo. */
+.modo-row { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 14px; margin-top: 10px; padding-top: 10px; border-top: 1px dashed #bfcde8; }
+.seg-modo button { font-weight: 700; }
+.seg-modo button[data-v="indirecto"][aria-pressed="true"] { background: #f2c94c; color: #4a3a00; }
+&.indirecto { --bg: #fff8dc; --soft: #fff3c4; }
+&.indirecto .sticky-filters { background: #fff1b8; border-color: #e8cf7a; box-shadow: 0 6px 16px rgba(120,90,0,.14); }
+&.indirecto .sticky-filters .seg, &.indirecto .sticky-filters .sel-btn, &.indirecto .sel-all { border-color: #e8cf7a; }
+&.indirecto .sel-btn.on, &.indirecto .sel-opt.on, &.indirecto .chip { background: #fde68a; border-color: #d9b94a; color: #4a3a00; }
+&.indirecto .modo-row { border-top-color: #e8cf7a; }
+&.indirecto .eyebrow { color: #a07a00; }
 .sticky-filters .selects { margin-top: 8px; gap: 6px 10px; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); }
 .sticky-filters .sel span { font-size: 10.5px; }
 .sticky-filters .sel-btn { font-size: 12.5px; padding: 4px 8px; }
