@@ -228,9 +228,9 @@ function renderTabs() {
   const order = { mx: 0, us: 1, tur: 2 };
   list.sort((a, b) => order[sucInfo(a.v)[1]] - order[sucInfo(b.v)[1]] || (b.n || 0) - (a.n || 0));
   let lastG = null;
-  host.innerHTML = `<button type="button" class="tab g-all" data-all="1" aria-pressed="${String(state.sucs.length === 0)}" title="Todas las sucursales (sin filtro)"><b>ALL</b></button>` +
+  host.innerHTML = `<button type="button" class="tab g-all" data-all="1" aria-pressed="${String(state.sucs.length === 0)}" data-tip="${encodeURIComponent(`<div class="tt">Todas las sucursales</div><div class="row"><span>Quita el filtro de sucursal</span></div>`)}"><b>ALL</b></button>` +
     list.map(o => { const [ab, g] = sucInfo(o.v); const head = g !== lastG ? `<div class="tgroup">${{ mx: "México", us: "Estados Unidos", tur: "Turismo médico" }[g]}</div>` : ""; lastG = g;
-    return head + `<button type="button" class="tab g-${g}" data-v="${esc(o.v)}" aria-pressed="${String(state.sucs.includes(o.v))}" title="${esc(sucName(o.v))}${o.n ? ` · ${nf.format(o.n)} leads` : ""}"><b>${ab}</b></button>`; }).join("");
+    return head + `<button type="button" class="tab g-${g}" data-v="${esc(o.v)}" aria-pressed="${String(state.sucs.includes(o.v))}" data-tip="${encodeURIComponent(`<div class="tt">${esc(sucName(o.v))}</div>${o.n ? `<div class="row"><span>Leads en el periodo</span><b>${nf.format(o.n)}</b></div>` : ""}`)}"><b>${ab}</b></button>`; }).join("");
   host.querySelectorAll(".tab").forEach(b => b.addEventListener("click", () => {
     if (b.dataset.all) state.sucs = [];
     else { const v = b.dataset.v, i = state.sucs.indexOf(v); if (i >= 0) state.sucs.splice(i, 1); else state.sucs.push(v); }
@@ -255,19 +255,25 @@ function paintFilters() {
 
 /* ===== Publicidad: inversión real y métricas de atracción de los anuncios ===== */
 function renderAds() {
-  const t = AROWS.reduce((o, r) => { o.inversion += r.inversion; o.impresiones += r.impresiones; o.alcance += r.alcance; o.clics += r.clics; if (r.visitas != null) { o.visitas += r.visitas; o.conVisitas = true; } return o; }, { inversion: 0, impresiones: 0, alcance: 0, clics: 0, visitas: 0, conVisitas: false });
+  const t = AROWS.reduce((o, r) => { o.inversion += r.inversion; o.impresiones += r.impresiones; o.alcance += r.alcance; o.clics += r.clics; return o; }, { inversion: 0, impresiones: 0, alcance: 0, clics: 0 });
   const a = sum(ROWS), reg = regTotal();
+  /* Con sucursales elegidas, la inversión es la asignada a sus leads (misma que el CPL); impresiones y clics se reparten en esa proporción (estimado). */
+  const porSuc = state.sucs.length > 0 && t.inversion > 0, share = porSuc ? Math.min(1, div(a.inversion, t.inversion) || 0) : 1;
+  const est = porSuc ? " · estimado" : "";
+  const inv = porSuc ? a.inversion : t.inversion, imp = t.impresiones * share, cl = t.clics * share;
   const items = [
-    { k: "Inversión", v: t.inversion, f: money },
-    { k: "Impresiones", v: t.impresiones, f: nf.format, sub: t.alcance ? `${nf.format(t.alcance)} de alcance` : "" },
-    { k: "Clics de enlace", v: t.clics, f: nf.format, sub: `CTR ${isFinite(div(t.clics, t.impresiones)) ? (div(t.clics, t.impresiones) * 100).toFixed(2) + "%" : "—"}` },
-    { k: "CPC", v: div(t.inversion, t.clics), f: money },
-    { k: "Vistas de landing", v: t.conVisitas ? t.visitas : NaN, f: nf.format, sub: t.conVisitas ? `${pct(div(t.visitas, t.clics))} de clics · solo Meta` : "Solo Meta la reporta" },
-    { k: "Registros", v: reg, f: nf.format, sub: t.clics ? `${pct(div(reg, t.clics))} de clics` : "" },
-    { k: "Leads", v: a.leads, f: nf.format, sub: reg ? `${pct(div(a.leads, reg))} de registros` : "" },
-    { k: "Costo por lead (inversión total)", v: div(t.inversion, a.leads), f: money, sub: state.sucs.length ? "toda la inversión de estos anuncios ÷ leads de la sucursal elegida; el CPL de abajo usa solo la parte asignada a esos leads" : "inversión total ÷ leads; el CPL de abajo usa la inversión asignada" }
+    { k: "Inversión", v: inv, f: money, sub: porSuc ? `asignada a ${sucsLabel().toLowerCase()} · ${pct(share)} de ${money(t.inversion)} en estos anuncios` : "total de los anuncios con estos filtros" },
+    { k: "Impresiones", v: imp, f: v => nf.format(Math.round(v)), sub: porSuc ? `${pct(share)} de ${compact.format(t.impresiones)}${est}` : t.alcance ? `${nf.format(t.alcance)} de alcance` : "" },
+    { k: "Clics de enlace", v: cl, f: v => nf.format(Math.round(v)), sub: `CTR ${isFinite(div(t.clics, t.impresiones)) ? (div(t.clics, t.impresiones) * 100).toFixed(2) + "%" : "—"}${est}` },
+    { k: "CPC", v: div(t.inversion, t.clics), f: money, sub: "inversión ÷ clics" },
+    { k: "Registros", v: reg, f: nf.format, sub: `de registros_historico${cl ? ` · ${pct(div(reg, cl))} de clics` : ""}` },
+    { k: "Leads", v: a.leads, f: nf.format, sub: `de leads (Airtable)${reg ? ` · ${pct(div(a.leads, reg))} de registros` : ""}` },
+    { k: "CPL", v: div(a.inversion, a.leads), f: money, sub: "inversión asignada ÷ leads (igual que abajo)" }
   ];
   byId("kpisAds").innerHTML = items.map(it => `<div class="kpi"><span class="k">${it.k}</span><span class="v">${AROWS.length && isFinite(it.v) ? it.f(it.v) : "—"}</span><span class="d">${it.sub || ""}</span></div>`).join("");
+  byId("adsHint").textContent = porSuc
+    ? `Anuncios de Meta y Google con el periodo, medio, mes y UTM elegidos. La tabla de anuncios no sabe de sucursal: la inversión mostrada es la asignada a los leads de ${sucsLabel().toLowerCase()} y las impresiones y clics se estiman en esa misma proporción. Los filtros de perfil no aplican.`
+    : "Anuncios de Meta y Google con el periodo, medio, mes y UTM elegidos. Elige sucursales para ver la parte asignada a ellas. Los filtros de perfil no aplican.";
 }
 
 /* ===== KPIs ===== */
@@ -355,16 +361,15 @@ function renderFunnel() {
   const pendingCard = (n, why) => `<div class="dcard pending"><div class="dname">${n}</div>
       <div class="dslot"><div class="dwrap" style="width:100%">${ring(`<circle cx="60" cy="60" r="${R}" fill="none" class="ring-pending" stroke-width="${SW}"/>`, `${n}: pendiente`)}
         <div class="dcenter"><span class="dval na">—</span></div></div></div><div class="dline">${why}</div></div>`;
-  let html = `<div class="fgroup-title">Atracción · anuncios</div><div class="donuts">`;
+  let html = `<div class="donuts fila"><div class="fdiv"><span>Atracción</span></div>`;
   /* Atracción: impresiones, clics y vistas de landing de los anuncios (AROWS), por medio. CPM, CPC y costo por vista con la inversión real. */
-  const ads = {}; chs.forEach(c => ads[c] = AROWS.filter(r => r.canal === c).reduce((o, r) => { o.inversion += r.inversion; o.impresiones += r.impresiones; o.clics += r.clics; if (r.visitas != null) { o.visitas += r.visitas; o.conVisitas = true; } return o; }, { inversion: 0, impresiones: 0, clics: 0, visitas: 0, conVisitas: false }));
-  const adsT = chs.reduce((o, c) => { o.inversion += ads[c].inversion; o.impresiones += ads[c].impresiones; o.clics += ads[c].clics; o.visitas += ads[c].visitas; o.conVisitas = o.conVisitas || ads[c].conVisitas; return o; }, { inversion: 0, impresiones: 0, clics: 0, visitas: 0, conVisitas: false });
+  const ads = {}; chs.forEach(c => ads[c] = AROWS.filter(r => r.canal === c).reduce((o, r) => { o.inversion += r.inversion; o.impresiones += r.impresiones; o.clics += r.clics; return o; }, { inversion: 0, impresiones: 0, clics: 0 }));
+  const adsT = chs.reduce((o, c) => { o.inversion += ads[c].inversion; o.impresiones += ads[c].impresiones; o.clics += ads[c].clics; return o; }, { inversion: 0, impresiones: 0, clics: 0 });
   if (!AROWS.length) html += pendingCard("Impresiones y clics", "Sin datos de anuncios para estos filtros");
   else {
     const ATR = [
       { m: "impresiones", name: "Impresiones", sub: "Meta y Google", cost: "CPM", costFn: (inv, v) => div(inv, v) * 1000 },
-      { m: "clics", name: "Clics de enlace", sub: "al sitio", conv: "CTR", cost: "CPC", costFn: div },
-      { m: "visitas", name: "Vistas de landing", sub: "solo Meta", conv: "de clics", cost: "Costo por vista", costFn: div, solo: c => ads[c].conVisitas }
+      { m: "clics", name: "Clics de enlace", sub: "al sitio", conv: "CTR", cost: "CPC", costFn: div }
     ];
     let prevA = null;
     ATR.forEach(st => {
@@ -387,7 +392,7 @@ function renderFunnel() {
       prevA = st.m;
     });
   }
-  html += `</div><div class="fgroup-title">Conversión</div><div class="donuts">`;
+  html += `<div class="fdiv"><span>Conversión</span></div>`;
   let prevM = null;
   /* Registros: primer anillo, por canal */
   { const total = regTotal(); let offset = 0, segs = `<circle cx="60" cy="60" r="${R}" fill="none" class="ring-track" stroke-width="${SW}"/>`;
@@ -419,7 +424,11 @@ function renderFunnel() {
       ${split}${conv}<div class="dline">${st.cost} ${money(div(a.inversion, total))}</div></div>`;
     prevM = st.m;
   });
-  html += `</div><div class="overall">${regTotal() ? `<span>Registro → PVR <b>${pct(div(a.pvr, regTotal()))}</b></span>` : ""}<span>Lead → cita agendada <b>${pct(div(a.citas, a.leads))}</b></span><span>Cita agendada → PVR <b>${pct(div(a.pvr, a.citas))}</b></span><span>TAL% <b>${pct(div(a.pvr, a.leads))}</b></span><span>Inversión asignada <b>${money(a.inversion)}</b></span></div>`;
+  const o = ole(), oleMax = Math.max(1, o.leads);
+  const oleBar = (label, v, conv, cls) => `<div class="obar"><span class="ol">${label}</span><div class="otrack"><i class="${cls}" style="width:${(100 * v / oleMax).toFixed(1)}%"></i></div><b>${nf.format(v)}</b><small>${conv}</small></div>`;
+  html += `</div><div class="ole-funnel"><div class="fgroup-title">OLE · leads NO pagados (de todos los medios)</div>
+    ${oleBar("Leads", o.leads, "sin campaña pagada", "f-otros")}${oleBar("Citas agendadas", o.citas, `${pct(div(o.citas, o.leads))} de leads`, "f-google")}${oleBar("Primeras visitas", o.pvr, `${pct(div(o.pvr, o.citas))} de citas · TAL% ${pct(div(o.pvr, o.leads))}`, "f-meta")}
+  </div><div class="overall">${regTotal() ? `<span>Registro → PVR <b>${pct(div(a.pvr, regTotal()))}</b></span>` : ""}<span>Lead → cita agendada <b>${pct(div(a.citas, a.leads))}</b></span><span>Cita agendada → PVR <b>${pct(div(a.pvr, a.citas))}</b></span><span>TAL% <b>${pct(div(a.pvr, a.leads))}</b></span><span>Inversión asignada <b>${money(a.inversion)}</b></span></div>`;
   byId("funnel").innerHTML = html;
   byId("legFunnel").innerHTML = legendHtml(chs);
 }
@@ -510,20 +519,22 @@ function renderWeekly() {
 
 /* ===== Registros por mes (apilado) ===== */
 function renderReg() {
-  const chs = channels(), ms = monthsSel(), host = byId("cReg"); setDims(host);
-  const per = ms.map(mo => { const o = {}; chs.forEach(c => o[c] = regBy(c, mo.key)); o.all = regBy(null, mo.key); o.leads = sum(MROWS.filter(r => r.mes === mo.key)).leads; return o; });
-  const yMax = niceMax(Math.max(1, ...per.map(p => p.all)) * 1.1);
-  const step = iw / ms.length, bw = Math.min(64, step * 0.6);
+  const ms = monthsSel(), host = byId("cReg"); setDims(host);
+  /* Registros: lo que llega a registros_historico (obedece sucursal elegida, medio, mes y UTM; no perfil). Leads, citas y PVR: con todos los filtros. */
+  const SER = [["reg", "Registros", "f-otros"], ["leads", "Leads", "f-meta"], ["citas", "Citas agendadas", "f-google"], ["pvr", "Primeras visitas", "f-a"]];
+  const per = ms.map(mo => { const a = sum(MROWS.filter(r => r.mes === mo.key)); return { reg: regBy(null, mo.key), leads: a.leads, citas: a.citas, pvr: a.pvr }; });
+  const yMax = niceMax(Math.max(1, ...per.map(p => Math.max(p.reg, p.leads))) * 1.1);
+  const step = iw / ms.length, gw = Math.min(100, step * 0.78), bw = gw / SER.length;
   let s = axes(yMax, v => nf.format(v));
-  ms.forEach((mo, i) => { const x = M.l + step * i + (step - bw) / 2; let yTop = M.t + ih;
-    chs.forEach(c => { const v = per[i][c]; if (!v) return; const h = v / yMax * ih; yTop -= h; s += `<rect class="f-${c}" x="${x}" y="${yTop}" width="${bw}" height="${h}"/>`; });
-    const tip = `<div class="tt">${cap(mo.long)}</div>` + tipRows(chs.map(c => [`<i class="dot ${c}"></i>${CH[c]}`, nf.format(per[i][c])]).concat([["Pasaron a lead", `${nf.format(per[i].leads)} (${pct(div(per[i].leads, per[i].all))})`]]));
-    s += `<g class="col" data-tip="${encodeURIComponent(tip)}"><rect class="hit" x="${M.l + step * i}" y="${M.t}" width="${step}" height="${ih}"/></g><text x="${x + bw / 2}" y="${H - 8}" text-anchor="middle">${cap(mo.short)}</text>`;
-    if (per[i].all) s += `<text x="${x + bw / 2}" y="${yTop - 5}" text-anchor="middle" class="lbl">${nf.format(per[i].all)}</text>`; });
-  host.innerHTML = `<svg class="chart" viewBox="0 0 ${W} ${H}" role="img" aria-label="Registros por mes">${s}</svg>`;
-  byId("legReg").innerHTML = legendHtml(chs);
+  ms.forEach((mo, i) => { const x0 = M.l + step * i + (step - gw) / 2;
+    SER.forEach(([m, , cls], j) => { const v = per[i][m]; if (!v) return; const h = v / yMax * ih; s += `<rect class="${cls}" x="${(x0 + bw * j).toFixed(1)}" y="${(M.t + ih - h).toFixed(1)}" width="${(bw - 1).toFixed(1)}" height="${h.toFixed(1)}" rx="1"/>`; });
+    const p = per[i];
+    const tip = `<div class="tt">${cap(mo.long)}</div>` + tipRows([["Registros", nf.format(p.reg)], ["Leads", `${nf.format(p.leads)} (${pct(div(p.leads, p.reg))} de registros)`], ["Citas agendadas", `${nf.format(p.citas)} (${pct(div(p.citas, p.leads))} de leads)`], ["Primeras visitas", `${nf.format(p.pvr)} (TAL% ${pct(div(p.pvr, p.leads))})`]]);
+    s += `<g class="col" data-tip="${encodeURIComponent(tip)}"><rect class="hit" x="${M.l + step * i}" y="${M.t}" width="${step}" height="${ih}"/></g><text x="${x0 + gw / 2}" y="${H - 8}" text-anchor="middle">${cap(mo.short)}</text>`; });
+  host.innerHTML = `<svg class="chart" viewBox="0 0 ${W} ${H}" role="img" aria-label="Registros, leads, citas agendadas y primeras visitas por mes">${s}</svg>`;
+  byId("legReg").innerHTML = SER.map(([, l, cls]) => `<span><i class="dot ${cls.replace("f-", "d-")}"></i>${l}</span>`).join("");
   const skipped = FILTER_DIMS.filter(k => state.f[k].length && REG_SKIP[k]).map(k => DIMS[k].label);
-  byId("regNote").textContent = (state.sucs.length ? "Registros por la sucursal que eligió la persona (el formulario no sabe dónde terminará la visita). " : "") + (skipped.length ? `Los filtros de ${skipped.join(" y ")} no aplican a registros.` : "");
+  byId("regNote").textContent = (state.sucs.length ? "Registros por la sucursal que eligió la persona (el formulario no sabe dónde terminará la visita). " : "") + (skipped.length ? `Los filtros de ${skipped.join(" y ")} no aplican a registros; leads, citas y PVR sí los obedecen.` : "");
 }
 
 /* ===== Líneas de costo por mes y canal ===== */

@@ -69,7 +69,7 @@ const PLANTILLA = `<div class="wrap">
 
   <section class="panel" aria-labelledby="h-ads" data-sec="ads">
     <div class="phead">
-      <div><h2 id="h-ads">Publicidad</h2><p class="hint" id="adsHint">Inversión y métricas de atracción de los anuncios (Meta y Google), por el periodo, medio, mes y UTM elegidos. La sucursal y los filtros de perfil no aplican aquí.</p></div>
+      <div><h2 id="h-ads">Publicidad</h2><p class="hint" id="adsHint">Anuncios de Meta y Google con el periodo, medio, mes y UTM elegidos.</p></div>
     </div>
     <div class="kpis" id="kpisAds" aria-label="Publicidad"></div>
   </section>
@@ -109,7 +109,7 @@ const PLANTILLA = `<div class="wrap">
     <div class="phead">
       <div>
         <h2 id="h-funnel">Funnel por etapa</h2>
-        <p class="hint">Atracción viene de los anuncios (impresiones, clics y vistas de landing, con CPM, CPC y costo por vista sobre la inversión real); conversión, de registros, leads, citas y PVR. Cada anillo muestra el total de la etapa y su reparto entre medios; su tamaño baja con el volumen (escala logarítmica). Pasa el cursor sobre un segmento para ver el detalle.</p>
+        <p class="hint">Una sola línea: atracción (impresiones y clics de los anuncios, con CPM y CPC) y conversión (registros, leads, citas agendadas y PVR). Abajo, el funnel de OLE. Cada anillo muestra el total de la etapa y su reparto entre medios; su tamaño baja con el volumen (escala logarítmica). Pasa el cursor sobre un segmento para ver el detalle.</p>
       </div>
       <div class="legend" id="legFunnel"></div>
     </div>
@@ -166,7 +166,7 @@ const PLANTILLA = `<div class="wrap">
 
   <section class="panel" aria-labelledby="h-reg" data-sec="reg">
     <div class="phead">
-      <div><h2 id="h-reg">Registros por mes</h2><p class="hint">Formularios apilados por medio. El tooltip muestra cuántos pasaron a lead.</p></div>
+      <div><h2 id="h-reg">Registros, leads, citas y PVR por mes</h2><p class="hint">Registros de los formularios junto a los leads, citas agendadas y primeras visitas de cada mes, con los filtros de arriba.</p></div>
       <div class="legend" id="legReg"></div>
     </div>
     <div id="cReg"></div>
@@ -212,7 +212,7 @@ const PLANTILLA = `<div class="wrap">
     <div><h3>Límites del dato</h3><p id="noteLimites">Enero y febrero de 2026 no tienen correo en los leads, así que no cruzan con cita ni visita: por eso el reporte empieza en marzo. El gasto llega hasta la última carga de <code>inversion_diaria</code>. Los leads con <code>posible_duplicado</code> se cuentan.</p></div>
     <div><h3>Registros</h3><p>De <code>registros_historico</code> (formularios enviados). No trae correo, perfil Azul/Verde ni teléfono, así que no se cruza con citas agendadas y los filtros de perfil, LeadING y Nacional / Internacional no le aplican; la sucursal es la que eligió la persona.</p></div>
     <div><h3>Origen y campaña local</h3><p>Origen: «local» = campaña pagada cuya región coincide con la sucursal elegida; «nacional» = región nacional; «otras» = otras regiones; «sin campaña» = sin UTM de pago. La campaña local se mide en Meta; «% leads de la sucursal» = leads de la campaña local que son de esta sucursal ÷ todos los leads que genera esa campaña.</p></div>
-    <div><h3>Publicidad</h3><p>Inversión, impresiones, alcance, clics de enlace y vistas de landing vienen de <code>inversion_y_metricas_anuncio_diaria</code> (una fila por anuncio y día, desde la API de Meta y Google; USD × 18). Es la inversión real del periodo, no la asignada a leads; por eso puede diferir del CPL de abajo. Registros y leads son los mismos del reporte. Las vistas de landing solo las reporta Meta.</p></div>
+    <div><h3>Publicidad</h3><p>Inversión, impresiones, alcance y clics de enlace vienen de <code>inversion_y_metricas_anuncio_diaria</code> (una fila por anuncio y día, desde la API de Meta y Google; USD × 18). Esa tabla no sabe de sucursal: con sucursales elegidas se muestra la inversión asignada a sus leads (la misma del CPL) y las impresiones y clics se estiman en esa proporción. Registros y leads son los de <code>registros_historico</code> y <code>leads_historico</code>, no los que reportan las plataformas. Las vistas de landing no se muestran porque Google no las reporta.</p></div>
   </section>
   </div>
 </div>

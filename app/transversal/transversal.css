@@ -138,6 +138,22 @@ h1 { font-family: var(--font-serif); font-size: 34px; line-height: 1.1; margin: 
 .fgroup-title { font-size: 11.5px; text-transform: uppercase; letter-spacing: .12em; color: var(--accent); font-weight: 700; margin: 6px 0 8px; display: flex; align-items: center; gap: 10px; }
 .fgroup-title::after { content: ""; flex: 1; height: 1px; background: var(--grid); }
 .donuts { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 14px; margin-bottom: 8px; }
+/* Funnel en una sola línea (Alin, 2026-10-09): atracción y conversión seguidas, separadas por una etiqueta vertical. */
+.donuts.fila { display: flex; flex-wrap: nowrap; overflow-x: auto; gap: 6px; align-items: stretch; padding-bottom: 6px; }
+.donuts.fila .dcard { flex: 1 1 0; min-width: 118px; padding-inline: 2px; }
+.donuts.fila .dslot { max-width: 112px; }
+.fdiv { flex: 0 0 auto; display: flex; align-items: center; justify-content: center; padding: 0 2px; border-left: 1px solid var(--grid); }
+.fdiv span { writing-mode: vertical-rl; transform: rotate(180deg); font-size: 10.5px; letter-spacing: .12em; text-transform: uppercase; color: var(--accent); font-weight: 700; }
+.fdiv:first-child { border-left: 0; }
+/* Funnel de OLE: barras horizontales con las mismas métricas */
+.ole-funnel { margin-top: 10px; padding: 10px 12px 6px; background: var(--accent-soft); border-radius: var(--r-md); }
+.obar { display: grid; grid-template-columns: 130px minmax(60px, 1fr) 64px minmax(120px, 1.2fr); align-items: center; gap: 10px; font-size: 13px; padding: 3px 0; }
+.obar .ol { color: var(--ink-2); font-weight: 700; } .obar b { text-align: right; font-family: var(--font-serif); font-size: 17px; color: #8a6a1c; }
+.obar small { color: var(--ink-2); font-size: 12px; }
+.otrack { height: 12px; background: rgba(255,255,255,.6); border-radius: 6px; overflow: hidden; } .otrack i { display: block; height: 100%; border-radius: 6px; }
+.otrack .f-otros { background: var(--otros); } .otrack .f-google { background: var(--google); } .otrack .f-meta { background: var(--meta); }
+@media (max-width: 640px) { .obar { grid-template-columns: 110px 1fr 56px; } .obar small { grid-column: 1 / -1; padding-left: 2px; } }
+.dot.d-otros { background: var(--otros); } .dot.d-meta { background: var(--meta); } .dot.d-google { background: var(--google); } .dot.d-a { background: var(--seg-a); }
 .dcard { display: flex; flex-direction: column; align-items: center; text-align: center; gap: 6px; padding: 10px 6px 12px; border-radius: var(--r-md); min-width: 0; }
 .dcard:hover { background: var(--soft); }
 .dname { font-size: 14px; font-weight: 700; min-height: 2.6em; color: var(--ink); }
