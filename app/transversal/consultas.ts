@@ -87,14 +87,30 @@ const filtroIn = (k: string, vals: string[]) => `${DIMS[k].sql} IN (${vals.map(s
 const channels = (e: Estado) => (e.canal === "pagado" ? ["meta", "google"] : e.canal === "todos" ? ["meta", "google", "otros"] : [e.canal]);
 const AGG = `SUM(leads) leads, SUM(citas) citas, SUM(pvr) pvr, SUM(sucursal_cambio) cambio, ROUND(SUM(gasto_mxn_unif)) inversion`;
 
-function whereSql(e: Estado, withCanal: boolean) {
-  const w = [`tipo_fila = 'lead'`, `fecha BETWEEN '${e.desde}' AND '${e.hasta}'`];
+/* `col` es la fecha que acota el periodo y el mes: `fecha` (creación del lead) en el reporte directo; en el indirecto,
+   cada métrica usa la suya (fecha_cita = BIC.FechaCitaProg, fecha_visita = BIP.FechaPrimeraVisita). */
+function whereSql(e: Estado, withCanal: boolean, col = "fecha") {
+  const w = [`tipo_fila = 'lead'`, `${col} BETWEEN '${e.desde}' AND '${e.hasta}'`];
   const si = sucsIn(e, "sucursal_real"); if (si) w.push(si);
-  if (withCanal) { const chs = channels(e); if (chs.length < 3) w.push(`${CANAL_SQL} IN (${inList(chs)})`); if (e.mes !== "todo") w.push(`FORMAT_DATE('%Y-%m', fecha) = '${e.mes}'`); }
+  if (withCanal) { const chs = channels(e); if (chs.length < 3) w.push(`${CANAL_SQL} IN (${inList(chs)})`); if (e.mes !== "todo") w.push(`FORMAT_DATE('%Y-%m', ${col}) = '${e.mes}'`); }
   FILTER_DIMS.forEach((k) => { if (e.f[k].length) w.push(filtroIn(k, e.f[k])); });
   return w.join("\n  AND ");
 }
-const mainSql = (e: Estado) => `SELECT FORMAT_DATE('%Y-%m', fecha) mes, ${CANAL_SQL} canal, ${ORIGEN_SQL("campaign", "region", localRegions(e.sucs))} origen, ${DIMS[e.dim].sql} dim, ${AGG}
+/* Reporte INDIRECTO (Alin, 2026-10-09): leads por fecha de creación; citas agendadas por la fecha programada en BIC y
+   primeras visitas por la fecha de la visita en BIP, es decir, todo lo que ocurre en el periodo o mes elegido, aunque
+   el lead sea anterior. Se arma como unión de tres partes, una por métrica, cada una acotada por su propia fecha. */
+const PARTES: [string, string][] = [["fecha", "leads, 0 citas, 0 pvr, 0 cambio, gasto_mxn_unif gasto"], ["fecha_cita", "0 leads, citas, 0 pvr, 0 cambio, 0 gasto"], ["fecha_visita", "0 leads, 0 pvr_, pvr, sucursal_cambio cambio, 0 gasto"]];
+const AGG_IND = `SUM(leads) leads, SUM(citas) citas, SUM(pvr) pvr, SUM(cambio) cambio, ROUND(SUM(gasto)) inversion`;
+function indirectoSql(e: Estado, dims: (col: string) => string, withCanal: boolean, group: string) {
+  const partes = PARTES.map(([col, sel]) => `SELECT ${dims(col)}${sel.replace("0 pvr_, pvr", "0 citas, pvr")}
+  FROM ${VIEW}
+  WHERE ${whereSql(e, withCanal, col)}${col === "fecha_cita" ? " AND citas > 0" : col === "fecha_visita" ? " AND pvr > 0" : ""}`);
+  return `SELECT ${group}, ${AGG_IND}\nFROM (\n${partes.join("\n  UNION ALL\n")}\n)\nGROUP BY ${group}`;
+}
+const esInd = (e: Estado) => e.modo === "indirecto";
+const mainSql = (e: Estado) => esInd(e)
+  ? indirectoSql(e, (col) => `FORMAT_DATE('%Y-%m', ${col}) mes, ${CANAL_SQL} canal, ${ORIGEN_SQL("campaign", "region", localRegions(e.sucs))} origen, ${DIMS[e.dim].sql} dim, `, false, "mes, canal, origen, dim")
+  : `SELECT FORMAT_DATE('%Y-%m', fecha) mes, ${CANAL_SQL} canal, ${ORIGEN_SQL("campaign", "region", localRegions(e.sucs))} origen, ${DIMS[e.dim].sql} dim, ${AGG}
 FROM ${VIEW}
 WHERE ${whereSql(e, false)}
 GROUP BY 1,2,3,4`;
@@ -121,6 +137,18 @@ GROUP BY 1,2,3`;
 function weeklySql(e: Estado) {
   const loc = localRegions(e.sucs), suc = sucsIn(e, "sucursal_real");
   if (!loc.length || !suc) return null;
+  if (esInd(e)) {
+    const base = (col: string) => `tipo_fila = 'lead' AND ${col} BETWEEN '${e.desde}' AND '${e.hasta}'
+  AND STARTS_WITH(LOWER(TRIM(IFNULL(campaign,''))),'paid') AND LOWER(TRIM(IFNULL(region,''))) IN (${inList(loc)})
+  AND ${CANAL_SQL} = 'meta'`;
+    return `SELECT semana, SUM(leads) leads, SUM(citas) citas, SUM(pvr) pvr, ROUND(SUM(inv_asig)) inv_asig, SUM(leads_all) leads_all, ROUND(SUM(inv_all)) inv_all
+FROM (
+  SELECT CAST(DATE_TRUNC(fecha, WEEK(MONDAY)) AS STRING) semana, IF(${suc}, leads, 0) leads, 0 citas, 0 pvr, IF(${suc}, gasto_mxn_unif, 0) inv_asig, leads leads_all, gasto_mxn_unif inv_all FROM ${VIEW} WHERE ${base("fecha")}
+  UNION ALL SELECT CAST(DATE_TRUNC(fecha_cita, WEEK(MONDAY)) AS STRING), 0, IF(${suc}, citas, 0), 0, 0, 0, 0 FROM ${VIEW} WHERE ${base("fecha_cita")} AND citas > 0
+  UNION ALL SELECT CAST(DATE_TRUNC(fecha_visita, WEEK(MONDAY)) AS STRING), 0, 0, IF(${suc}, pvr, 0), 0, 0, 0 FROM ${VIEW} WHERE ${base("fecha_visita")} AND pvr > 0
+)
+GROUP BY 1 ORDER BY 1`;
+  }
   return `SELECT CAST(DATE_TRUNC(fecha, WEEK(MONDAY)) AS STRING) semana,
   SUM(IF(${suc}, leads, 0)) leads, SUM(IF(${suc}, citas, 0)) citas, SUM(IF(${suc}, pvr, 0)) pvr,
   ROUND(SUM(IF(${suc}, gasto_mxn_unif, 0))) inv_asig, SUM(leads) leads_all, ROUND(SUM(gasto_mxn_unif)) inv_all
@@ -131,11 +159,15 @@ WHERE tipo_fila = 'lead' AND fecha BETWEEN '${e.desde}' AND '${e.hasta}'
 GROUP BY 1 ORDER BY 1`;
 }
 /* Evolución diaria: respeta canal y mes como «perfil». */
-const diarioSql = (e: Estado) => `SELECT CAST(fecha AS STRING) dia, SUM(leads) leads, SUM(citas) citas, SUM(pvr) pvr
+const diarioSql = (e: Estado) => esInd(e)
+  ? indirectoSql(e, (col) => `CAST(${col} AS STRING) dia, `, true, "dia") + " ORDER BY 1"
+  : `SELECT CAST(fecha AS STRING) dia, SUM(leads) leads, SUM(citas) citas, SUM(pvr) pvr
 FROM ${VIEW}
 WHERE ${whereSql(e, true)}
 GROUP BY 1 ORDER BY 1`;
-const perfilSql = (e: Estado) => `SELECT ${DIMS[e.pdim].sql} dim, ${AGG}
+const perfilSql = (e: Estado) => esInd(e)
+  ? indirectoSql(e, () => `${DIMS[e.pdim].sql} dim, `, true, "dim")
+  : `SELECT ${DIMS[e.pdim].sql} dim, ${AGG}
 FROM ${VIEW}
 WHERE ${whereSql(e, true)}
 GROUP BY 1`;

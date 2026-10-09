@@ -145,7 +145,13 @@ const rtEl = document.querySelector(".rt") || document.body;
 function pintarModo() {
   byId("fModo").querySelectorAll("button").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.v === state.modo)));
   rtEl.classList.toggle("indirecto", state.modo === "indirecto");
-  byId("modoNote").textContent = state.modo === "indirecto" ? "Reporte indirecto: por ahora muestra la misma data; la regla de cálculo se define con Alin." : "";
+  const ind = state.modo === "indirecto";
+  byId("modoNote").textContent = ind
+    ? "Indirecto: leads por su fecha de creación; citas agendadas por la fecha programada (BIC) y primeras visitas por la fecha de la visita (BIP). Todo lo que ocurre en el periodo o mes elegido, aunque el lead sea anterior."
+    : "Directo: todo sigue al lead por su fecha de creación (cohorte); sus citas y visitas se cuentan aunque ocurran después.";
+  byId("noteCohorte").textContent = ind
+    ? "Reporte indirecto: los leads se cuentan por su fecha de creación, las citas agendadas por BIC.FechaCitaProg y las primeras visitas por BIP.FechaPrimeraVisita, cada una dentro del periodo y mes elegidos. Las tasas (lead → cita, TAL%) cruzan cosas de distinta fecha; úsalas como ritmo del mes, no como conversión de una cohorte."
+    : "El periodo filtra por fecha de creación del lead; sus citas agendadas y visitas se cuentan aunque ocurran después. Los últimos meses siguen madurando y sus tasas subirán.";
 }
 on(byId("fModo"), "click", e => { const b = e.target.closest("button"); if (!b) return; state.modo = b.dataset.v; save(); pintarModo(); loadOptions(false); refresh(false); });
 pintarModo();
