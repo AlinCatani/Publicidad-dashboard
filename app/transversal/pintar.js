@@ -592,6 +592,11 @@ function renderMes() {
   byId("mesHint").textContent = `${metN} por mes apilados por medio; la tabla trae costos y conversiones de cada cohorte.`;
   const per = ms.map(mo => { const o = {}; chs.forEach(c => o[c] = sum(MROWS.filter(r => r.mes === mo.key && r.canal === c))); o.all = sum(MROWS.filter(r => r.mes === mo.key)); return o; });
   const host = byId("cMes"); setDims(host);
+  if (!MROWS.length) {
+    const medio = state.canal === "pagado" ? "Meta ni Google" : state.canal === "todos" ? "ningún medio" : CH[state.canal];
+    host.innerHTML = `<p class="hint">Sin leads de ${medio} para ${sucsLabel().toLowerCase()} con estos filtros en el periodo. Prueba con ALL, otro medio o quita filtros.</p>`;
+    byId("legMes").innerHTML = ""; byId("tMes").innerHTML = ""; return;
+  }
   const yMax = niceMax(Math.max(1, ...per.map(p => p.all[met])) * 1.1);
   const step = iw / ms.length, bw = Math.min(64, step * 0.6);
   let s = axes(yMax, v => nf.format(v));
