@@ -247,7 +247,7 @@ tr.total td { font-weight: 700; color: var(--primary); border-top: 1px solid var
 .sticky-filters .seg { background: #ffffff; border-color: #bfcde8; }
 .sticky-filters .sel-btn { border-color: #bfcde8; }
 /* Botón maestro Directo / Indirecto (Alin, 2026-10-09). Con Indirecto todo el reporte se tiñe de amarillo pastel para que no se confunda con el directo. */
-.modo-row { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 14px; margin-top: 10px; padding-top: 10px; border-top: 1px dashed #bfcde8; }
+.modo-row { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 14px; margin-bottom: 10px; padding-bottom: 10px; border-bottom: 1px dashed #bfcde8; }
 .seg-modo button { font-weight: 700; }
 /* Indirecto en verde Ingenes (#7ab83b, el de las pestañas MX), pedido por Alin el 2026-10-15; antes era amarillo. */
 .seg-modo button[data-v="indirecto"][aria-pressed="true"] { background: #7ab83b; color: #fff; }
@@ -255,9 +255,10 @@ tr.total td { font-weight: 700; color: var(--primary); border-top: 1px solid var
 &.indirecto .sticky-filters { background: #e4f2d4; border-color: #b9d99c; box-shadow: 0 6px 16px rgba(79,138,28,.14); }
 &.indirecto .sticky-filters .seg, &.indirecto .sticky-filters .sel-btn, &.indirecto .sel-all { border-color: #b9d99c; }
 &.indirecto .sel-btn.on, &.indirecto .sel-opt.on, &.indirecto .chip { background: #d4ebbd; border-color: #8fc45a; color: #35600f; }
-&.indirecto .modo-row { border-top-color: #b9d99c; }
+&.indirecto .modo-row { border-bottom-color: #b9d99c; }
 &.indirecto .eyebrow { color: #4f8a1c; }
 .sticky-filters .selects:first-of-type { margin-top: 0; }
+.sticky-filters .selects { margin-top: 8px; }
 .sticky-filters .chips { justify-content: flex-start; margin: 8px 0 0; }
 .sticky-filters .selects { margin-top: 8px; gap: 6px 10px; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); }
 .sticky-filters .sel span { font-size: 10.5px; }
