@@ -78,16 +78,15 @@ const PLANTILLA = `<div class="wrap">
     </div>
     <div class="seg" role="group" aria-label="Característica" id="fPerfil" style="margin-bottom:12px"></div>
     <div class="tscroll"><table id="tPerfil"></table></div>
-  </section>
-
-  <section class="panel" aria-labelledby="h-diario" data-sec="diario">
-    <div class="phead">
-      <div><h2 id="h-diario">Tendencia de resultados</h2><p class="hint" id="diarioHint">Resultados por día, apilados por la característica elegida arriba (por ejemplo LS y LP por día).</p></div>
-      <div class="seg" role="group" aria-label="Métrica" id="fDiaMet"></div>
-      <div class="seg" role="group" aria-label="Granularidad" id="fGran"><button type="button" data-v="dia">Por día</button><button type="button" data-v="semana">Por semana</button><button type="button" data-v="mes">Por mes</button></div>
+    <div class="subpanel" id="bloqueDiario">
+      <div class="phead">
+        <div><h3 id="h-diario">Tendencia de resultados</h3><p class="hint" id="diarioHint">Resultados por día, apilados por la característica elegida arriba (por ejemplo LS y LP por día).</p></div>
+        <div class="seg" role="group" aria-label="Métrica" id="fDiaMet"></div>
+        <div class="seg" role="group" aria-label="Granularidad" id="fGran"><button type="button" data-v="dia">Por día</button><button type="button" data-v="semana">Por semana</button><button type="button" data-v="mes">Por mes</button></div>
+      </div>
+      <div class="legend" id="diarioLeg" style="margin-bottom:10px"></div>
+      <div id="cDiario"></div>
     </div>
-    <div class="legend" id="diarioLeg" style="margin-bottom:10px"></div>
-    <div id="cDiario"></div>
   </section>
 
   <section class="panel" aria-labelledby="h-desg" data-sec="desg">

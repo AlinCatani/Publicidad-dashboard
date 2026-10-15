@@ -820,7 +820,7 @@ async function refreshAds(force) {
 }
 let dseq = 0;
 async function refreshDiario(force) {
-  if (!hay("diario")) return;
+  if (!hay("perfil") && !hay("evol")) return; // la tendencia vive dentro de la tabla de paciente (2026-10-15); Evolución diaria también usa estas filas
   const my = ++dseq;
   try {
     const { rows } = await runSql("diario", force);
