@@ -26,7 +26,13 @@ const PLANTILLA = `<div class="wrap">
 
   <section class="panel sticky-filters" aria-label="Filtros">
     <div class="modo-row">
-      <span class="flabel" id="lbl-periodo">Periodo</span>
+      <span class="flabel" id="lbl-modo">Reporte</span>
+      <div class="seg seg-modo" role="group" aria-labelledby="lbl-modo" id="fModo">
+        <button type="button" data-v="directo" title="Reporte directo">Directo</button>
+        <button type="button" data-v="indirecto" title="Reporte indirecto: cambia toda la data del reporte">Indirecto</button>
+      </div>
+      <span class="caveat" id="modoNote" style="margin:0"></span>
+      <span class="flabel" id="lbl-periodo" style="margin-left:auto">Periodo</span>
       <div class="period-wrap">
       <button type="button" class="period" id="periodBtn" aria-haspopup="dialog" aria-expanded="false">—</button>
       <div class="popover" id="periodPop" role="dialog" aria-label="Elegir periodo" hidden>
@@ -41,12 +47,6 @@ const PLANTILLA = `<div class="wrap">
         <p class="caveat" style="margin-top:8px">Las fechas son de creación del lead. Los datos empiezan el 1 de marzo de 2026.</p>
       </div>
       </div>
-      <span class="flabel" id="lbl-modo">Reporte</span>
-      <div class="seg seg-modo" role="group" aria-labelledby="lbl-modo" id="fModo">
-        <button type="button" data-v="directo" title="Reporte directo">Directo</button>
-        <button type="button" data-v="indirecto" title="Reporte indirecto: cambia toda la data del reporte">Indirecto</button>
-      </div>
-      <span class="caveat" id="modoNote" style="margin:0"></span>
     </div>
     <div class="selects" id="selects1"></div>
     <div class="selects" id="selects2"></div>

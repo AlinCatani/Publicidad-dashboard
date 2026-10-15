@@ -223,10 +223,10 @@ tr.total td { font-weight: 700; color: var(--primary); border-top: 1px solid var
 .notes h3 { font-family: var(--font-serif); font-size: 17px; color: var(--primary); font-weight: 600; margin: 0 0 4px; }
 .notes p { margin: 0; }
 /* Periodo: botón + selector de fechas */
-.period-wrap { position: relative; margin-right: 10px; }
+.period-wrap { position: relative; }
 .period { font: inherit; cursor: pointer; font-weight: 700; }
 .period:hover { background: var(--soft); }
-.popover { position: absolute; left: 0; top: calc(100% + 8px); z-index: 30; background: var(--surface); border: 1px solid var(--line); border-radius: var(--r-md); box-shadow: var(--shadow); padding: 14px; min-width: 300px; display: flex; flex-direction: column; gap: 10px; }
+.popover { position: absolute; right: 0; top: calc(100% + 8px); z-index: 30; background: var(--surface); border: 1px solid var(--line); border-radius: var(--r-md); box-shadow: var(--shadow); padding: 14px; min-width: 300px; display: flex; flex-direction: column; gap: 10px; }
 .popover label { display: flex; justify-content: space-between; align-items: center; gap: 10px; font-size: 13.5px; color: var(--ink-2); }
 .popover input[type=date] { font: inherit; font-size: 13.5px; color: var(--ink); background: var(--surface); border: 1px solid var(--line); border-radius: var(--r-sm); padding: 6px 8px; }
 .pop-actions { display: flex; flex-wrap: wrap; gap: 6px; justify-content: flex-end; }
