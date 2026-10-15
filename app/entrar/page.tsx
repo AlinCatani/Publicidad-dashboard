@@ -1,4 +1,5 @@
 import { existsSync } from "node:fs";
+import { headers } from "next/headers";
 import { signIn } from "@/auth";
 
 // Foto de portada opcional: public/portada.webp. Si no está, queda el degradado azul.
@@ -10,6 +11,9 @@ const GOOGLE_G = (
 
 export default async function Entrar({ searchParams }: PageProps<"/entrar">) {
   const { error, callbackUrl } = await searchParams;
+  // En reportetransversal.vercel.app la pantalla de entrar es la del reporte (Alin, 2026-10-15).
+  const host = (await headers()).get("host") ?? "";
+  const titulo = /^reportetransversal\./i.test(host) ? "Reporte transversal" : "Reportes de Atracción";
   // Volver a la página que se pidió, pero solo dentro del sitio (nunca a otro dominio).
   let destino = "/";
   try {
@@ -21,7 +25,7 @@ export default async function Entrar({ searchParams }: PageProps<"/entrar">) {
     <main className="entrar">
       <header className="cabecera">
         <img src="/ingenes-logo.webp" alt="Instituto Ingenes" />
-        <h1>Reportes de Atracción</h1>
+        <h1>{titulo}</h1>
       </header>
       <section className="portada" aria-hidden="true">
         {HAY_PORTADA && <img src="/portada.webp" alt="" />}
