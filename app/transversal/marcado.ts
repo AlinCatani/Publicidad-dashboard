@@ -31,6 +31,7 @@ const PLANTILLA = `<div class="wrap">
         <button type="button" data-v="directo" title="Reporte directo">Directo</button>
         <button type="button" data-v="indirecto" title="Reporte indirecto: cambia toda la data del reporte">Indirecto</button>
       </div>
+      <button type="button" class="ver-filtros" id="verFiltros" aria-expanded="false" title="Mostrar los filtros"><span aria-hidden="true">⌄</span><small>Ver filtros</small></button>
       <span class="caveat" id="modoNote" style="margin:0"></span>
       <span class="flabel" id="lbl-periodo" style="margin-left:auto">Periodo</span>
       <div class="period-wrap">

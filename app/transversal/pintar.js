@@ -761,6 +761,30 @@ function pintarPliegue() {
 const alternarPliegue = () => { plegado = !plegado; try { localStorage.setItem("reporte-transversal-menu", plegado ? "plegado" : "abierto"); } catch (e) {} pintarPliegue(); clearTimeout(resizeT); resizeT = setTimeout(renderCharts, 200); };
 on(sideToggle, "click", alternarPliegue); on(sideBadge, "click", alternarPliegue);
 pintarPliegue();
+/* Barra de filtros compacta al hacer scroll (Alin, 2026-10-15): congelada ocupaba demasiado. Al pasar de su sitio solo
+   quedan Directo / Indirecto, los chips de filtros activos y el periodo; «Ver filtros» (clic o cursor encima) despliega
+   los selectores, y al volver arriba la barra regresa completa. */
+const barraEl = document.querySelector(".sticky-filters"), verFiltros = byId("verFiltros"), modoRowEl = document.querySelector(".modo-row"), chipsEl = byId("filterNote");
+let compacta = false, filtrosAbiertos = false;
+function pintarBarra() {
+  rtEl.classList.toggle("compacta", compacta);
+  rtEl.classList.toggle("filtros-abiertos", compacta && filtrosAbiertos);
+  verFiltros.setAttribute("aria-expanded", String(compacta && filtrosAbiertos));
+  verFiltros.title = filtrosAbiertos ? "Ocultar los filtros" : "Mostrar los filtros";
+  verFiltros.firstElementChild.textContent = filtrosAbiertos ? "⌃" : "⌄";
+  /* los chips viajan a la fila de arriba cuando la barra está compacta y vuelven abajo cuando no */
+  if (compacta && chipsEl.parentElement !== modoRowEl) modoRowEl.insertBefore(chipsEl, byId("lbl-periodo"));
+  else if (!compacta && chipsEl.parentElement === modoRowEl) barraEl.appendChild(chipsEl);
+}
+if (barraEl && "IntersectionObserver" in window) {
+  const centinela = document.createElement("div"); centinela.className = "centinela"; barraEl.parentElement.insertBefore(centinela, barraEl);
+  const io = new IntersectionObserver(([en]) => { const antes = compacta; compacta = !en.isIntersecting && en.boundingClientRect.top < 0; if (!compacta) filtrosAbiertos = false; if (antes !== compacta) pintarBarra(); }, { threshold: 0 });
+  io.observe(centinela);
+}
+on(verFiltros, "click", () => { filtrosAbiertos = !filtrosAbiertos; pintarBarra(); });
+on(barraEl, "mouseenter", () => { if (compacta && !filtrosAbiertos) { filtrosAbiertos = true; pintarBarra(); } });
+on(barraEl, "mouseleave", () => { if (compacta && filtrosAbiertos && !selAbierto && periodPop.hidden) { filtrosAbiertos = false; pintarBarra(); } });
+
 /* Botones flotantes: volver al menú (siempre), inicio y salir (solo en el sitio) */
 const irMenu = byId("irMenu");
 const enSitio = typeof opciones === "object" && !!opciones && !!opciones.sitio;
