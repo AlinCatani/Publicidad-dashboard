@@ -545,7 +545,7 @@ function renderReg() {
   host.innerHTML = `<svg class="chart" viewBox="0 0 ${W} ${H}" role="img" aria-label="Registros, leads, citas agendadas y primeras visitas por mes">${s}</svg>`;
   byId("legReg").innerHTML = SER.map(([, l, cls]) => `<span><i class="dot ${cls.replace("f-", "d-")}"></i>${l}</span>`).join("");
   const skipped = FILTER_DIMS.filter(k => state.f[k].length && REG_SKIP[k]).map(k => DIMS[k].label);
-  byId("regNote").textContent = (state.sucs.length ? "Registros por la sucursal que eligió la persona (el formulario no sabe dónde terminará la visita). " : "") + (state.terr ? "El territorio no aplica a registros (el formulario no guarda teléfono). " : "") + (skipped.length ? `Los filtros de ${skipped.join(" y ")} no aplican a registros; leads, citas y PVR sí los obedecen.` : "");
+  byId("regNote").textContent = (state.sucs.length ? "Registros por la sucursal que eligió la persona (el formulario no sabe dónde terminará la visita). " : "") + (state.terr ? "En registros el territorio se aproxima con el país del formulario (no guarda teléfono). " : "") + (skipped.length ? `Los filtros de ${skipped.join(" y ")} no aplican a registros; leads, citas y PVR sí los obedecen.` : "");
 }
 
 /* ===== Líneas de costo por mes y canal ===== */

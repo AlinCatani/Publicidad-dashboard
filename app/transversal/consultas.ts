@@ -70,6 +70,14 @@ function terrSql(terr: string): string | null {
   if (terr === "usa") return `${ES_INTL} AND ${us}`;
   return null;
 }
+/* En registros_historico no hay teléfono: el territorio se aproxima con `pais` (MX / US) y `pais_sucursal` (MEX / USA). */
+function terrRegSql(terr: string): string | null {
+  const mx = "UPPER(TRIM(IFNULL(pais,''))) = 'MX'", us = "UPPER(TRIM(IFNULL(pais_sucursal,''))) = 'USA'";
+  if (terr === "mexico") return `${mx} AND NOT ${us}`;
+  if (terr === "internacional") return `NOT ${mx} AND NOT ${us}`;
+  if (terr === "usa") return `NOT ${mx} AND ${us}`;
+  return null;
+}
 
 export type Estado = { desde: string; hasta: string; mes: string; canal: string; modo: "directo" | "indirecto"; terr: string; dim: string; pdim: string; sucs: string[]; f: Record<string, string[]> };
 
@@ -136,6 +144,7 @@ const REG_SKIP: Record<string, 1> = { perfil: 1, es_leading: 1, internacional: 1
 function regWhereSql(e: Estado) {
   const w = [`Fecha BETWEEN '${e.desde}' AND '${e.hasta}'`];
   const si = sucsIn(e, SUC_NORM_SQL("sucursal")); if (si) w.push(si);
+  const tr = terrRegSql(e.terr); if (tr) w.push(tr);
   const chs = channels(e);
   if (chs.length < 3) w.push(`${CANAL_SQL} IN (${inList(chs)})`);
   FILTER_DIMS.forEach((k) => {
@@ -150,13 +159,14 @@ WHERE ${regWhereSql(e)}
 GROUP BY 1,2,3`;
 
 /* Semanal de la campaña local (Meta, región de la sucursal): leads de la sucursal vs. todos los leads de esa campaña. */
+const terrAnd = (e: Estado) => { const t = terrSql(e.terr); return t ? ` AND ${t}` : ""; };
 function weeklySql(e: Estado) {
   const loc = localRegions(e.sucs), suc = sucsIn(e, "sucursal_real");
   if (!loc.length || !suc) return null;
   if (esInd(e)) {
     const base = (col: string) => `tipo_fila = 'lead' AND ${col} BETWEEN '${e.desde}' AND '${e.hasta}'
   AND STARTS_WITH(LOWER(TRIM(IFNULL(campaign,''))),'paid') AND LOWER(TRIM(IFNULL(region,''))) IN (${inList(loc)})
-  AND ${CANAL_SQL} = 'meta'`;
+  AND ${CANAL_SQL} = 'meta'${terrAnd(e)}`;
     return `SELECT semana, SUM(leads) leads, SUM(citas) citas, SUM(pvr) pvr, ROUND(SUM(inv_asig)) inv_asig, SUM(leads_all) leads_all, ROUND(SUM(inv_all)) inv_all
 FROM (
   SELECT CAST(DATE_TRUNC(fecha, WEEK(MONDAY)) AS STRING) semana, IF(${suc}, leads, 0) leads, 0 citas, 0 pvr, IF(${suc}, gasto_mxn_unif, 0) inv_asig, leads leads_all, gasto_mxn_unif inv_all FROM ${VIEW} WHERE ${base("fecha")}
@@ -171,7 +181,7 @@ GROUP BY 1 ORDER BY 1`;
 FROM ${VIEW}
 WHERE tipo_fila = 'lead' AND fecha BETWEEN '${e.desde}' AND '${e.hasta}'
   AND STARTS_WITH(LOWER(TRIM(IFNULL(campaign,''))),'paid') AND LOWER(TRIM(IFNULL(region,''))) IN (${inList(loc)})
-  AND ${CANAL_SQL} = 'meta'
+  AND ${CANAL_SQL} = 'meta'${terrAnd(e)}
 GROUP BY 1 ORDER BY 1`;
 }
 /* Evolución diaria: respeta canal y mes como «perfil». */
