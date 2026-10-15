@@ -40,7 +40,7 @@ const DIMS = {
 const FILTER_ROW1 = ["campaign", "medium", "landing", "region", "anuncio", "mensaje"];
 const FILTER_ROW2 = ["tipo_de_paciente", "perfil", "score", "user_persona", "grupo_edad", "es_leading", "ole", "internacional"];
 const FILTER_DIMS = FILTER_ROW1.concat(FILTER_ROW2);
-const DESG_DIMS = ["campaign", "medium", "landing", "region", "anuncio", "mensaje", "sucursal_real", "mes"]; // «canal» (Meta/Google/otros) salió de los botones el 2026-10-15 a pedido de Alin; el servidor lo sigue aceptando
+const DESG_DIMS = ["campaign", "medium", "landing", "region", "anuncio", "mensaje", "sucursal_real"]; // «canal» (Meta/Google/otros) salió de los botones el 2026-10-15 a pedido de Alin; el servidor lo sigue aceptando
 const PERFIL_DIMS = ["tipo_de_paciente", "perfil", "score", "user_persona", "es_leading", "grupo_edad"];
 
 /* Sucursales: abreviatura y grupo de color (mx = verde del logo, us = azul marino, tur = dorado). */
