@@ -51,7 +51,7 @@ const FILTER_DIMS = ["campaign", "medium", "landing", "region", "anuncio", "mens
 const DESG_DIMS = ["campaign", "medium", "landing", "region", "anuncio", "mensaje", "sucursal_real", "canal", "mes"];
 const PERFIL_DIMS = ["tipo_de_paciente", "perfil", "score", "user_persona", "es_leading", "grupo_edad"];
 const CANALES = ["pagado", "todos", "meta", "google", "otros"];
-export const TIPOS = ["principal", "registros", "semanal", "perfil", "opciones", "diario", "desg_diario", "publicidad"] as const;
+export const TIPOS = ["principal", "registros", "reg_diario", "semanal", "perfil", "opciones", "diario", "desg_diario", "publicidad"] as const;
 const VACIO = "__vacio__"; // el select manda esto para «(vacío)»; en SQL es ''
 const MAX_SUCS = 40;
 const MAX_VALS = 60; // valores por filtro
@@ -153,6 +153,11 @@ function regWhereSql(e: Estado) {
   });
   return w.join("\n  AND ");
 }
+/* Registros por día, para la tendencia (2026-10-15). */
+const regDiarioSql = (e: Estado) => `SELECT CAST(Fecha AS STRING) dia, COUNT(*) registros
+FROM ${REG}
+WHERE ${regWhereSql(e)}
+GROUP BY 1 ORDER BY 1`;
 const regSql = (e: Estado) => `SELECT FORMAT_DATE('%Y-%m', Fecha) mes, ${CANAL_SQL} canal, ${ORIGEN_SQL("campaign", "region", localRegions(e.sucs))} origen, COUNT(*) registros
 FROM ${REG}
 WHERE ${regWhereSql(e)}
@@ -230,6 +235,7 @@ export function construirSql(tipo: Tipo, e: Estado): string | null {
     case "perfil": return perfilSql(e);
     case "opciones": return optionsSql();
     case "diario": return diarioSql(e);
+    case "reg_diario": return regDiarioSql(e);
     case "desg_diario": return desgDiarioSql(e);
     case "publicidad": return adsSql(e);
   }

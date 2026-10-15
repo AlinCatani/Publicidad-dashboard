@@ -70,7 +70,7 @@ const today = iso(new Date());
 
 /* ===== Estado ===== */
 const MES_MET_KEYS = ["leads", "citas", "pvr"];
-const state = { desde: MIN_DATE, hasta: today, mes: "todo", canal: "todos", modo: "directo", terr: "", diaMet: "leads", gran: "dia", evolGran: "dia", desgMet: "leads", desgGran: "dia", dim: "campaign", pdim: "tipo_de_paciente", sucs: [], f: {} }; // arranca en ALL y con todos los medios (Alin, 2026-10-15): «no dejes fuera nada»
+const state = { desde: MIN_DATE, hasta: today, mes: "todo", canal: "todos", modo: "directo", terr: "", diaMet: "leads", gran: "dia", evolGran: "dia", desgMet: "leads", desgGran: "dia", regMet: "registros", regGran: "dia", dim: "campaign", pdim: "tipo_de_paciente", sucs: [], f: {} }; // arranca en ALL y con todos los medios (Alin, 2026-10-15): «no dejes fuera nada»
 FILTER_DIMS.forEach(k => state.f[k] = []);
 try {
   const s = JSON.parse(localStorage.getItem("reporte-transversal-v3") || "{}");
@@ -80,6 +80,8 @@ try {
   if (s.evolGran === "semana") state.evolGran = "semana";
   if (MES_MET_KEYS.includes(s.desgMet)) state.desgMet = s.desgMet;
   if (["dia", "semana", "mes"].includes(s.desgGran)) state.desgGran = s.desgGran;
+  if (["registros", "leads", "citas", "pvr"].includes(s.regMet)) state.regMet = s.regMet;
+  if (["dia", "semana", "mes"].includes(s.regGran)) state.regGran = s.regGran;
   if (typeof s.mesMet === "string") state.mesMet = s.mesMet;
   if (/^\d{4}-\d\d-\d\d$/.test(s.desde || "")) state.desde = s.desde < MIN_DATE ? MIN_DATE : s.desde;
   if (/^\d{4}-\d\d-\d\d$/.test(s.hasta || "")) state.hasta = s.hasta;
@@ -103,7 +105,7 @@ function monthsSel() {
 
 const REG_SKIP = { perfil: 1, es_leading: 1, internacional: 1 };
 /* ===== Datos ===== */
-let ALL = [], ROWS = [], PROWS = [], RROWS = [], WEEKS = [], DROWS = [], GROWS = [], AROWS = [], OPTIONS = null;
+let ALL = [], ROWS = [], PROWS = [], RROWS = [], RDROWS = [], WEEKS = [], DROWS = [], GROWS = [], AROWS = [], OPTIONS = null;
 let MROWS = [];
 const inMes = r => state.mes === "todo" || r.mes === state.mes;
 const applyCanal = () => { const chs = channels(); MROWS = ALL.filter(r => chs.includes(r.canal)); ROWS = MROWS.filter(inMes); };
@@ -535,21 +537,43 @@ function renderWeekly() {
 }
 
 /* ===== Registros por mes (apilado) ===== */
+const REG_MET = { registros: ["Registros", "#9aa7bd"], leads: ["Leads", "#253f78"], citas: ["Citas agendadas", "#c8a040"], pvr: ["Primeras visitas", "#4a3aa7"] };
+const fRegMet = byId("fRegMet"), fRegGran = byId("fRegGran");
+fRegMet.innerHTML = Object.keys(REG_MET).map(k => `<button type="button" data-v="${k}">${REG_MET[k][0]}</button>`).join("");
+fRegMet.addEventListener("click", e => { const b = e.target.closest("button"); if (!b) return; state.regMet = b.dataset.v; save(); renderReg(); });
+fRegGran.addEventListener("click", e => { const b = e.target.closest("button"); if (!b) return; state.regGran = b.dataset.v; save(); renderReg(); });
+/* Tendencia de registros / leads / citas / PVR: una métrica a la vez, barras por día, semana (desde lunes) o mes (Alin, 2026-10-15).
+   Registros vienen de registros_historico por día (RDROWS); leads, citas y PVR de las filas diarias del reporte (DROWS). */
 function renderReg() {
-  const ms = monthsSel(), host = byId("cReg"); setDims(host);
-  /* Registros: lo que llega a registros_historico (obedece sucursal elegida, medio, mes y UTM; no perfil). Leads, citas y PVR: con todos los filtros. */
-  const SER = [["reg", "Registros", "f-otros"], ["leads", "Leads", "f-meta"], ["citas", "Citas agendadas", "f-google"], ["pvr", "Primeras visitas", "f-a"]];
-  const per = ms.map(mo => { const a = sum(MROWS.filter(r => r.mes === mo.key)); return { reg: regBy(null, mo.key), leads: a.leads, citas: a.citas, pvr: a.pvr }; });
-  const yMax = niceMax(Math.max(1, ...per.map(p => Math.max(p.reg, p.leads))) * 1.1);
-  const step = iw / ms.length, gw = Math.min(100, step * 0.78), bw = gw / SER.length;
-  let s = axes(yMax, v => nf.format(v));
-  ms.forEach((mo, i) => { const x0 = M.l + step * i + (step - gw) / 2;
-    SER.forEach(([m, , cls], j) => { const v = per[i][m]; if (!v) return; const h = v / yMax * ih; s += `<rect class="${cls}" x="${(x0 + bw * j).toFixed(1)}" y="${(M.t + ih - h).toFixed(1)}" width="${(bw - 1).toFixed(1)}" height="${h.toFixed(1)}" rx="1"/>`; });
-    const p = per[i];
-    const tip = `<div class="tt">${cap(mo.long)}</div>` + tipRows([["Registros", nf.format(p.reg)], ["Leads", `${nf.format(p.leads)} (${pct(div(p.leads, p.reg))} de registros)`], ["Citas agendadas", `${nf.format(p.citas)} (${pct(div(p.citas, p.leads))} de leads)`], ["Primeras visitas", `${nf.format(p.pvr)} (TAL% ${pct(div(p.pvr, p.leads))})`]]);
-    s += `<g class="col" data-tip="${encodeURIComponent(tip)}"><rect class="hit" x="${M.l + step * i}" y="${M.t}" width="${step}" height="${ih}"/></g><text x="${x0 + gw / 2}" y="${H - 8}" text-anchor="middle">${cap(mo.short)}</text>`; });
-  host.innerHTML = `<svg class="chart" viewBox="0 0 ${W} ${H}" role="img" aria-label="Registros, leads, citas agendadas y primeras visitas por mes">${s}</svg>`;
-  byId("legReg").innerHTML = SER.map(([, l, cls]) => `<span><i class="dot ${cls.replace("f-", "d-")}"></i>${l}</span>`).join("");
+  if (!hay("reg")) return;
+  fRegMet.querySelectorAll("button").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.v === state.regMet)));
+  fRegGran.querySelectorAll("button").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.v === state.regGran)));
+  const host = byId("cReg"), met = state.regMet, [metN, col] = REG_MET[met];
+  const sem = state.regGran === "semana", mes = state.regGran === "mes", gran = mes ? "mes" : sem ? "semana" : "día";
+  const key = d => mes ? d.slice(0, 7) + "-01" : sem ? monday(d) : d;
+  const map = new Map();
+  const add = (d, v) => { const k = key(d); map.set(k, (map.get(k) || 0) + v); };
+  if (met === "registros") RDROWS.forEach(r => add(r.dia, r.registros)); else DROWS.forEach(r => add(r.dia, r[met]));
+  const pts = [...map.entries()].map(([k, v]) => ({ k, v })).sort((a, b) => a.k < b.k ? -1 : 1);
+  byId("regHint").textContent = `${metN} por ${gran}, del ${fmtDate(state.desde)} al ${fmtDate(state.hasta)}, con los filtros de arriba. Las semanas empiezan en lunes.`;
+  if (!pts.length) { host.innerHTML = `<p class="hint">Sin datos con estos filtros.</p>`; } else {
+    setDims(host); H = W < 520 ? 280 : 340; const mb = 40; ih = H - M.t - mb;
+    const top = Math.max(1, ...pts.map(p => p.v)) * 1.08, pw = Math.pow(10, Math.floor(Math.log10(top))), q = top / pw;
+    const yMax = ([1, 1.2, 1.5, 2, 2.5, 3, 4, 5, 6, 8, 10].find(m => q <= m) || 10) * pw;
+    const n = pts.length, step = iw / n, bw = Math.max(1.5, Math.min(64, step * 0.84));
+    const x = i => M.l + step * (i + 0.5), y = v => M.t + ih - v / yMax * ih;
+    let s = axes(yMax, v => nf.format(v));
+    const fx = k => new Date(k + "T12:00:00").toLocaleDateString("es-MX", mes ? { month: "short", year: "numeric" } : { day: "numeric", month: "short" }).replace(".", "");
+    const fmtK = k => mes ? cap(new Date(k + "T12:00:00").toLocaleDateString("es-MX", { month: "long", year: "numeric" })) : sem ? `Semana del ${fmtDate(k)}` : fmtDate(k);
+    const every = step >= 30 ? 1 : Math.max(1, Math.ceil(n / (W < 420 ? 4 : W < 800 ? 7 : 12)));
+    pts.forEach((p, i) => { if (i % every === 0 || i === n - 1) s += `<text x="${x(i)}" y="${H - (every === 1 && step < 64 && i % 2 ? 6 : 20)}" text-anchor="middle">${fx(p.k)}</text>`; });
+    pts.forEach((p, i) => {
+      if (p.v > 0) s += `<rect x="${(x(i) - bw / 2).toFixed(1)}" y="${y(p.v).toFixed(1)}" width="${bw.toFixed(1)}" height="${(M.t + ih - y(p.v)).toFixed(1)}" fill="${col}" rx="${Math.min(3, bw / 2)}" pointer-events="none"/>`;
+      if (p.v > 0 && bw >= 11) s += `<text x="${x(i)}" y="${(y(p.v) - 4).toFixed(1)}" text-anchor="middle" class="lbl${bw < 26 ? " chica" : ""}">${nf.format(p.v)}</text>`;
+      s += `<g class="col" data-tip="${encodeURIComponent(`<div class="tt">${fmtK(p.k)}</div>` + tipRows([[metN, nf.format(p.v)]]))}"><rect class="hit" x="${(x(i) - step / 2).toFixed(1)}" y="${M.t}" width="${step.toFixed(1)}" height="${ih}"/></g>`;
+    });
+    host.innerHTML = `<svg class="chart" viewBox="0 0 ${W} ${H}" role="img" aria-label="${metN} por ${gran}">${s}</svg>`;
+  }
   const skipped = FILTER_DIMS.filter(k => state.f[k].length && REG_SKIP[k]).map(k => DIMS[k].label);
   byId("regNote").textContent = (state.sucs.length ? "Registros por la sucursal que eligió la persona (el formulario no sabe dónde terminará la visita). " : "") + (state.terr ? "En registros el territorio se aproxima con el país del formulario (no guarda teléfono). " : "") + (skipped.length ? `Los filtros de ${skipped.join(" y ")} no aplican a registros; leads, citas y PVR sí los obedecen.` : "");
 }
@@ -857,6 +881,10 @@ async function refreshReg(force) {
   try { const { rows } = await runSql("registros", force); if (!rows) return;
     RROWS = rows.map(r => ({ mes: String(r.mes), canal: String(r.canal), origen: String(r.origen), registros: +r.registros || 0 })); render();
   } catch (e) { /* registros se quedan en cero */ }
+  if (!hay("reg")) return;
+  try { const { rows } = await runSql("reg_diario", force); if (!rows) return;
+    RDROWS = rows.map(r => ({ dia: String(r.dia).slice(0, 10), registros: +r.registros || 0 })); renderReg();
+  } catch (e) { /* la tendencia conserva lo anterior */ }
 }
 async function refreshWeekly(force) {
   if (!hay("local") && !hay("wk")) return;
@@ -885,7 +913,7 @@ async function refreshDiario(force) {
     const { rows } = await runSql("diario", force);
     if (my !== dseq || !rows) return;
     DROWS = rows.map(r => ({ dia: String(r.dia).slice(0, 10), dim: r.dim == null ? "" : String(r.dim), leads: +r.leads || 0, citas: +r.citas || 0, pvr: +r.pvr || 0 })).sort((a, b) => a.dia < b.dia ? -1 : 1);
-    renderEvol(); renderDiario();
+    renderEvol(); renderDiario(); renderReg();
   } catch (e) { /* la sección conserva lo anterior */ }
 }
 let gseq = 0;

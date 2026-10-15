@@ -174,8 +174,11 @@ const PLANTILLA = `<div class="wrap">
 
   <section class="panel" aria-labelledby="h-reg" data-sec="reg">
     <div class="phead">
-      <div><h2 id="h-reg">Registros, leads, citas y PVR por mes</h2><p class="hint">Registros de los formularios junto a los leads, citas agendadas y primeras visitas de cada mes, con los filtros de arriba.</p></div>
-      <div class="legend" id="legReg"></div>
+      <div><h2 id="h-reg">Tendencia de registros, leads, citas y PVR</h2><p class="hint" id="regHint">Registros de los formularios, leads, citas agendadas y primeras visitas en el tiempo, con los filtros de arriba. Las semanas empiezan en lunes.</p></div>
+    </div>
+    <div class="fila-ctrl">
+      <div class="seg" role="group" aria-label="Métrica" id="fRegMet"></div>
+      <div class="seg" role="group" aria-label="Granularidad" id="fRegGran" style="margin-left:auto"><button type="button" data-v="dia">Día</button><button type="button" data-v="semana">Semana</button><button type="button" data-v="mes">Mes</button></div>
     </div>
     <div id="cReg"></div>
     <p class="caveat" id="regNote"></p>
