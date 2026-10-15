@@ -70,13 +70,14 @@ const today = iso(new Date());
 
 /* ===== Estado ===== */
 const MES_MET_KEYS = ["leads", "citas", "pvr"];
-const state = { desde: MIN_DATE, hasta: today, mes: "todo", canal: "pagado", modo: "directo", terr: "", diaMet: "leads", gran: "dia", dim: "campaign", pdim: "tipo_de_paciente", sucs: ["MONTERREY"], f: {} };
+const state = { desde: MIN_DATE, hasta: today, mes: "todo", canal: "pagado", modo: "directo", terr: "", diaMet: "leads", gran: "dia", evolGran: "dia", dim: "campaign", pdim: "tipo_de_paciente", sucs: ["MONTERREY"], f: {} };
 FILTER_DIMS.forEach(k => state.f[k] = []);
 try {
   const s = JSON.parse(localStorage.getItem("reporte-transversal-v3") || "{}");
   if (Array.isArray(s.sucs)) state.sucs = s.sucs.filter(v => typeof v === "string" && v).slice(0, 40);
   if (s.gran === "semana" || s.gran === "mes") state.gran = s.gran;
   if (MES_MET_KEYS.includes(s.diaMet)) state.diaMet = s.diaMet;
+  if (s.evolGran === "semana") state.evolGran = "semana";
   if (typeof s.mesMet === "string") state.mesMet = s.mesMet;
   if (/^\d{4}-\d\d-\d\d$/.test(s.desde || "")) state.desde = s.desde < MIN_DATE ? MIN_DATE : s.desde;
   if (/^\d{4}-\d\d-\d\d$/.test(s.hasta || "")) state.hasta = s.hasta;
@@ -638,6 +639,37 @@ function renderMes() {
 const fGran = byId("fGran");
 fGran.addEventListener("click", e => { const b = e.target.closest("button"); if (!b) return; state.gran = b.dataset.v; save(); renderDiario(); });
 function monday(d) { const x = new Date(d + "T12:00:00"); x.setDate(x.getDate() - ((x.getDay() + 6) % 7)); return iso(x); }
+/* Evolución diaria: tres líneas (leads, citas, PVR) por día o semana, todos los pacientes. Alin la pidió de vuelta el 2026-10-15,
+   arriba de la tabla de paciente; la gráfica apilada de abajo es otra cosa. Usa las mismas filas diarias (DROWS). */
+const fGranEvol = byId("fGranEvol");
+fGranEvol.addEventListener("click", e => { const b = e.target.closest("button"); if (!b) return; state.evolGran = b.dataset.v; save(); renderEvol(); });
+function renderEvol() {
+  if (!hay("evol")) return;
+  fGranEvol.querySelectorAll("button").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.v === state.evolGran)));
+  const host = byId("cEvol"), sem = state.evolGran === "semana";
+  const map = new Map();
+  DROWS.forEach(r => { const k = sem ? monday(r.dia) : r.dia; const o = map.get(k) || { k, leads: 0, citas: 0, pvr: 0 }; o.leads += r.leads; o.citas += r.citas; o.pvr += r.pvr; map.set(k, o); });
+  const pts = [...map.values()].sort((a, b) => a.k < b.k ? -1 : 1);
+  const series = [["leads", "Leads", "meta"], ["citas", "Citas agendadas", "google"], ["pvr", "Primeras visitas", "otros"]];
+  if (!pts.length) { host.innerHTML = `<p class="hint">Sin datos con estos filtros.</p>`; return; }
+  const fmtK = k => sem ? `Semana del ${fmtDate(k)}` : fmtDate(k);
+  host.innerHTML = series.map(([m, label]) => `<div class="mini"><h3>${label}</h3><div id="cEvol-${m}"></div></div>`).join("");
+  series.forEach(([m, label, cls]) => {
+    const el = byId("cEvol-" + m); setDims(el); H = 180; ih = H - M.t - M.b;
+    const yMax = niceMax(Math.max(1, ...pts.map(p => p[m])) * 1.15);
+    const n = pts.length, x = i => M.l + (n > 1 ? iw * i / (n - 1) : iw / 2), y = v => M.t + ih - v / yMax * ih;
+    let s = axes(yMax, v => nf.format(v));
+    const every = Math.max(1, Math.ceil(n / (W < 420 ? 4 : 6)));
+    pts.forEach((p, i) => { if (i % every === 0 || i === n - 1) s += `<text x="${x(i)}" y="${H - 8}" text-anchor="middle">${new Date(p.k + "T12:00:00").toLocaleDateString("es-MX", { day: "numeric", month: "short" }).replace(".", "")}</text>`; });
+    let d = ""; pts.forEach((p, i) => d += `${i ? "L" : "M"}${x(i).toFixed(1)},${y(p[m]).toFixed(1)}`);
+    s += `<path d="${d}" fill="none" class="s-${cls}" stroke-width="2" stroke-linejoin="round" pointer-events="none"/>`;
+    if (n <= 60) pts.forEach((p, i) => s += `<circle class="f-${cls} mk" cx="${x(i)}" cy="${y(p[m])}" r="3" pointer-events="none"/>`);
+    const step = n > 1 ? iw / (n - 1) : iw;
+    pts.forEach((p, i) => { const tip = `<div class="tt">${fmtK(p.k)}</div>` + tipRows(series.map(([mm, ll]) => [ll, nf.format(p[mm])]));
+      s += `<g class="col" data-tip="${encodeURIComponent(tip)}"><rect class="hit" x="${x(i) - step / 2}" y="${M.t}" width="${step}" height="${ih}"/><line class="guide" x1="${x(i)}" x2="${x(i)}" y1="${M.t}" y2="${M.t + ih}"/></g>`; });
+    el.innerHTML = `<svg class="chart" viewBox="0 0 ${W} ${H}" role="img" aria-label="${label} por ${sem ? "semana" : "día"}">${s}</svg>`;
+  });
+}
 const PAL = ["#1a73e8", "#7ab83b", "#e6007e", "#5e35b1", "#c8a040", "#00acc1", "#9aa7bd", "#8a6a1c"];
 /* Colores fijos para los valores que ya tienen color en Looker (referencia de Alin, 2026-10-15). */
 const PAL_FIJA = { Azul: "#1a73e8", Verde: "#7ab83b", LP: "#5e35b1", LS: "#f06292", LeadING: "#e6007e", "No LeadING": "#00acc1" };
@@ -711,7 +743,7 @@ on(document, "mousemove", e => {
   tip.style.top = Math.min(e.clientY + 14, window.innerHeight - r.height - 8) + "px";
 });
 
-function renderCharts() { renderDiario(); renderMes(); renderReg(); renderLine("cCag", "legCag", "citas", "Costo por cita agendada"); renderLine("cCpvr", "legCpvr", "pvr", "Costo por primera visita"); renderWeekly(); }
+function renderCharts() { renderEvol(); renderDiario(); renderMes(); renderReg(); renderLine("cCag", "legCag", "citas", "Costo por cita agendada"); renderLine("cCpvr", "legCpvr", "pvr", "Costo por primera visita"); renderWeekly(); }
 function render() { paintFilters(); renderAds(); renderKpis(); renderFunnel(); renderOrigen(); renderLocal(); renderCanal(); renderDesglose(); renderCharts(); renderNotes(); }
 /* Menú lateral plegable (preferencia de pantalla, aparte de los filtros) */
 const wrapEl = document.querySelector(".wrap"), sideToggle = byId("sideToggle"), sideEl = document.querySelector(".side");
@@ -794,7 +826,7 @@ async function refreshDiario(force) {
     const { rows } = await runSql("diario", force);
     if (my !== dseq || !rows) return;
     DROWS = rows.map(r => ({ dia: String(r.dia).slice(0, 10), dim: r.dim == null ? "" : String(r.dim), leads: +r.leads || 0, citas: +r.citas || 0, pvr: +r.pvr || 0 })).sort((a, b) => a.dia < b.dia ? -1 : 1);
-    renderDiario();
+    renderEvol(); renderDiario();
   } catch (e) { /* la sección conserva lo anterior */ }
 }
 async function refreshPerfil(force) {

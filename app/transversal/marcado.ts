@@ -61,6 +61,14 @@ const PLANTILLA = `<div class="wrap">
   </section>
   <section class="kpis" id="kpis" data-sec="kpis" aria-label="Indicadores principales"></section>
 
+  <section class="panel" aria-labelledby="h-evol" data-sec="evol">
+    <div class="phead">
+      <div><h2 id="h-evol">Evolución diaria</h2><p class="hint">Leads, citas agendadas y primeras visitas según la fecha de creación del lead, con los filtros, el medio y el mes elegidos.</p></div>
+      <div class="seg" role="group" aria-label="Granularidad" id="fGranEvol"><button type="button" data-v="dia">Por día</button><button type="button" data-v="semana">Por semana</button></div>
+    </div>
+    <div class="trio" id="cEvol"></div>
+  </section>
+
   <section class="panel" aria-labelledby="h-perfil" data-sec="perfil">
     <div class="phead">
       <div>
