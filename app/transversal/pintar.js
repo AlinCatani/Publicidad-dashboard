@@ -585,7 +585,8 @@ const COSTO_FIJO = { OLE: "#7ab83b", facebook: "#1a73e8", google_search: "#c8a04
 function gruposCosto() { // ordenados por leads en el periodo; OLE al final
   const tot = {}; CROWS.forEach(r => tot[r.grupo] = (tot[r.grupo] || 0) + r.leads);
   const ks = Object.keys(tot).filter(k => k !== "OLE").sort((a, b) => tot[b] - tot[a]); if (tot.OLE != null) ks.push("OLE");
-  let i = 0; return ks.map(k => [k, k, COSTO_FIJO[k] || COSTO_PAL[i++ % COSTO_PAL.length]]);
+  const usados = new Set(Object.values(COSTO_FIJO)), libres = COSTO_PAL.filter(c => !usados.has(c)); let i = 0;
+  return ks.map(k => [k, k, COSTO_FIJO[k] || libres[i++ % libres.length]]);
 }
 const COSTO_MET = { leads: ["CPL", "Costo por lead"], citas: ["Costo por cita agendada", "Costo por cita agendada"], pvr: ["Costo por PVR", "Costo por primera visita"] };
 const fCostoMet = byId("fCostoMet");
@@ -605,7 +606,8 @@ function renderCostos() {
   GRUPOS.forEach(([g, , col]) => { let d = "", pen = false; ms.forEach((mo, i) => { const v = val(g, mo); if (!isFinite(v)) { pen = false; return; } d += `${pen ? "L" : "M"}${x(i).toFixed(1)},${y(v).toFixed(1)}`; pen = true; });
     s += `<path d="${d}" fill="none" stroke="${col}" stroke-width="2.25" stroke-linejoin="round" stroke-linecap="round" pointer-events="none"/>`;
     ms.forEach((mo, i) => { const v = val(g, mo); if (isFinite(v)) s += `<circle fill="${col}" class="mk" cx="${x(i)}" cy="${y(v)}" r="4" pointer-events="none"/>`; }); });
-  ms.forEach((mo, i) => { const tip = `<div class="tt">${cap(mo.long)} · ${metN}</div>` + tipRows(GRUPOS.map(([g, l, col]) => { const a = cel(g, mo), v = val(g, mo); return [`<i class="dot" style="background:${col}"></i>${l}`, isFinite(v) ? `${money(v)} · ${nf.format(a.n)} · ${money(a.inv)}` : a.n ? `sin inversión · ${nf.format(a.n)}` : "—"]; }));
+  const unidad = met === "leads" ? "leads" : met === "citas" ? "citas" : "PVR", dinero = v => v < 10 ? "$" + v.toFixed(2) : money(v);
+  ms.forEach((mo, i) => { const tip = `<div class="tt">${cap(mo.long)} · ${metN}</div><div class="row"><span>medio</span><b>costo · ${unidad} · inversión</b></div>` + tipRows(GRUPOS.map(([g, l, col]) => { const a = cel(g, mo), v = val(g, mo); return [`<i class="dot" style="background:${col}"></i>${l}`, isFinite(v) ? `${dinero(v)} · ${nf.format(a.n)} · ${money(a.inv)}` : a.n ? `sin inversión · ${nf.format(a.n)} ${unidad}` : "sin datos"]; }));
     s += `<g class="col" data-tip="${encodeURIComponent(tip)}"><rect class="hit" x="${M.l + step * i}" y="${M.t}" width="${step}" height="${ih}"/><line class="guide" x1="${x(i)}" x2="${x(i)}" y1="${M.t}" y2="${M.t + ih}"/></g>`; });
   host.innerHTML = `<svg class="chart" viewBox="0 0 ${W} ${H}" role="img" aria-label="${metN} por mes y medio">${s}</svg>`;
   byId("legCostos").innerHTML = GRUPOS.map(([, l, col]) => `<span><i class="dot" style="background:${col}"></i>${l}</span>`).join("");
