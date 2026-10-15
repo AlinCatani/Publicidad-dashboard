@@ -10,7 +10,7 @@ export const TABLEROS: Tablero[] = [
   },
   {
     ruta: "/transversal",
-    nombre: "Reporte Transversal+Ole",
+    nombre: "Reporte Transversal",
     descripcion: "De las impresiones a las primeras visitas, por sucursal real, campaña y perfil del paciente. Abre en Monterrey.",
   },
   {
