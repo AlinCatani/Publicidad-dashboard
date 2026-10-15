@@ -185,12 +185,13 @@ WHERE tipo_fila = 'lead' AND fecha BETWEEN '${e.desde}' AND '${e.hasta}'
 GROUP BY 1 ORDER BY 1`;
 }
 /* Evolución diaria: respeta canal y mes como «perfil». */
+/* Trae también la característica del paciente elegida (pdim) para que la gráfica siga la fila marcada en la tabla (Alin, 2026-10-15). */
 const diarioSql = (e: Estado) => esInd(e)
-  ? indirectoSql(e, (col) => `CAST(${col} AS STRING) dia, `, true, "dia") + " ORDER BY 1"
-  : `SELECT CAST(fecha AS STRING) dia, SUM(leads) leads, SUM(citas) citas, SUM(pvr) pvr
+  ? indirectoSql(e, (col) => `CAST(${col} AS STRING) dia, ${DIMS[e.pdim].sql} dim, `, true, "dia, dim") + " ORDER BY 1"
+  : `SELECT CAST(fecha AS STRING) dia, ${DIMS[e.pdim].sql} dim, SUM(leads) leads, SUM(citas) citas, SUM(pvr) pvr
 FROM ${VIEW}
 WHERE ${whereSql(e, true)}
-GROUP BY 1 ORDER BY 1`;
+GROUP BY 1,2 ORDER BY 1`;
 const perfilSql = (e: Estado) => esInd(e)
   ? indirectoSql(e, () => `${DIMS[e.pdim].sql} dim, `, true, "dim")
   : `SELECT ${DIMS[e.pdim].sql} dim, ${AGG}

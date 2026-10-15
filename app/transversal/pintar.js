@@ -69,12 +69,13 @@ const fmtDate = s => new Date(s + "T12:00:00").toLocaleDateString("es-MX", { day
 const today = iso(new Date());
 
 /* ===== Estado ===== */
-const state = { desde: MIN_DATE, hasta: today, mes: "todo", canal: "pagado", modo: "directo", terr: "", gran: "dia", dim: "campaign", pdim: "tipo_de_paciente", sucs: ["MONTERREY"], f: {} };
+const state = { desde: MIN_DATE, hasta: today, mes: "todo", canal: "pagado", modo: "directo", terr: "", psel: "", gran: "dia", dim: "campaign", pdim: "tipo_de_paciente", sucs: ["MONTERREY"], f: {} };
 FILTER_DIMS.forEach(k => state.f[k] = []);
 try {
   const s = JSON.parse(localStorage.getItem("reporte-transversal-v3") || "{}");
   if (Array.isArray(s.sucs)) state.sucs = s.sucs.filter(v => typeof v === "string" && v).slice(0, 40);
-  if (s.gran === "semana") state.gran = "semana";
+  if (s.gran === "semana" || s.gran === "mes") state.gran = s.gran;
+  if (typeof s.psel === "string") state.psel = s.psel.slice(0, 200);
   if (typeof s.mesMet === "string") state.mesMet = s.mesMet;
   if (/^\d{4}-\d\d-\d\d$/.test(s.desde || "")) state.desde = s.desde < MIN_DATE ? MIN_DATE : s.desde;
   if (/^\d{4}-\d\d-\d\d$/.test(s.hasta || "")) state.hasta = s.hasta;
@@ -166,7 +167,7 @@ fDim.innerHTML = DESG_DIMS.map(k => `<button type="button" data-v="${k}">${DIMS[
 fDim.addEventListener("click", e => { const b = e.target.closest("button"); if (!b) return; state.dim = b.dataset.v; save(); paintFilters(); refresh(false); });
 const fPerfil = byId("fPerfil");
 fPerfil.innerHTML = PERFIL_DIMS.map(k => `<button type="button" data-v="${k}">${DIMS[k].label}</button>`).join("");
-fPerfil.addEventListener("click", e => { const b = e.target.closest("button"); if (!b) return; state.pdim = b.dataset.v; save(); paintFilters(); refreshPerfil(false); refreshDiario(false); });
+fPerfil.addEventListener("click", e => { const b = e.target.closest("button"); if (!b) return; state.pdim = b.dataset.v; state.psel = ""; save(); paintFilters(); refreshPerfil(false); refreshDiario(false); });
 
 /* ===== Filtros de varias opciones: botón + desplegable con casillas, «Todas» y «Solo» ===== */
 const selVal = o => o.v === "" ? VACIO : o.v, selLabel = v => v === VACIO ? "(vacío)" : v;
@@ -328,7 +329,7 @@ function resultTable(rows, label, nameFn) {
   else list.sort((x, y) => y.a.leads - x.a.leads);
   const shown = list.slice(0, 30), rest = list.slice(30);
   if (rest.length) shown.push({ k: `Otros (${rest.length})`, a: sum(rest.flatMap(x => groups[x.k])), raw: true });
-  const row = (name, a, cls) => `<tr${cls ? ` class="${cls}"` : ""}>
+  const row = (name, a, cls, key) => `<tr${cls ? ` class="${cls}"` : ""}${key !== undefined ? ` data-k="${esc(key)}"` : ""}>
       <td>${esc(name)}</td>
       <td>${nf.format(a.leads)}</td>
       <td><span class="share">${pct(div(a.leads, tot.leads))}<span class="bar"><i style="width:${(div(a.leads, tot.leads) * 100 || 0).toFixed(1)}%"></i></span></span></td>
@@ -337,7 +338,7 @@ function resultTable(rows, label, nameFn) {
       <td>${money(a.inversion)}</td><td class="hl">${money(div(a.inversion, a.leads))}</td><td class="hl">${money(div(a.inversion, a.citas))}</td><td class="hl">${money(div(a.inversion, a.pvr))}</td>
     </tr>`;
   return { html: `<thead><tr><th>${label}</th><th>Leads</th><th>% leads</th><th>Citas agendadas</th><th>Lead → cita agendada</th><th>PVR</th><th>TAL%</th><th>Inversión</th><th>CPL</th><th>Costo/cita agendada</th><th>Costo/PVR</th></tr></thead>
-     <tbody>${shown.map(x => row(x.raw ? x.k : nameFn(x.k), x.a)).join("")}${row("Total", tot, "total")}</tbody>`, n: list.length, rest: rest.length };
+     <tbody>${shown.map(x => row(x.raw ? x.k : nameFn(x.k), x.a, !x.raw && state.psel === x.k ? "sel" : "", x.raw ? undefined : x.k)).join("")}${row("Total", tot, "total")}</tbody>`, n: list.length, rest: rest.length };
 }
 const monthName = key => { const m = monthsSel().find(x => x.key === key); return m ? cap(m.long) : key; };
 const dimName = (dim, k) => dim === "mes" ? monthName(k) : dim === "canal" ? (CH[k] || k) : dim === "sucursal_real" ? sucName(k) : (k || "(vacío)");
@@ -351,8 +352,9 @@ function renderDesglose() {
 function renderPerfil() {
   const d = DIMS[state.pdim];
   const t = resultTable(PROWS, d.label, k => dimName(state.pdim, k));
-  byId("tPerfil").innerHTML = t.html;
-  byId("perfilHint").textContent = `CPL, costo por cita agendada y costo por primera visita por ${d.label.toLowerCase()}. Los filtros de arriba aplican.`;
+  const tabla = byId("tPerfil"); tabla.innerHTML = t.html;
+  tabla.querySelectorAll("tr[data-k]").forEach(tr => tr.addEventListener("click", () => { const k = tr.dataset.k; state.psel = state.psel === k ? "" : k; save(); renderPerfil(); renderDiario(); }));
+  byId("perfilHint").textContent = `CPL, costo por cita agendada y costo por primera visita por ${d.label.toLowerCase()}. Los filtros de arriba aplican. Haz clic en una fila para ver su tendencia abajo.`;
 }
 
 /* ===== Funnel ===== */
@@ -638,13 +640,21 @@ function monday(d) { const x = new Date(d + "T12:00:00"); x.setDate(x.getDate() 
 function renderDiario() {
   fGran.querySelectorAll("button").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.v === state.gran)));
   const host = byId("cDiario");
-  const sem = state.gran === "semana";
+  const sem = state.gran === "semana", mes = state.gran === "mes";
+  const d = DIMS[state.pdim];
+  const sel = state.psel !== "" && DROWS.some(r => r.dim === state.psel) ? state.psel : "";
+  const filas = sel ? DROWS.filter(r => r.dim === sel) : DROWS;
+  const tot = filas.reduce((o, r) => { o.leads += r.leads; o.citas += r.citas; o.pvr += r.pvr; return o; }, { leads: 0, citas: 0, pvr: 0 });
+  const quien = sel ? `${d.label}: ${dimName(state.pdim, sel)}` : "todos los pacientes";
+  byId("diarioHint").textContent = `Leads, citas agendadas y primeras visitas por ${mes ? "mes" : sem ? "semana" : "día"} para ${quien}, del ${fmtDate(state.desde)} al ${fmtDate(state.hasta)}, con los filtros y el medio elegidos. Haz clic en una fila de la tabla de arriba para cambiar de grupo.`;
+  byId("diarioTot").innerHTML = [["Leads", tot.leads], ["Citas agendadas", tot.citas, pct(div(tot.citas, tot.leads)) + " de leads"], ["Primeras visitas", tot.pvr, pct(div(tot.pvr, tot.citas)) + " de citas"]]
+    .map(([k, v, sub]) => `<div class="kpi"><span class="k">${k}</span><span class="v">${nf.format(v)}</span><span class="d">${sub || `total de ${quien}`}</span></div>`).join("");
   const map = new Map();
-  DROWS.forEach(r => { const k = sem ? monday(r.dia) : r.dia; const o = map.get(k) || { k, leads: 0, citas: 0, pvr: 0 }; o.leads += r.leads; o.citas += r.citas; o.pvr += r.pvr; map.set(k, o); });
+  filas.forEach(r => { const k = mes ? r.dia.slice(0, 7) + "-01" : sem ? monday(r.dia) : r.dia; const o = map.get(k) || { k, leads: 0, citas: 0, pvr: 0 }; o.leads += r.leads; o.citas += r.citas; o.pvr += r.pvr; map.set(k, o); });
   const pts = [...map.values()].sort((a, b) => a.k < b.k ? -1 : 1);
   const series = [["leads", "Leads", "meta"], ["citas", "Citas agendadas", "google"], ["pvr", "Primeras visitas", "otros"]];
   if (!pts.length) { host.innerHTML = `<p class="hint">Sin datos con estos filtros.</p>`; return; }
-  const fmtK = k => sem ? `Semana del ${fmtDate(k)}` : fmtDate(k);
+  const fmtK = k => mes ? cap(new Date(k + "T12:00:00").toLocaleDateString("es-MX", { month: "long", year: "numeric" })) : sem ? `Semana del ${fmtDate(k)}` : fmtDate(k);
   host.innerHTML = series.map(([m, label]) => `<div class="mini"><h3>${label}</h3><div id="cDia-${m}"></div></div>`).join("");
   series.forEach(([m, label, cls]) => {
     const el = byId("cDia-" + m); setDims(el); H = 180; ih = H - M.t - M.b;
@@ -652,14 +662,14 @@ function renderDiario() {
     const n = pts.length, x = i => M.l + (n > 1 ? iw * i / (n - 1) : iw / 2), y = v => M.t + ih - v / yMax * ih;
     let s = axes(yMax, v => nf.format(v));
     const every = Math.max(1, Math.ceil(n / (W < 420 ? 4 : 6)));
-    pts.forEach((p, i) => { if (i % every === 0 || i === n - 1) s += `<text x="${x(i)}" y="${H - 8}" text-anchor="middle">${new Date(p.k + "T12:00:00").toLocaleDateString("es-MX", { day: "numeric", month: "short" }).replace(".", "")}</text>`; });
+    pts.forEach((p, i) => { if (i % every === 0 || i === n - 1) s += `<text x="${x(i)}" y="${H - 8}" text-anchor="middle">${new Date(p.k + "T12:00:00").toLocaleDateString("es-MX", mes ? { month: "short", year: "2-digit" } : { day: "numeric", month: "short" }).replace(".", "")}</text>`; });
     let d = ""; pts.forEach((p, i) => d += `${i ? "L" : "M"}${x(i).toFixed(1)},${y(p[m]).toFixed(1)}`);
     s += `<path d="${d}" fill="none" class="s-${cls}" stroke-width="2" stroke-linejoin="round" pointer-events="none"/>`;
     if (n <= 60) pts.forEach((p, i) => s += `<circle class="f-${cls} mk" cx="${x(i)}" cy="${y(p[m])}" r="3" pointer-events="none"/>`);
     const step = n > 1 ? iw / (n - 1) : iw;
     pts.forEach((p, i) => { const tip = `<div class="tt">${fmtK(p.k)}</div>` + tipRows(series.map(([mm, ll]) => [ll, nf.format(p[mm])]));
       s += `<g class="col" data-tip="${encodeURIComponent(tip)}"><rect class="hit" x="${x(i) - step / 2}" y="${M.t}" width="${step}" height="${ih}"/><line class="guide" x1="${x(i)}" x2="${x(i)}" y1="${M.t}" y2="${M.t + ih}"/></g>`; });
-    el.innerHTML = `<svg class="chart" viewBox="0 0 ${W} ${H}" role="img" aria-label="${label} por ${sem ? "semana" : "día"}">${s}</svg>`;
+    el.innerHTML = `<svg class="chart" viewBox="0 0 ${W} ${H}" role="img" aria-label="${label} por ${mes ? "mes" : sem ? "semana" : "día"}">${s}</svg>`;
   });
 }
 
@@ -765,7 +775,7 @@ async function refreshDiario(force) {
   try {
     const { rows } = await runSql("diario", force);
     if (my !== dseq || !rows) return;
-    DROWS = rows.map(r => ({ dia: String(r.dia).slice(0, 10), leads: +r.leads || 0, citas: +r.citas || 0, pvr: +r.pvr || 0 })).sort((a, b) => a.dia < b.dia ? -1 : 1);
+    DROWS = rows.map(r => ({ dia: String(r.dia).slice(0, 10), dim: r.dim == null ? "" : String(r.dim), leads: +r.leads || 0, citas: +r.citas || 0, pvr: +r.pvr || 0 })).sort((a, b) => a.dia < b.dia ? -1 : 1);
     renderDiario();
   } catch (e) { /* la sección conserva lo anterior */ }
 }

@@ -282,6 +282,8 @@ td.hl { color: var(--primary); font-weight: 700; }
 .chart .gap-mark { font-size: 10px; fill: var(--muted); }
 .oname { display: flex; flex-direction: column; } .oname small { color: var(--muted); font-size: 11.5px; }
 tr.hl td { background: var(--accent-soft); }
+tr[data-k] { cursor: pointer; } tr[data-k]:hover td { background: var(--soft); } tr.sel td { background: var(--accent-soft); font-weight: 700; }
+.kpis-mini { margin-bottom: 12px; }
 tr.rate td { color: var(--ink-2); } tr.rate td:first-child { padding-left: 12px; }
 td.chg { font-size: 12.5px; color: var(--muted); }
 td.better { color: var(--good); font-weight: 700; } td.better::before { content: "● "; font-size: 9px; vertical-align: 1px; }

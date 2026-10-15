@@ -60,14 +60,6 @@ const PLANTILLA = `<div class="wrap">
   </section>
   <section class="kpis" id="kpis" data-sec="kpis" aria-label="Indicadores principales"></section>
 
-  <section class="panel" aria-labelledby="h-diario" data-sec="diario">
-    <div class="phead">
-      <div><h2 id="h-diario">Evolución diaria</h2><p class="hint">Leads, citas agendadas y primeras visitas según la fecha de creación del lead, con los filtros, el medio y el mes elegidos.</p></div>
-      <div class="seg" role="group" aria-label="Granularidad" id="fGran"><button type="button" data-v="dia">Por día</button><button type="button" data-v="semana">Por semana</button></div>
-    </div>
-    <div class="trio" id="cDiario"></div>
-  </section>
-
   <section class="panel" aria-labelledby="h-perfil" data-sec="perfil">
     <div class="phead">
       <div>
@@ -77,6 +69,15 @@ const PLANTILLA = `<div class="wrap">
     </div>
     <div class="seg" role="group" aria-label="Característica" id="fPerfil" style="margin-bottom:12px"></div>
     <div class="tscroll"><table id="tPerfil"></table></div>
+  </section>
+
+  <section class="panel" aria-labelledby="h-diario" data-sec="diario">
+    <div class="phead">
+      <div><h2 id="h-diario">Tendencia de resultados</h2><p class="hint" id="diarioHint">Leads, citas agendadas y primeras visitas en el tiempo. Sigue la fila que marques en la tabla de arriba; sin fila marcada, muestra a todos los pacientes.</p></div>
+      <div class="seg" role="group" aria-label="Granularidad" id="fGran"><button type="button" data-v="dia">Por día</button><button type="button" data-v="semana">Por semana</button><button type="button" data-v="mes">Por mes</button></div>
+    </div>
+    <div class="kpis kpis-mini" id="diarioTot"></div>
+    <div class="trio" id="cDiario"></div>
   </section>
 
   <section class="panel" aria-labelledby="h-desg" data-sec="desg">
