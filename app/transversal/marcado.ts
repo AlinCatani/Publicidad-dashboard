@@ -74,11 +74,12 @@ const PLANTILLA = `<div class="wrap">
 
   <section class="panel" aria-labelledby="h-diario" data-sec="diario">
     <div class="phead">
-      <div><h2 id="h-diario">Tendencia de resultados</h2><p class="hint" id="diarioHint">Leads, citas agendadas y primeras visitas en el tiempo. Sigue la fila que marques en la tabla de arriba; sin fila marcada, muestra a todos los pacientes.</p></div>
+      <div><h2 id="h-diario">Tendencia de resultados</h2><p class="hint" id="diarioHint">Resultados por día, apilados por la característica elegida arriba (por ejemplo LS y LP por día).</p></div>
+      <div class="seg" role="group" aria-label="Métrica" id="fDiaMet"></div>
       <div class="seg" role="group" aria-label="Granularidad" id="fGran"><button type="button" data-v="dia">Por día</button><button type="button" data-v="semana">Por semana</button><button type="button" data-v="mes">Por mes</button></div>
     </div>
-    <div class="kpis kpis-mini" id="diarioTot"></div>
-    <div class="trio" id="cDiario"></div>
+    <div class="legend" id="diarioLeg" style="margin-bottom:10px"></div>
+    <div id="cDiario"></div>
   </section>
 
   <section class="panel" aria-labelledby="h-desg" data-sec="desg">

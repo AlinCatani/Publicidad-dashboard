@@ -69,13 +69,14 @@ const fmtDate = s => new Date(s + "T12:00:00").toLocaleDateString("es-MX", { day
 const today = iso(new Date());
 
 /* ===== Estado ===== */
-const state = { desde: MIN_DATE, hasta: today, mes: "todo", canal: "pagado", modo: "directo", terr: "", psel: "", gran: "dia", dim: "campaign", pdim: "tipo_de_paciente", sucs: ["MONTERREY"], f: {} };
+const MES_MET_KEYS = ["leads", "citas", "pvr"];
+const state = { desde: MIN_DATE, hasta: today, mes: "todo", canal: "pagado", modo: "directo", terr: "", diaMet: "leads", gran: "dia", dim: "campaign", pdim: "tipo_de_paciente", sucs: ["MONTERREY"], f: {} };
 FILTER_DIMS.forEach(k => state.f[k] = []);
 try {
   const s = JSON.parse(localStorage.getItem("reporte-transversal-v3") || "{}");
   if (Array.isArray(s.sucs)) state.sucs = s.sucs.filter(v => typeof v === "string" && v).slice(0, 40);
   if (s.gran === "semana" || s.gran === "mes") state.gran = s.gran;
-  if (typeof s.psel === "string") state.psel = s.psel.slice(0, 200);
+  if (MES_MET_KEYS.includes(s.diaMet)) state.diaMet = s.diaMet;
   if (typeof s.mesMet === "string") state.mesMet = s.mesMet;
   if (/^\d{4}-\d\d-\d\d$/.test(s.desde || "")) state.desde = s.desde < MIN_DATE ? MIN_DATE : s.desde;
   if (/^\d{4}-\d\d-\d\d$/.test(s.hasta || "")) state.hasta = s.hasta;
@@ -167,7 +168,7 @@ fDim.innerHTML = DESG_DIMS.map(k => `<button type="button" data-v="${k}">${DIMS[
 fDim.addEventListener("click", e => { const b = e.target.closest("button"); if (!b) return; state.dim = b.dataset.v; save(); paintFilters(); refresh(false); });
 const fPerfil = byId("fPerfil");
 fPerfil.innerHTML = PERFIL_DIMS.map(k => `<button type="button" data-v="${k}">${DIMS[k].label}</button>`).join("");
-fPerfil.addEventListener("click", e => { const b = e.target.closest("button"); if (!b) return; state.pdim = b.dataset.v; state.psel = ""; save(); paintFilters(); refreshPerfil(false); refreshDiario(false); });
+fPerfil.addEventListener("click", e => { const b = e.target.closest("button"); if (!b) return; state.pdim = b.dataset.v; save(); paintFilters(); refreshPerfil(false); refreshDiario(false); });
 
 /* ===== Filtros de varias opciones: botón + desplegable con casillas, «Todas» y «Solo» ===== */
 const selVal = o => o.v === "" ? VACIO : o.v, selLabel = v => v === VACIO ? "(vacío)" : v;
@@ -330,7 +331,7 @@ function resultTable(rows, label, nameFn) {
   else list.sort((x, y) => y.a.leads - x.a.leads);
   const shown = list.slice(0, 30), rest = list.slice(30);
   if (rest.length) shown.push({ k: `Otros (${rest.length})`, a: sum(rest.flatMap(x => groups[x.k])), raw: true });
-  const row = (name, a, cls, key) => `<tr${cls ? ` class="${cls}"` : ""}${key !== undefined ? ` data-k="${esc(key)}"` : ""}>
+  const row = (name, a, cls) => `<tr${cls ? ` class="${cls}"` : ""}>
       <td>${esc(name)}</td>
       <td>${nf.format(a.leads)}</td>
       <td><span class="share">${pct(div(a.leads, tot.leads))}<span class="bar"><i style="width:${(div(a.leads, tot.leads) * 100 || 0).toFixed(1)}%"></i></span></span></td>
@@ -339,7 +340,7 @@ function resultTable(rows, label, nameFn) {
       <td>${money(a.inversion)}</td><td class="hl">${money(div(a.inversion, a.leads))}</td><td class="hl">${money(div(a.inversion, a.citas))}</td><td class="hl">${money(div(a.inversion, a.pvr))}</td>
     </tr>`;
   return { html: `<thead><tr><th>${label}</th><th>Leads</th><th>% leads</th><th>Citas agendadas</th><th>Lead → cita agendada</th><th>PVR</th><th>TAL%</th><th>Inversión</th><th>CPL</th><th>Costo/cita agendada</th><th>Costo/PVR</th></tr></thead>
-     <tbody>${shown.map(x => row(x.raw ? x.k : nameFn(x.k), x.a, !x.raw && state.psel === x.k ? "sel" : "", x.raw ? undefined : x.k)).join("")}${row("Total", tot, "total")}</tbody>`, n: list.length, rest: rest.length };
+     <tbody>${shown.map(x => row(x.raw ? x.k : nameFn(x.k), x.a)).join("")}${row("Total", tot, "total")}</tbody>`, n: list.length, rest: rest.length };
 }
 const monthName = key => { const m = monthsSel().find(x => x.key === key); return m ? cap(m.long) : key; };
 const dimName = (dim, k) => dim === "mes" ? monthName(k) : dim === "canal" ? (CH[k] || k) : dim === "sucursal_real" ? sucName(k) : (k || "(vacío)");
@@ -353,9 +354,8 @@ function renderDesglose() {
 function renderPerfil() {
   const d = DIMS[state.pdim];
   const t = resultTable(PROWS, d.label, k => dimName(state.pdim, k));
-  const tabla = byId("tPerfil"); tabla.innerHTML = t.html;
-  tabla.querySelectorAll("tr[data-k]").forEach(tr => tr.addEventListener("click", () => { const k = tr.dataset.k; state.psel = state.psel === k ? "" : k; save(); renderPerfil(); renderDiario(); }));
-  byId("perfilHint").textContent = `CPL, costo por cita agendada y costo por primera visita por ${d.label.toLowerCase()}. Los filtros de arriba aplican. Haz clic en una fila para ver su tendencia abajo.`;
+  byId("tPerfil").innerHTML = t.html;
+  byId("perfilHint").textContent = `CPL, costo por cita agendada y costo por primera visita por ${d.label.toLowerCase()}. Los filtros de arriba aplican; la tendencia de abajo se abre por la misma característica.`;
 }
 
 /* ===== Funnel ===== */
@@ -638,38 +638,50 @@ function renderMes() {
 const fGran = byId("fGran");
 fGran.addEventListener("click", e => { const b = e.target.closest("button"); if (!b) return; state.gran = b.dataset.v; save(); renderDiario(); });
 function monday(d) { const x = new Date(d + "T12:00:00"); x.setDate(x.getDate() - ((x.getDay() + 6) % 7)); return iso(x); }
+const PAL = ["#253f78", "#7ab83b", "#c8a040", "#5b8fd6", "#9aa7bd", "#8a6a1c", "#a90707", "#3d558a"];
+const fDiaMet = byId("fDiaMet");
+fDiaMet.innerHTML = MES_MET_KEYS.map(k => `<button type="button" data-v="${k}">${MES_MET[k]}</button>`).join("");
+fDiaMet.addEventListener("click", e => { const b = e.target.closest("button"); if (!b) return; state.diaMet = b.dataset.v; save(); renderDiario(); });
+/* Una sola gráfica de barras apiladas: por día / semana / mes, un color por valor de la característica elegida en la tabla
+   de paciente (Alin, 2026-10-15: «identificar por día cuántos fueron LS y cuántos LP»). */
 function renderDiario() {
   fGran.querySelectorAll("button").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.v === state.gran)));
-  const host = byId("cDiario");
-  const sem = state.gran === "semana", mes = state.gran === "mes";
-  const d = DIMS[state.pdim];
-  const sel = state.psel !== "" && DROWS.some(r => r.dim === state.psel) ? state.psel : "";
-  const filas = sel ? DROWS.filter(r => r.dim === sel) : DROWS;
-  const tot = filas.reduce((o, r) => { o.leads += r.leads; o.citas += r.citas; o.pvr += r.pvr; return o; }, { leads: 0, citas: 0, pvr: 0 });
-  const quien = sel ? `${d.label}: ${dimName(state.pdim, sel)}` : "todos los pacientes";
-  byId("diarioHint").textContent = `Leads, citas agendadas y primeras visitas por ${mes ? "mes" : sem ? "semana" : "día"} para ${quien}, del ${fmtDate(state.desde)} al ${fmtDate(state.hasta)}, con los filtros y el medio elegidos. Haz clic en una fila de la tabla de arriba para cambiar de grupo.`;
-  byId("diarioTot").innerHTML = [["Leads", tot.leads], ["Citas agendadas", tot.citas, pct(div(tot.citas, tot.leads)) + " de leads"], ["Primeras visitas", tot.pvr, pct(div(tot.pvr, tot.citas)) + " de citas"]]
-    .map(([k, v, sub]) => `<div class="kpi"><span class="k">${k}</span><span class="v">${nf.format(v)}</span><span class="d">${sub || `total de ${quien}`}</span></div>`).join("");
+  fDiaMet.querySelectorAll("button").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.v === state.diaMet)));
+  const host = byId("cDiario"), leg = byId("diarioLeg");
+  const sem = state.gran === "semana", mes = state.gran === "mes", met = state.diaMet, metN = MES_MET[met];
+  const d = DIMS[state.pdim], gran = mes ? "mes" : sem ? "semana" : "día";
+  byId("diarioHint").textContent = `${metN} por ${gran}, apilados por ${d.label.toLowerCase()}, del ${fmtDate(state.desde)} al ${fmtDate(state.hasta)}, con los filtros y el medio elegidos. Cambia la característica con los botones de la tabla de arriba.`;
+  /* valores de la característica, ordenados por total; los que pasan de 7 se juntan en «Otros» */
+  const totV = {}; DROWS.forEach(r => { if (r.dim !== "") totV[r.dim] = (totV[r.dim] || 0) + r[met]; }); // sin dato: fuera, como en la tabla
+  let vals = Object.keys(totV).filter(k => totV[k] > 0);
+  if (d.sortKey) vals.sort((x, y) => x.localeCompare(y, "es", { numeric: true })); else vals.sort((x, y) => totV[y] - totV[x]);
+  const MAXV = 7, otros = vals.length > MAXV ? vals.slice(MAXV) : [];
+  if (otros.length) vals = vals.slice(0, MAXV).concat(["__otros"]);
+  const key = v => otros.includes(v) ? "__otros" : v;
+  const name = v => v === "__otros" ? `Otros (${otros.length})` : dimName(state.pdim, v);
+  const color = i => PAL[i % PAL.length];
   const map = new Map();
-  filas.forEach(r => { const k = mes ? r.dia.slice(0, 7) + "-01" : sem ? monday(r.dia) : r.dia; const o = map.get(k) || { k, leads: 0, citas: 0, pvr: 0 }; o.leads += r.leads; o.citas += r.citas; o.pvr += r.pvr; map.set(k, o); });
+  DROWS.forEach(r => { if (r.dim === "") return; const k = mes ? r.dia.slice(0, 7) + "-01" : sem ? monday(r.dia) : r.dia; const o = map.get(k) || { k, by: {}, tot: 0 }; const kv = key(r.dim); o.by[kv] = (o.by[kv] || 0) + r[met]; o.tot += r[met]; map.set(k, o); });
   const pts = [...map.values()].sort((a, b) => a.k < b.k ? -1 : 1);
-  const series = [["leads", "Leads", "meta"], ["citas", "Citas agendadas", "google"], ["pvr", "Primeras visitas", "otros"]];
+  const total = pts.reduce((a, p) => a + p.tot, 0);
+  leg.innerHTML = vals.map((v, i) => { const t = v === "__otros" ? otros.reduce((a, o) => a + totV[o], 0) : totV[v]; return `<span><i class="dot" style="background:${color(i)}"></i>${esc(name(v))} <b>${nf.format(t)}</b> <small>(${pct(div(t, total))})</small></span>`; }).join("") + `<span><b>Total ${nf.format(total)}</b></span>`;
   if (!pts.length) { host.innerHTML = `<p class="hint">Sin datos con estos filtros.</p>`; return; }
   const fmtK = k => mes ? cap(new Date(k + "T12:00:00").toLocaleDateString("es-MX", { month: "long", year: "numeric" })) : sem ? `Semana del ${fmtDate(k)}` : fmtDate(k);
-  host.innerHTML = series.map(([m, label]) => `<div class="mini"><h3>${label}</h3><div id="cDia-${m}"></div></div>`).join("");
-  series.forEach(([m, label, cls]) => {
-    const el = byId("cDia-" + m); setDims(el); H = 180; ih = H - M.t - M.b;
-    const yMax = niceMax(Math.max(1, ...pts.map(p => p[m])) * 1.15);
-    const n = pts.length, x = i => M.l + (n > 1 ? iw * i / (n - 1) : iw / 2), y = v => M.t + ih - v / yMax * ih;
-    let s = axes(yMax, v => nf.format(v));
-    const every = Math.max(1, Math.ceil(n / (W < 420 ? 4 : 6)));
-    pts.forEach((p, i) => { if (i % every === 0 || i === n - 1) s += `<text x="${x(i)}" y="${H - 8}" text-anchor="middle">${new Date(p.k + "T12:00:00").toLocaleDateString("es-MX", mes ? { month: "short", year: "2-digit" } : { day: "numeric", month: "short" }).replace(".", "")}</text>`; });
-    const step = n > 1 ? iw / (n - 1) : iw, bw = Math.max(1.5, Math.min(26, step * 0.7));
-    pts.forEach((p, i) => { if (p[m] > 0) s += `<rect class="f-${cls}" x="${(x(i) - bw / 2).toFixed(1)}" y="${y(p[m]).toFixed(1)}" width="${bw.toFixed(1)}" height="${(M.t + ih - y(p[m])).toFixed(1)}" rx="${Math.min(3, bw / 2)}" pointer-events="none"/>`; });
-    pts.forEach((p, i) => { const tip = `<div class="tt">${fmtK(p.k)}</div>` + tipRows(series.map(([mm, ll]) => [ll, nf.format(p[mm])]));
-      s += `<g class="col" data-tip="${encodeURIComponent(tip)}"><rect class="hit" x="${x(i) - step / 2}" y="${M.t}" width="${step}" height="${ih}"/><line class="guide" x1="${x(i)}" x2="${x(i)}" y1="${M.t}" y2="${M.t + ih}"/></g>`; });
-    el.innerHTML = `<svg class="chart" viewBox="0 0 ${W} ${H}" role="img" aria-label="${label} por ${mes ? "mes" : sem ? "semana" : "día"}">${s}</svg>`;
+  setDims(host); H = 300; ih = H - M.t - M.b;
+  const yMax = niceMax(Math.max(1, ...pts.map(p => p.tot)) * 1.1);
+  const n = pts.length, step = iw / n, bw = Math.max(1.5, Math.min(34, step * 0.72));
+  const x = i => M.l + step * (i + 0.5), y = v => M.t + ih - v / yMax * ih;
+  let s = axes(yMax, v => nf.format(v));
+  const every = Math.max(1, Math.ceil(n / (W < 420 ? 4 : W < 800 ? 7 : 12)));
+  pts.forEach((p, i) => { if (i % every === 0 || i === n - 1) s += `<text x="${x(i)}" y="${H - 8}" text-anchor="middle">${new Date(p.k + "T12:00:00").toLocaleDateString("es-MX", mes ? { month: "short", year: "2-digit" } : { day: "numeric", month: "short" }).replace(".", "")}</text>`; });
+  pts.forEach((p, i) => {
+    let acc = 0;
+    vals.forEach((v, j) => { const val = p.by[v] || 0; if (!val) return; const y1 = y(acc + val), h = y(acc) - y1; s += `<rect x="${(x(i) - bw / 2).toFixed(1)}" y="${y1.toFixed(1)}" width="${bw.toFixed(1)}" height="${h.toFixed(1)}" fill="${color(j)}" pointer-events="none"/>`; acc += val; });
+    if (p.tot > 0 && (bw >= 18 || every === 1)) s += `<text x="${x(i)}" y="${(y(p.tot) - 4).toFixed(1)}" text-anchor="middle" class="lbl">${nf.format(p.tot)}</text>`;
+    const tip = `<div class="tt">${fmtK(p.k)} · ${metN}</div>` + tipRows(vals.filter(v => p.by[v]).map((v, j) => [`<i class="dot" style="background:${color(vals.indexOf(v))}"></i>${esc(name(v))}`, `${nf.format(p.by[v])} · ${pct(div(p.by[v], p.tot))}`]).concat([["Total", nf.format(p.tot)]]));
+    s += `<g class="col" data-tip="${encodeURIComponent(tip)}"><rect class="hit" x="${(x(i) - step / 2).toFixed(1)}" y="${M.t}" width="${step.toFixed(1)}" height="${ih}"/></g>`;
   });
+  host.innerHTML = `<svg class="chart" viewBox="0 0 ${W} ${H}" role="img" aria-label="${metN} por ${gran} y ${d.label}">${s}</svg>`;
 }
 
 /* ===== Notas al pie con datos en vivo ===== */
