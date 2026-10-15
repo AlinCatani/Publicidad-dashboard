@@ -51,8 +51,9 @@
 @media (max-width: 1000px) { .wrap { grid-template-columns: 140px minmax(0, 1fr); gap: 14px; } .logo { height: auto; width: 100%; max-width: 90px; margin-left: 2px; } .side-toggle .st-label { display: none; } .side-toggle { padding: 4px 7px; } }
 @media (max-width: 480px) { .wrap { grid-template-columns: 64px minmax(0, 1fr); gap: 10px; padding-inline: 10px; } .tgroup { display: none; } .tab { padding: 4px 6px; justify-content: center; } .tab .ab { display: inline; } .tab .nm { display: none; } }
 
-header { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 14px 24px; padding-bottom: 18px; border-bottom: 1px solid var(--line); }
-.brand { display: flex; align-items: center; gap: 22px; }
+/* Título centrado (Alin, 2026-10-15): el periodo ya no vive aquí y quedaba mucho aire a la derecha. */
+header { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 14px 24px; padding-bottom: 18px; border-bottom: 1px solid var(--line); text-align: center; }
+.brand { display: flex; align-items: center; justify-content: center; gap: 22px; }
 .logo { height: auto; width: 100%; max-width: 110px; object-fit: contain; align-self: flex-start; display: block; margin: 4px 0 2px 2px; }
 .eyebrow { font-size: 12px; letter-spacing: .14em; text-transform: uppercase; color: var(--accent); margin: 0 0 2px; font-weight: 700; }
 h1 { font-family: var(--font-serif); font-size: 34px; line-height: 1.1; margin: 0; font-weight: 600; letter-spacing: 0; color: var(--primary); text-wrap: balance; }
