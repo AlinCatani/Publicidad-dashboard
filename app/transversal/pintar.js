@@ -70,7 +70,7 @@ const today = iso(new Date());
 
 /* ===== Estado ===== */
 const MES_MET_KEYS = ["leads", "citas", "pvr"];
-const state = { desde: MIN_DATE, hasta: today, mes: "todo", canal: "todos", modo: "directo", terr: "", diaMet: "leads", gran: "dia", evolGran: "dia", desgMet: "leads", desgGran: "dia", regMet: "registros", regGran: "dia", costoMet: "leads", dim: "campaign", pdim: "tipo_de_paciente", sucs: [], f: {} }; // arranca en ALL y con todos los medios (Alin, 2026-10-15): «no dejes fuera nada»
+const state = { desde: MIN_DATE, hasta: today, mes: "todo", canal: "todos", modo: "directo", terr: "", diaMet: "leads", gran: "dia", evolGran: "dia", desgMet: "leads", desgGran: "dia", regMet: "registros", regGran: "dia", costoMet: "leads", costoVista: "pagado", dim: "campaign", pdim: "tipo_de_paciente", sucs: [], f: {} }; // arranca en ALL y con todos los medios (Alin, 2026-10-15): «no dejes fuera nada»
 FILTER_DIMS.forEach(k => state.f[k] = []);
 try {
   const s = JSON.parse(localStorage.getItem("reporte-transversal-v3") || "{}");
@@ -83,6 +83,7 @@ try {
   if (["registros", "leads", "citas", "pvr"].includes(s.regMet)) state.regMet = s.regMet;
   if (["dia", "semana", "mes"].includes(s.regGran)) state.regGran = s.regGran;
   if (["leads", "citas", "pvr"].includes(s.costoMet)) state.costoMet = s.costoMet;
+  if (s.costoVista === "ole") state.costoVista = "ole";
   if (typeof s.mesMet === "string") state.mesMet = s.mesMet;
   if (/^\d{4}-\d\d-\d\d$/.test(s.desde || "")) state.desde = s.desde < MIN_DATE ? MIN_DATE : s.desde;
   if (/^\d{4}-\d\d-\d\d$/.test(s.hasta || "")) state.hasta = s.hasta;
@@ -581,13 +582,16 @@ function renderReg() {
 
 /* ===== Costo por resultado por medio: líneas por mes, un medio por línea (solo campañas pagadas) + OLE ===== */
 const COSTO_PAL = ["#1a73e8", "#e6007e", "#ff7043", "#5e35b1", "#00acc1", "#fbbc04", "#f06292", "#757575", "#8d6e63", "#3949ab", "#00897b", "#c0ca33", "#ab47bc", "#ef5350", "#26c6da", "#ffa726", "#5c6bc0", "#9ccc65", "#78909c", "#253f78"];
-const COSTO_FIJO = { OLE: "#7ab83b", facebook: "#1a73e8", google_search: "#c8a040", instagram: "#e6007e" };
-function gruposCosto() { // ordenados por leads en el periodo; OLE al final
-  const tot = {}; CROWS.forEach(r => tot[r.grupo] = (tot[r.grupo] || 0) + r.leads);
-  const ks = Object.keys(tot).filter(k => k !== "OLE").sort((a, b) => tot[b] - tot[a]); if (tot.OLE != null) ks.push("OLE");
+const COSTO_FIJO = { facebook: "#1a73e8", google_search: "#c8a040", instagram: "#e6007e", web: "#7ab83b", "(sin medio)": "#9aa7bd" };
+const filasCosto = () => CROWS.filter(r => (state.costoVista === "ole") === (r.pagado === 0));
+function gruposCosto() { // medios de la vista elegida (pagado u OLE), ordenados por leads en el periodo
+  const tot = {}; filasCosto().forEach(r => tot[r.medio] = (tot[r.medio] || 0) + r.leads);
+  const ks = Object.keys(tot).sort((a, b) => tot[b] - tot[a]);
   const usados = new Set(Object.values(COSTO_FIJO)), libres = COSTO_PAL.filter(c => !usados.has(c)); let i = 0;
   return ks.map(k => [k, k, COSTO_FIJO[k] || libres[i++ % libres.length]]);
 }
+const fCostoVista = byId("fCostoVista");
+fCostoVista.addEventListener("click", e => { const b = e.target.closest("button"); if (!b) return; state.costoVista = b.dataset.v; save(); renderCostos(); });
 const COSTO_MET = { leads: ["CPL", "Costo por lead"], citas: ["Costo por cita agendada", "Costo por cita agendada"], pvr: ["Costo por PVR", "Costo por primera visita"] };
 const fCostoMet = byId("fCostoMet");
 fCostoMet.innerHTML = Object.keys(COSTO_MET).map(k => `<button type="button" data-v="${k}">${COSTO_MET[k][0]}</button>`).join("");
@@ -595,13 +599,17 @@ fCostoMet.addEventListener("click", e => { const b = e.target.closest("button");
 function renderCostos() {
   if (!hay("costos")) return;
   fCostoMet.querySelectorAll("button").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.v === state.costoMet)));
-  const ms = monthsSel(), host = byId("cCostos"), met = state.costoMet, metN = COSTO_MET[met][1], GRUPOS = gruposCosto(); setDims(host);
-  const cel = (g, mo) => CROWS.filter(r => r.grupo === g && r.mes === mo.key).reduce((o, r) => { o.n += r[met]; o.inv += r.inversion; return o; }, { n: 0, inv: 0 });
-  const val = (g, mo) => { const a = cel(g, mo); return a.n > 0 && a.inv > 0 ? a.inv / a.n : NaN; };
+  fCostoVista.querySelectorAll("button").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.v === state.costoVista)));
+  const ole = state.costoVista === "ole", FIL = filasCosto();
+  const ms = monthsSel(), host = byId("cCostos"), met = state.costoMet, metN = ole ? (met === "leads" ? "Leads OLE" : met === "citas" ? "Citas agendadas OLE" : "Primeras visitas OLE") : COSTO_MET[met][1], GRUPOS = gruposCosto(); setDims(host);
+  fCostoMet.querySelectorAll("button").forEach(b => { const k = b.dataset.v; b.textContent = ole ? (k === "leads" ? "Leads" : k === "citas" ? "Citas agendadas" : "Primeras visitas") : COSTO_MET[k][0]; });
+  const cel = (g, mo) => FIL.filter(r => r.medio === g && r.mes === mo.key).reduce((o, r) => { o.n += r[met]; o.inv += r.inversion; return o; }, { n: 0, inv: 0 });
+  /* Pagado: costo por resultado. OLE: no hay inversión que repartir, así que la línea es el volumen de resultados. */
+  const val = (g, mo) => { const a = cel(g, mo); return ole ? (a.n > 0 ? a.n : NaN) : (a.n > 0 && a.inv > 0 ? a.inv / a.n : NaN); };
   const all = GRUPOS.flatMap(([g]) => ms.map(mo => val(g, mo))).filter(isFinite);
   const yMax = niceMax((all.length ? Math.max(...all) : 1) * 1.15);
   const step = iw / ms.length, x = i => M.l + step * i + step / 2, y = v => M.t + ih - v / yMax * ih;
-  let s = axes(yMax, v => "$" + compact.format(v));
+  let s = axes(yMax, v => ole ? nf.format(v) : "$" + compact.format(v));
   ms.forEach((mo, i) => s += `<text x="${x(i)}" y="${H - 8}" text-anchor="middle">${cap(mo.short)}</text>`);
   GRUPOS.forEach(([g, , col]) => { let d = "", pen = false; ms.forEach((mo, i) => { const v = val(g, mo); if (!isFinite(v)) { pen = false; return; } d += `${pen ? "L" : "M"}${x(i).toFixed(1)},${y(v).toFixed(1)}`; pen = true; });
     s += `<path d="${d}" fill="none" stroke="${col}" stroke-width="2.25" stroke-linejoin="round" stroke-linecap="round" pointer-events="none"/>`;
@@ -610,13 +618,16 @@ function renderCostos() {
   const uniN = met === "leads" ? "Leads" : met === "citas" ? "Citas" : "PVR", costoN = met === "leads" ? "CPL" : met === "citas" ? "Costo/cita" : "Costo/PVR";
   ms.forEach((mo, i) => { const filas = GRUPOS.map(([g, l, col]) => { const a = cel(g, mo), v = val(g, mo); return { l, col, a, v }; }).filter(f => f.a.n || f.a.inv);
     const tot = filas.reduce((o, f) => { o.n += f.a.n; o.inv += f.a.inv; return o; }, { n: 0, inv: 0 });
-    const fila = (l, col, v, n, inv, cls = "") => `<tr class="${cls}"><td>${col ? `<i class="dot" style="background:${col}"></i>` : ""}${l}</td><td>${isFinite(v) ? dinero(v) : "—"}</td><td>${nf.format(n)}</td><td>${inv ? money(inv) : "—"}</td></tr>`;
-    const tip = `<div class="tt">${cap(mo.long)} · ${metN}</div><table class="tip-tabla"><thead><tr><th>Medio</th><th>${costoN}</th><th>${uniN}</th><th>Inversión</th></tr></thead><tbody>` +
-      filas.map(f => fila(f.l, f.col, f.v, f.a.n, f.a.inv)).join("") + fila("Total", "", tot.n > 0 && tot.inv > 0 ? tot.inv / tot.n : NaN, tot.n, tot.inv, "total") + `</tbody></table>`;
+    const costo = (n, inv) => n > 0 && inv > 0 ? inv / n : NaN;
+    const fila = (l, col, n, inv, cls = "") => `<tr class="${cls}"><td>${col ? `<i class="dot" style="background:${col}"></i>` : ""}${l}</td>${ole ? "" : `<td>${isFinite(costo(n, inv)) ? dinero(costo(n, inv)) : "—"}</td>`}<td>${nf.format(n)}</td><td>${inv ? money(inv) : "—"}</td></tr>`;
+    const tip = `<div class="tt">${cap(mo.long)} · ${metN}</div><table class="tip-tabla"><thead><tr><th>Medio</th>${ole ? "" : `<th>${costoN}</th>`}<th>${uniN}</th><th>Inversión</th></tr></thead><tbody>` +
+      filas.map(f => fila(f.l, f.col, f.a.n, f.a.inv)).join("") + fila("Total", "", tot.n, tot.inv, "total") + `</tbody></table>`;
     s += `<g class="col" data-tip="${encodeURIComponent(tip)}"><rect class="hit" x="${M.l + step * i}" y="${M.t}" width="${step}" height="${ih}"/><line class="guide" x1="${x(i)}" x2="${x(i)}" y1="${M.t}" y2="${M.t + ih}"/></g>`; });
   host.innerHTML = `<svg class="chart" viewBox="0 0 ${W} ${H}" role="img" aria-label="${metN} por mes y medio">${s}</svg>`;
   byId("legCostos").innerHTML = GRUPOS.map(([, l, col]) => `<span><i class="dot" style="background:${col}"></i>${l}</span>`).join("");
-  byId("costosHint").textContent = `${metN}: inversión asignada ÷ ${met === "leads" ? "leads" : met === "citas" ? "citas agendadas" : "primeras visitas"}, por mes, en MXN. Una línea por medio de las campañas pagadas (campaña que empieza con paid, paid_int o paid_us) y una sola línea OLE con todo lo que no es pagado. Un medio sin inversión en el mes no se dibuja; el detalle sale al pasar el cursor.`;
+  byId("costosHint").textContent = ole
+    ? `${metN} por mes, una línea por medio: todo lo que no es campaña pagada, incluso lo que llega sin parámetros («(sin medio)»). Como OLE no tiene inversión que repartir, se muestra el volumen; el detalle sale al pasar el cursor.`
+    : `${metN}: inversión asignada ÷ ${met === "leads" ? "leads" : met === "citas" ? "citas agendadas" : "primeras visitas"}, por mes, en MXN. Una línea por medio de las campañas pagadas (campaña que empieza con paid, paid_int o paid_us). Un medio sin inversión en el mes no se dibuja; el detalle sale al pasar el cursor.`;
 }
 
 /* ===== Líneas de costo por mes y canal ===== */
@@ -964,7 +975,7 @@ async function refreshCostos(force) {
   try {
     const { rows } = await runSql("costos", force);
     if (my !== cseq || !rows) return;
-    CROWS = rows.map(r => ({ mes: String(r.mes), grupo: String(r.grupo), leads: +r.leads || 0, citas: +r.citas || 0, pvr: +r.pvr || 0, inversion: +r.inversion || 0 }));
+    CROWS = rows.map(r => ({ mes: String(r.mes), pagado: +r.pagado || 0, medio: String(r.medio), leads: +r.leads || 0, citas: +r.citas || 0, pvr: +r.pvr || 0, inversion: +r.inversion || 0 }));
     renderCostos();
   } catch (e) { /* la sección conserva lo anterior */ }
 }

@@ -206,13 +206,14 @@ WHERE ${whereSql(e, true)}
 GROUP BY 1,2 ORDER BY 1`;
 /* Costos por mes y medio (Alin, 2026-10-15): un grupo por medio cuando la campaña es pagada (empieza con paid / paid_int /
    paid_us); todo lo que no es pagado se resume en un solo grupo «OLE». */
-const GRUPO_SQL = `CASE WHEN STARTS_WITH(LOWER(TRIM(IFNULL(campaign,''))),'paid') THEN IFNULL(NULLIF(LOWER(TRIM(IFNULL(medium,''))),''),'(sin medio)') ELSE 'OLE' END`;
+const PAGADO_SQL = `IF(STARTS_WITH(LOWER(TRIM(IFNULL(campaign,''))),'paid'), 1, 0)`;
+const MEDIO_SQL = `IFNULL(NULLIF(LOWER(TRIM(IFNULL(medium,''))),''),'(sin medio)')`;
 const costosSql = (e: Estado) => esInd(e)
-  ? indirectoSql(e, (col) => `FORMAT_DATE('%Y-%m', ${col}) mes, ${GRUPO_SQL} grupo, `, true, "mes, grupo")
-  : `SELECT FORMAT_DATE('%Y-%m', fecha) mes, ${GRUPO_SQL} grupo, ${AGG}
+  ? indirectoSql(e, (col) => `FORMAT_DATE('%Y-%m', ${col}) mes, ${PAGADO_SQL} pagado, ${MEDIO_SQL} medio, `, true, "mes, pagado, medio")
+  : `SELECT FORMAT_DATE('%Y-%m', fecha) mes, ${PAGADO_SQL} pagado, ${MEDIO_SQL} medio, ${AGG}
 FROM ${VIEW}
 WHERE ${whereSql(e, true)}
-GROUP BY 1,2`;
+GROUP BY 1,2,3`;
 const perfilSql = (e: Estado) => esInd(e)
   ? indirectoSql(e, () => `${DIMS[e.pdim].sql} dim, `, true, "dim")
   : `SELECT ${DIMS[e.pdim].sql} dim, ${AGG}

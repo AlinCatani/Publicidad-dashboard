@@ -187,9 +187,10 @@ const PLANTILLA = `<div class="wrap">
 
   <section class="panel" aria-labelledby="h-costos" data-sec="costos">
     <div class="phead">
-      <div><h2 id="h-costos">Costo por resultado por medio</h2><p class="hint" id="costosHint">Inversión asignada ÷ resultados, por mes, en MXN. Una línea por medio de las campañas pagadas (paid, paid_int, paid_us) y una sola línea OLE con todo lo orgánico.</p></div>
+      <div><h2 id="h-costos">Costo por resultado por medio</h2><p class="hint" id="costosHint">Una línea por medio. «Pagado»: campañas que empiezan con paid, paid_int o paid_us, costo = inversión asignada ÷ resultados. «OLE»: todo lo que no es pagado, incluso sin parámetros, en volumen de resultados.</p></div>
     </div>
     <div class="fila-ctrl">
+      <div class="seg" role="group" aria-label="Pagado u OLE" id="fCostoVista"><button type="button" data-v="pagado">Pagado</button><button type="button" data-v="ole">OLE</button></div>
       <div class="seg" role="group" aria-label="Métrica" id="fCostoMet"></div>
       <div class="legend" id="legCostos" style="margin-left:auto"></div>
     </div>
