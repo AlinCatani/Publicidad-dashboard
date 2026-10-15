@@ -257,6 +257,8 @@ tr.total td { font-weight: 700; color: var(--primary); border-top: 1px solid var
 &.indirecto .sel-btn.on, &.indirecto .sel-opt.on, &.indirecto .chip { background: #d4ebbd; border-color: #8fc45a; color: #35600f; }
 &.indirecto .modo-row { border-top-color: #b9d99c; }
 &.indirecto .eyebrow { color: #4f8a1c; }
+.sticky-filters .selects:first-of-type { margin-top: 0; }
+.sticky-filters .chips { justify-content: flex-start; margin: 8px 0 0; }
 .sticky-filters .selects { margin-top: 8px; gap: 6px 10px; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); }
 .sticky-filters .sel span { font-size: 10.5px; }
 .sticky-filters .sel-btn { font-size: 12.5px; padding: 4px 8px; }
