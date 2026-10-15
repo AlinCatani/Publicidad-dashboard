@@ -607,7 +607,12 @@ function renderCostos() {
     s += `<path d="${d}" fill="none" stroke="${col}" stroke-width="2.25" stroke-linejoin="round" stroke-linecap="round" pointer-events="none"/>`;
     ms.forEach((mo, i) => { const v = val(g, mo); if (isFinite(v)) s += `<circle fill="${col}" class="mk" cx="${x(i)}" cy="${y(v)}" r="4" pointer-events="none"/>`; }); });
   const unidad = met === "leads" ? "leads" : met === "citas" ? "citas" : "PVR", dinero = v => v < 10 ? "$" + v.toFixed(2) : money(v);
-  ms.forEach((mo, i) => { const tip = `<div class="tt">${cap(mo.long)} · ${metN}</div><div class="row"><span>medio</span><b>costo · ${unidad} · inversión</b></div>` + tipRows(GRUPOS.map(([g, l, col]) => { const a = cel(g, mo), v = val(g, mo); return [`<i class="dot" style="background:${col}"></i>${l}`, isFinite(v) ? `${dinero(v)} · ${nf.format(a.n)} · ${money(a.inv)}` : a.n ? `sin inversión · ${nf.format(a.n)} ${unidad}` : "sin datos"]; }));
+  const uniN = met === "leads" ? "Leads" : met === "citas" ? "Citas" : "PVR", costoN = met === "leads" ? "CPL" : met === "citas" ? "Costo/cita" : "Costo/PVR";
+  ms.forEach((mo, i) => { const filas = GRUPOS.map(([g, l, col]) => { const a = cel(g, mo), v = val(g, mo); return { l, col, a, v }; }).filter(f => f.a.n || f.a.inv);
+    const tot = filas.reduce((o, f) => { o.n += f.a.n; o.inv += f.a.inv; return o; }, { n: 0, inv: 0 });
+    const fila = (l, col, v, n, inv, cls = "") => `<tr class="${cls}"><td>${col ? `<i class="dot" style="background:${col}"></i>` : ""}${l}</td><td>${isFinite(v) ? dinero(v) : "—"}</td><td>${nf.format(n)}</td><td>${inv ? money(inv) : "—"}</td></tr>`;
+    const tip = `<div class="tt">${cap(mo.long)} · ${metN}</div><table class="tip-tabla"><thead><tr><th>Medio</th><th>${costoN}</th><th>${uniN}</th><th>Inversión</th></tr></thead><tbody>` +
+      filas.map(f => fila(f.l, f.col, f.v, f.a.n, f.a.inv)).join("") + fila("Total", "", tot.n > 0 && tot.inv > 0 ? tot.inv / tot.n : NaN, tot.n, tot.inv, "total") + `</tbody></table>`;
     s += `<g class="col" data-tip="${encodeURIComponent(tip)}"><rect class="hit" x="${M.l + step * i}" y="${M.t}" width="${step}" height="${ih}"/><line class="guide" x1="${x(i)}" x2="${x(i)}" y1="${M.t}" y2="${M.t + ih}"/></g>`; });
   host.innerHTML = `<svg class="chart" viewBox="0 0 ${W} ${H}" role="img" aria-label="${metN} por mes y medio">${s}</svg>`;
   byId("legCostos").innerHTML = GRUPOS.map(([, l, col]) => `<span><i class="dot" style="background:${col}"></i>${l}</span>`).join("");
