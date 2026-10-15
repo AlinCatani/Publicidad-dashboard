@@ -324,7 +324,8 @@ function resultTable(rows, label, nameFn) {
   const tot = sum(rows);
   const groups = {};
   rows.forEach(r => { (groups[r.dim] = groups[r.dim] || []).push(r); });
-  let list = Object.keys(groups).map(k => ({ k, a: sum(groups[k]) }));
+  // Los leads sin dato en la característica (clave vacía) no se listan como fila: son pocos y confunden (Alin, 2026-10-15); siguen en el Total.
+  let list = Object.keys(groups).filter(k => k !== "").map(k => ({ k, a: sum(groups[k]) }));
   if (DIMS[state.pdim] && label === DIMS[state.pdim].label && DIMS[state.pdim].sortKey) list.sort((x, y) => x.k.localeCompare(y.k, "es", { numeric: true }));
   else list.sort((x, y) => y.a.leads - x.a.leads);
   const shown = list.slice(0, 30), rest = list.slice(30);
