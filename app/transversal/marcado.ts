@@ -16,7 +16,18 @@ const PLANTILLA = `<div class="wrap">
         <p class="sub">Desde las impresiones hasta las primeras visitas</p>
       </div>
     </div>
-    <div class="period-wrap">
+  </header>
+
+  <div class="status" role="status" aria-live="polite">
+    <span class="pill snap" id="statusPill">Conectando</span>
+    <span class="msg" id="statusMsg">Buscando el conector de BigQuery…</span>
+    <button type="button" class="btn" id="btnRefresh" hidden>Actualizar</button>
+  </div>
+
+  <section class="panel sticky-filters" aria-label="Filtros">
+    <div class="modo-row">
+      <span class="flabel" id="lbl-periodo">Periodo</span>
+      <div class="period-wrap">
       <button type="button" class="period" id="periodBtn" aria-haspopup="dialog" aria-expanded="false">—</button>
       <div class="popover" id="periodPop" role="dialog" aria-label="Elegir periodo" hidden>
         <label>Desde <input type="date" id="dDesde"></label>
@@ -29,17 +40,7 @@ const PLANTILLA = `<div class="wrap">
         </div>
         <p class="caveat" style="margin-top:8px">Las fechas son de creación del lead. Los datos empiezan el 1 de marzo de 2026.</p>
       </div>
-    </div>
-  </header>
-
-  <div class="status" role="status" aria-live="polite">
-    <span class="pill snap" id="statusPill">Conectando</span>
-    <span class="msg" id="statusMsg">Buscando el conector de BigQuery…</span>
-    <button type="button" class="btn" id="btnRefresh" hidden>Actualizar</button>
-  </div>
-
-  <section class="panel sticky-filters" aria-label="Filtros">
-    <div class="modo-row">
+      </div>
       <span class="flabel" id="lbl-modo">Reporte</span>
       <div class="seg seg-modo" role="group" aria-labelledby="lbl-modo" id="fModo">
         <button type="button" data-v="directo" title="Reporte directo">Directo</button>
