@@ -240,10 +240,10 @@ function renderTabs() {
   const order = { mx: 0, us: 1, tur: 2 };
   list.sort((a, b) => order[sucInfo(a.v)[1]] - order[sucInfo(b.v)[1]] || (b.n || 0) - (a.n || 0));
   let lastG = null;
-  host.innerHTML = `<button type="button" class="tab g-all" data-all="1" aria-pressed="${String(state.sucs.length === 0)}" data-tip="${encodeURIComponent(`<div class="tt">Todas las sucursales</div><div class="row"><span>Quita el filtro de sucursal</span></div>`)}"><b>ALL</b></button>` +
-    `<div class="tgroup">Territorio</div>` + Object.keys(TERR).map(k => `<button type="button" class="tab g-terr" data-terr="${k}" aria-pressed="${String(state.terr === k)}" data-tip="${encodeURIComponent(`<div class="tt">${TERR[k][1]}</div><div class="row"><span>${TERR[k][2]}</span></div>`)}"><b class="ab">${TERR[k][0]}</b><span class="nm">${TERR[k][1]}</span></button>`).join("") +
+  host.innerHTML = `<button type="button" class="tab g-all" data-all="1" aria-pressed="${String(state.sucs.length === 0)}"><b>ALL</b></button>` +
+    `<div class="tgroup">Territorio</div>` + Object.keys(TERR).map(k => `<button type="button" class="tab g-terr" data-terr="${k}" aria-pressed="${String(state.terr === k)}" title="${TERR[k][2]}"><b class="ab">${TERR[k][0]}</b><span class="nm">${TERR[k][1]}</span></button>`).join("") +
     list.map(o => { const [ab, g] = sucInfo(o.v); const head = g !== lastG ? `<div class="tgroup">${{ mx: "México", us: "Estados Unidos", tur: "Turismo médico" }[g]}</div>` : ""; lastG = g;
-    return head + `<button type="button" class="tab g-${g}" data-v="${esc(o.v)}" aria-pressed="${String(state.sucs.includes(o.v))}" data-tip="${encodeURIComponent(`<div class="tt">${esc(sucName(o.v))}</div>${o.n ? `<div class="row"><span>Leads en el periodo</span><b>${nf.format(o.n)}</b></div>` : ""}`)}"><b class="ab">${ab}</b><span class="nm">${esc(sucName(o.v))}</span></button>`; }).join("");
+    return head + `<button type="button" class="tab g-${g}" data-v="${esc(o.v)}" aria-pressed="${String(state.sucs.includes(o.v))}"><b class="ab">${ab}</b><span class="nm">${esc(sucName(o.v))}</span></button>`; }).join("");
   host.querySelectorAll(".tab").forEach(b => b.addEventListener("click", () => {
     if (b.dataset.all) state.sucs = [];
     else if (b.dataset.terr) state.terr = state.terr === b.dataset.terr ? "" : b.dataset.terr;
