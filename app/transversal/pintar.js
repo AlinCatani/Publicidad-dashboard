@@ -790,7 +790,7 @@ async function refresh(force) {
     ALL = parseRows(rows); applyCanal();
     render();
     setStatus(rows.length ? "live" : "snap", rows.length ? "Al día" : "Sin filas",
-      rows.length ? `Datos de BigQuery consultados el ${at.toLocaleString("es-MX", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}.` : "BigQuery no devolvió leads con estos filtros.");
+      rows.length ? `Datos de BigQuery consultados el ${at.toLocaleString("es-MX", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}.` : `BigQuery no devolvió leads para ${sucsLabel().toLowerCase()} con estos filtros${state.terr && state.sucs.length ? " (revisa que el territorio y la sucursal sean compatibles)" : ""}.`);
   } catch (err) {
     if (my !== seq) return;
     const code = err && err.code;
@@ -798,6 +798,7 @@ async function refresh(force) {
     const map = {
       sesion: "Tu sesión terminó. Recarga la página y vuelve a entrar.",
       tool_error: `BigQuery rechazó la consulta (${esc((err.message || "").slice(0, 160))}).`,
+      timeout: "La consulta tardó más de un minuto; dale a «Actualizar» para intentar de nuevo.",
       empty: "BigQuery no devolvió filas."
     };
     setStatus("err", "Sin conexión", map[code] || `No se pudo consultar BigQuery en este momento${err && (err.message || code) ? ` (${esc(String(err.message || code).slice(0, 200))})` : ""}.`);
