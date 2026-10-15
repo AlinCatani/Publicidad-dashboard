@@ -187,7 +187,7 @@ const PLANTILLA = `<div class="wrap">
 
   <section class="panel" aria-labelledby="h-costos" data-sec="costos">
     <div class="phead">
-      <div><h2 id="h-costos">Costo por resultado por tipo de campaña</h2><p class="hint" id="costosHint">Inversión asignada ÷ resultados, por mes, en MXN. Una línea por tipo de campaña: paid, paid_us, paid_int y OLE (todo lo que no es campaña pagada).</p></div>
+      <div><h2 id="h-costos">Costo por resultado por medio</h2><p class="hint" id="costosHint">Inversión asignada ÷ resultados, por mes, en MXN. Una línea por medio de las campañas pagadas (paid, paid_int, paid_us) y una sola línea OLE con todo lo orgánico.</p></div>
     </div>
     <div class="fila-ctrl">
       <div class="seg" role="group" aria-label="Métrica" id="fCostoMet"></div>

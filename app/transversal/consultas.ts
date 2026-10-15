@@ -204,8 +204,9 @@ const desgDiarioSql = (e: Estado) => esInd(e)
 FROM ${VIEW}
 WHERE ${whereSql(e, true)}
 GROUP BY 1,2 ORDER BY 1`;
-/* Costos por mes y tipo de campaña (Alin, 2026-10-15): paid, paid_us, paid_int y todo lo demás = OLE. */
-const GRUPO_SQL = `CASE WHEN LOWER(TRIM(IFNULL(campaign,''))) = 'paid_us' THEN 'paid_us' WHEN LOWER(TRIM(IFNULL(campaign,''))) = 'paid_int' THEN 'paid_int' WHEN STARTS_WITH(LOWER(TRIM(IFNULL(campaign,''))),'paid') THEN 'paid' ELSE 'OLE' END`;
+/* Costos por mes y medio (Alin, 2026-10-15): un grupo por medio cuando la campaña es pagada (empieza con paid / paid_int /
+   paid_us); todo lo que no es pagado se resume en un solo grupo «OLE». */
+const GRUPO_SQL = `CASE WHEN STARTS_WITH(LOWER(TRIM(IFNULL(campaign,''))),'paid') THEN IFNULL(NULLIF(LOWER(TRIM(IFNULL(medium,''))),''),'(sin medio)') ELSE 'OLE' END`;
 const costosSql = (e: Estado) => esInd(e)
   ? indirectoSql(e, (col) => `FORMAT_DATE('%Y-%m', ${col}) mes, ${GRUPO_SQL} grupo, `, true, "mes, grupo")
   : `SELECT FORMAT_DATE('%Y-%m', fecha) mes, ${GRUPO_SQL} grupo, ${AGG}

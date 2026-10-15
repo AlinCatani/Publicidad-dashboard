@@ -579,8 +579,14 @@ function renderReg() {
   byId("regNote").textContent = (state.sucs.length ? "Registros por la sucursal que eligió la persona (el formulario no sabe dónde terminará la visita). " : "") + (state.terr ? "En registros el territorio se aproxima con el país del formulario (no guarda teléfono). " : "") + (skipped.length ? `Los filtros de ${skipped.join(" y ")} no aplican a registros; leads, citas y PVR sí los obedecen.` : "");
 }
 
-/* ===== Costo por resultado por tipo de campaña: líneas por mes (paid, paid_us, paid_int, OLE) ===== */
-const GRUPOS = [["paid", "paid", "#253f78"], ["paid_us", "paid_us", "#1a73e8"], ["paid_int", "paid_int", "#c8a040"], ["OLE", "OLE", "#7ab83b"]];
+/* ===== Costo por resultado por medio: líneas por mes, un medio por línea (solo campañas pagadas) + OLE ===== */
+const COSTO_PAL = ["#1a73e8", "#e6007e", "#ff7043", "#5e35b1", "#00acc1", "#fbbc04", "#f06292", "#757575", "#8d6e63", "#3949ab", "#00897b", "#c0ca33", "#ab47bc", "#ef5350", "#26c6da", "#ffa726", "#5c6bc0", "#9ccc65", "#78909c", "#253f78"];
+const COSTO_FIJO = { OLE: "#7ab83b", facebook: "#1a73e8", google_search: "#c8a040", instagram: "#e6007e" };
+function gruposCosto() { // ordenados por leads en el periodo; OLE al final
+  const tot = {}; CROWS.forEach(r => tot[r.grupo] = (tot[r.grupo] || 0) + r.leads);
+  const ks = Object.keys(tot).filter(k => k !== "OLE").sort((a, b) => tot[b] - tot[a]); if (tot.OLE != null) ks.push("OLE");
+  let i = 0; return ks.map(k => [k, k, COSTO_FIJO[k] || COSTO_PAL[i++ % COSTO_PAL.length]]);
+}
 const COSTO_MET = { leads: ["CPL", "Costo por lead"], citas: ["Costo por cita agendada", "Costo por cita agendada"], pvr: ["Costo por PVR", "Costo por primera visita"] };
 const fCostoMet = byId("fCostoMet");
 fCostoMet.innerHTML = Object.keys(COSTO_MET).map(k => `<button type="button" data-v="${k}">${COSTO_MET[k][0]}</button>`).join("");
@@ -588,7 +594,7 @@ fCostoMet.addEventListener("click", e => { const b = e.target.closest("button");
 function renderCostos() {
   if (!hay("costos")) return;
   fCostoMet.querySelectorAll("button").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.v === state.costoMet)));
-  const ms = monthsSel(), host = byId("cCostos"), met = state.costoMet, metN = COSTO_MET[met][1]; setDims(host);
+  const ms = monthsSel(), host = byId("cCostos"), met = state.costoMet, metN = COSTO_MET[met][1], GRUPOS = gruposCosto(); setDims(host);
   const cel = (g, mo) => CROWS.filter(r => r.grupo === g && r.mes === mo.key).reduce((o, r) => { o.n += r[met]; o.inv += r.inversion; return o; }, { n: 0, inv: 0 });
   const val = (g, mo) => { const a = cel(g, mo); return a.n > 0 && a.inv > 0 ? a.inv / a.n : NaN; };
   const all = GRUPOS.flatMap(([g]) => ms.map(mo => val(g, mo))).filter(isFinite);
@@ -601,9 +607,9 @@ function renderCostos() {
     ms.forEach((mo, i) => { const v = val(g, mo); if (isFinite(v)) s += `<circle fill="${col}" class="mk" cx="${x(i)}" cy="${y(v)}" r="4" pointer-events="none"/>`; }); });
   ms.forEach((mo, i) => { const tip = `<div class="tt">${cap(mo.long)} · ${metN}</div>` + tipRows(GRUPOS.map(([g, l, col]) => { const a = cel(g, mo), v = val(g, mo); return [`<i class="dot" style="background:${col}"></i>${l}`, isFinite(v) ? `${money(v)} · ${nf.format(a.n)} · ${money(a.inv)}` : a.n ? `sin inversión · ${nf.format(a.n)}` : "—"]; }));
     s += `<g class="col" data-tip="${encodeURIComponent(tip)}"><rect class="hit" x="${M.l + step * i}" y="${M.t}" width="${step}" height="${ih}"/><line class="guide" x1="${x(i)}" x2="${x(i)}" y1="${M.t}" y2="${M.t + ih}"/></g>`; });
-  host.innerHTML = `<svg class="chart" viewBox="0 0 ${W} ${H}" role="img" aria-label="${metN} por mes y tipo de campaña">${s}</svg>`;
+  host.innerHTML = `<svg class="chart" viewBox="0 0 ${W} ${H}" role="img" aria-label="${metN} por mes y medio">${s}</svg>`;
   byId("legCostos").innerHTML = GRUPOS.map(([, l, col]) => `<span><i class="dot" style="background:${col}"></i>${l}</span>`).join("");
-  byId("costosHint").textContent = `${metN}: inversión asignada ÷ ${met === "leads" ? "leads" : met === "citas" ? "citas agendadas" : "primeras visitas"}, por mes, en MXN. Una línea por tipo de campaña: paid, paid_us, paid_int y OLE (todo lo que no es campaña pagada: orgánico, sin campaña, etc.). Si un grupo no tiene inversión en el mes, no se dibuja; el detalle sale al pasar el cursor.`;
+  byId("costosHint").textContent = `${metN}: inversión asignada ÷ ${met === "leads" ? "leads" : met === "citas" ? "citas agendadas" : "primeras visitas"}, por mes, en MXN. Una línea por medio de las campañas pagadas (campaña que empieza con paid, paid_int o paid_us) y una sola línea OLE con todo lo que no es pagado. Un medio sin inversión en el mes no se dibuja; el detalle sale al pasar el cursor.`;
 }
 
 /* ===== Líneas de costo por mes y canal ===== */
