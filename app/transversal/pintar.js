@@ -800,7 +800,7 @@ async function refresh(force) {
       tool_error: `BigQuery rechazó la consulta (${esc((err.message || "").slice(0, 160))}).`,
       empty: "BigQuery no devolvió filas."
     };
-    setStatus("err", "Sin conexión", map[code] || "No se pudo consultar BigQuery en este momento.");
+    setStatus("err", "Sin conexión", map[code] || `No se pudo consultar BigQuery en este momento${err && (err.message || code) ? ` (${esc(String(err.message || code).slice(0, 200))})` : ""}.`);
   } finally { if (my === seq) btn.disabled = false; }
 }
 btn.addEventListener("click", () => { retried = false; loadOptions(true); refresh(true); });
