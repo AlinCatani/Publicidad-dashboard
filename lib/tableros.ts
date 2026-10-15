@@ -11,7 +11,7 @@ export const TABLEROS: Tablero[] = [
   {
     ruta: "/transversal",
     nombre: "Reporte Transversal",
-    descripcion: "De las impresiones a las primeras visitas, por sucursal real, campaña y perfil del paciente. Abre en Monterrey.",
+    descripcion: "De las impresiones a las primeras visitas, por sucursal real, campaña y perfil del paciente, con todos los medios y sucursales.",
   },
   {
     ruta: "/campanas",

@@ -91,7 +91,7 @@ export function validarEstado(x: unknown): Estado | null {
   let hasta = fecha(o.hasta) ?? new Date().toISOString().slice(0, 10);
   if (hasta < desde) hasta = desde;
   const mes = typeof o.mes === "string" && /^\d{4}-\d{2}$/.test(o.mes) ? o.mes : "todo";
-  const canal = typeof o.canal === "string" && CANALES.includes(o.canal) ? o.canal : "pagado";
+  const canal = typeof o.canal === "string" && CANALES.includes(o.canal) ? o.canal : "todos"; // todos los medios (Alin, 2026-10-15): es un reporte transversal, no de campañas
   const modo = o.modo === "indirecto" ? "indirecto" : "directo"; // botón maestro Directo / Indirecto (2026-10-09); aún no cambia el SQL
   const terr = typeof o.terr === "string" && TERRS.includes(o.terr) ? o.terr : "";
   const dim = typeof o.dim === "string" && DESG_DIMS.includes(o.dim) ? o.dim : "campaign";
