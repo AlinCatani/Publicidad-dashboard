@@ -239,6 +239,7 @@ tr.total td { font-weight: 700; color: var(--primary); border-top: 1px solid var
 .tab.g-mx { border-color: #7ab83b; color: #4f8a1c; } .tab.g-mx[aria-pressed="true"] { background: #7ab83b; color: #fff; }
 .tab.g-us { border-color: #253f78; color: var(--primary); } .tab.g-us[aria-pressed="true"] { background: #253f78; color: #fff; }
 .tab.g-tur { border-color: #c8a040; color: #8a6a1c; } .tab.g-tur[aria-pressed="true"] { background: #c8a040; color: #fff; }
+.tab.g-terr { border-color: var(--accent); color: #8a6a1c; border-style: dashed; } .tab.g-terr[aria-pressed="true"] { background: var(--ink); border-color: var(--ink); border-style: solid; color: #fff; }
 .tab.g-all { border-color: var(--axis); color: var(--muted); } .tab.g-all[aria-pressed="true"] { background: var(--muted); color: #fff; }
 .tab:hover { background: var(--soft); } .tab[aria-pressed="true"]:hover { filter: brightness(1.05); }
 .tab:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }

@@ -14,7 +14,11 @@ const OPEN_START = "2026-08-10";
 const SUC_REGION = { "CIUDAD DE MEXICO": ["mexico", "cdmx", "ciudad_de_mexico"], "MONTERREY": ["monterrey", "mty"], "GUADALAJARA": ["guadalajara", "gdl"], "PUEBLA": ["puebla"], "TIJUANA": ["tijuana"], "CANCUN": ["cancun"], "MERIDA": ["merida"], "QUERETARO": ["queretaro"], "VERACRUZ": ["veracruz"], "TOLUCA": ["toluca"], "CIUDAD JUAREZ": ["juarez", "ciudad_juarez", "cd_juarez"], "LEON": ["leon", "bajio"], "MORELIA": ["morelia"], "MEXICALI": ["mexicali"], "CHIHUAHUA": ["chihuahua", "chuhuahua"], "AGUASCALIENTES": ["aguascalientes"], "HERMOSILLO": ["hermosillo"], "MAZATLAN": ["mazatlan"], "PUERTO VALLARTA": ["vallarta", "puerto_vallarta"], "HOUSTON": ["texas", "houston", "usa_south"], "ORANGE COUNTY": ["california", "orange_county"], "NEW YORK": ["newyork", "new_york"], "MIAMI": ["florida", "miami"] };
 const localRegions = () => { const out = []; state.sucs.forEach(s => { const base = SUC_REGION[s] || [s.toLowerCase().replace(/\s+/g, "_")]; base.concat(base.map(x => x.replace(/_/g, " "))).forEach(r => { if (!out.includes(r)) out.push(r); }); }); return out; };
 const soloMty = () => state.sucs.length === 1 && state.sucs[0] === "MONTERREY";
-const sucsLabel = () => state.sucs.length === 0 ? "Todas las sucursales" : state.sucs.length === 1 ? `Sucursal ${sucName(state.sucs[0])}` : `${state.sucs.length} sucursales`;
+/* Territorio (Alin, 2026-10-15): México = número nacional y sucursal de México; Internacional = número extranjero y
+   sucursal de México, «No sé» o sin sucursal; USA = número extranjero y sucursal de Estados Unidos. */
+const TERR = { mexico: ["MEX", "México", "Número nacional (+52) y sucursal de México"], internacional: ["INT", "Internacional", "Número extranjero y sucursal de México, «No sé» o sin sucursal"], usa: ["USA", "USA", "Número extranjero y sucursal de Estados Unidos (Houston, Orange County, New York, Miami)"] };
+const terrLabel = () => state.terr ? ` · ${TERR[state.terr][1]}` : "";
+const sucsLabel = () => (state.sucs.length === 0 ? "Todas las sucursales" : state.sucs.length === 1 ? `Sucursal ${sucName(state.sucs[0])}` : `${state.sucs.length} sucursales`) + terrLabel();
 const ORIGENES = [
   { k: "local", name: "Campaña local", sub: "región de la sucursal" },
   { k: "nacional", name: "Campañas nacionales", sub: "región nacional" },
@@ -65,7 +69,7 @@ const fmtDate = s => new Date(s + "T12:00:00").toLocaleDateString("es-MX", { day
 const today = iso(new Date());
 
 /* ===== Estado ===== */
-const state = { desde: MIN_DATE, hasta: today, mes: "todo", canal: "pagado", modo: "directo", gran: "dia", dim: "campaign", pdim: "tipo_de_paciente", sucs: ["MONTERREY"], f: {} };
+const state = { desde: MIN_DATE, hasta: today, mes: "todo", canal: "pagado", modo: "directo", terr: "", gran: "dia", dim: "campaign", pdim: "tipo_de_paciente", sucs: ["MONTERREY"], f: {} };
 FILTER_DIMS.forEach(k => state.f[k] = []);
 try {
   const s = JSON.parse(localStorage.getItem("reporte-transversal-v3") || "{}");
@@ -75,6 +79,7 @@ try {
   if (/^\d{4}-\d\d-\d\d$/.test(s.desde || "")) state.desde = s.desde < MIN_DATE ? MIN_DATE : s.desde;
   if (/^\d{4}-\d\d-\d\d$/.test(s.hasta || "")) state.hasta = s.hasta;
   if (s.modo === "indirecto") state.modo = "indirecto";
+  if (TERR[s.terr]) state.terr = s.terr;
   if (s.dim && DESG_DIMS.includes(s.dim)) state.dim = s.dim;
   if (s.pdim && PERFIL_DIMS.includes(s.pdim)) state.pdim = s.pdim;
   if (s.f) FILTER_DIMS.forEach(k => { const v = s.f[k]; if (Array.isArray(v)) state.f[k] = v.filter(x => typeof x === "string" && x).slice(0, 60); else if (typeof v === "string" && v) state.f[k] = [v]; });
@@ -233,10 +238,12 @@ function renderTabs() {
   list.sort((a, b) => order[sucInfo(a.v)[1]] - order[sucInfo(b.v)[1]] || (b.n || 0) - (a.n || 0));
   let lastG = null;
   host.innerHTML = `<button type="button" class="tab g-all" data-all="1" aria-pressed="${String(state.sucs.length === 0)}" data-tip="${encodeURIComponent(`<div class="tt">Todas las sucursales</div><div class="row"><span>Quita el filtro de sucursal</span></div>`)}"><b>ALL</b></button>` +
+    `<div class="tgroup">Territorio</div>` + Object.keys(TERR).map(k => `<button type="button" class="tab g-terr" data-terr="${k}" aria-pressed="${String(state.terr === k)}" data-tip="${encodeURIComponent(`<div class="tt">${TERR[k][1]}</div><div class="row"><span>${TERR[k][2]}</span></div>`)}"><b>${TERR[k][0]}</b></button>`).join("") +
     list.map(o => { const [ab, g] = sucInfo(o.v); const head = g !== lastG ? `<div class="tgroup">${{ mx: "México", us: "Estados Unidos", tur: "Turismo médico" }[g]}</div>` : ""; lastG = g;
     return head + `<button type="button" class="tab g-${g}" data-v="${esc(o.v)}" aria-pressed="${String(state.sucs.includes(o.v))}" data-tip="${encodeURIComponent(`<div class="tt">${esc(sucName(o.v))}</div>${o.n ? `<div class="row"><span>Leads en el periodo</span><b>${nf.format(o.n)}</b></div>` : ""}`)}"><b>${ab}</b></button>`; }).join("");
   host.querySelectorAll(".tab").forEach(b => b.addEventListener("click", () => {
     if (b.dataset.all) state.sucs = [];
+    else if (b.dataset.terr) state.terr = state.terr === b.dataset.terr ? "" : b.dataset.terr;
     else { const v = b.dataset.v, i = state.sucs.indexOf(v); if (i >= 0) state.sucs.splice(i, 1); else state.sucs.push(v); }
     save(); paintFilters(); renderTabs(); refresh(false);
   }));
@@ -262,7 +269,7 @@ function renderAds() {
   const t = AROWS.reduce((o, r) => { o.inversion += r.inversion; o.impresiones += r.impresiones; o.alcance += r.alcance; o.clics += r.clics; return o; }, { inversion: 0, impresiones: 0, alcance: 0, clics: 0 });
   const a = sum(ROWS), reg = regTotal();
   /* Con sucursales elegidas, la inversión es la asignada a sus leads (misma que el CPL); impresiones y clics se reparten en esa proporción (estimado). */
-  const porSuc = state.sucs.length > 0 && t.inversion > 0, share = porSuc ? Math.min(1, div(a.inversion, t.inversion) || 0) : 1;
+  const porSuc = (state.sucs.length > 0 || !!state.terr) && t.inversion > 0, share = porSuc ? Math.min(1, div(a.inversion, t.inversion) || 0) : 1;
   const est = porSuc ? " · estimado" : "";
   const inv = porSuc ? a.inversion : t.inversion, imp = t.impresiones * share, cl = t.clics * share;
   const items = [
@@ -538,7 +545,7 @@ function renderReg() {
   host.innerHTML = `<svg class="chart" viewBox="0 0 ${W} ${H}" role="img" aria-label="Registros, leads, citas agendadas y primeras visitas por mes">${s}</svg>`;
   byId("legReg").innerHTML = SER.map(([, l, cls]) => `<span><i class="dot ${cls.replace("f-", "d-")}"></i>${l}</span>`).join("");
   const skipped = FILTER_DIMS.filter(k => state.f[k].length && REG_SKIP[k]).map(k => DIMS[k].label);
-  byId("regNote").textContent = (state.sucs.length ? "Registros por la sucursal que eligió la persona (el formulario no sabe dónde terminará la visita). " : "") + (skipped.length ? `Los filtros de ${skipped.join(" y ")} no aplican a registros; leads, citas y PVR sí los obedecen.` : "");
+  byId("regNote").textContent = (state.sucs.length ? "Registros por la sucursal que eligió la persona (el formulario no sabe dónde terminará la visita). " : "") + (state.terr ? "El territorio no aplica a registros (el formulario no guarda teléfono). " : "") + (skipped.length ? `Los filtros de ${skipped.join(" y ")} no aplican a registros; leads, citas y PVR sí los obedecen.` : "");
 }
 
 /* ===== Líneas de costo por mes y canal ===== */

@@ -57,7 +57,21 @@ const MAX_SUCS = 40;
 const MAX_VALS = 60; // valores por filtro
 export type Tipo = (typeof TIPOS)[number];
 
-export type Estado = { desde: string; hasta: string; mes: string; canal: string; modo: "directo" | "indirecto"; dim: string; pdim: string; sucs: string[]; f: Record<string, string[]> };
+/* Territorio (Alin, 2026-10-15): México = número nacional y sucursal de México; Internacional = número extranjero y
+   sucursal de México, «No sé» o sin sucursal; USA = número extranjero y sucursal de Estados Unidos. El número lo da
+   la columna `internacional` de leads_historico (vacío cuenta como nacional). Vacío = sin filtro de territorio. */
+const US_SUCS = ["HOUSTON", "ORANGE COUNTY", "NEW YORK", "MIAMI"];
+const TERRS = ["", "mexico", "internacional", "usa"];
+const ES_INTL = "LOWER(TRIM(IFNULL(internacional,''))) = 'internacional'";
+function terrSql(terr: string): string | null {
+  const us = `sucursal_real IN (${inList(US_SUCS)})`;
+  if (terr === "mexico") return `NOT ${ES_INTL} AND NOT ${us}`;
+  if (terr === "internacional") return `${ES_INTL} AND NOT ${us}`;
+  if (terr === "usa") return `${ES_INTL} AND ${us}`;
+  return null;
+}
+
+export type Estado = { desde: string; hasta: string; mes: string; canal: string; modo: "directo" | "indirecto"; terr: string; dim: string; pdim: string; sucs: string[]; f: Record<string, string[]> };
 
 /* Valida lo que manda el navegador. Devuelve null si no tiene forma de estado. */
 export function validarEstado(x: unknown): Estado | null {
@@ -71,6 +85,7 @@ export function validarEstado(x: unknown): Estado | null {
   const mes = typeof o.mes === "string" && /^\d{4}-\d{2}$/.test(o.mes) ? o.mes : "todo";
   const canal = typeof o.canal === "string" && CANALES.includes(o.canal) ? o.canal : "pagado";
   const modo = o.modo === "indirecto" ? "indirecto" : "directo"; // botón maestro Directo / Indirecto (2026-10-09); aún no cambia el SQL
+  const terr = typeof o.terr === "string" && TERRS.includes(o.terr) ? o.terr : "";
   const dim = typeof o.dim === "string" && DESG_DIMS.includes(o.dim) ? o.dim : "campaign";
   const pdim = typeof o.pdim === "string" && PERFIL_DIMS.includes(o.pdim) ? o.pdim : "tipo_de_paciente";
   const sucs = Array.isArray(o.sucs) ? (o.sucs as unknown[]).filter((v): v is string => typeof v === "string" && v.length > 0 && v.length <= 60).slice(0, MAX_SUCS) : [];
@@ -78,7 +93,7 @@ export function validarEstado(x: unknown): Estado | null {
   const fx = o.f && typeof o.f === "object" ? (o.f as Record<string, unknown>) : {};
   const esVal = (v: unknown): v is string => typeof v === "string" && v.length > 0 && v.length <= 200;
   FILTER_DIMS.forEach((k) => { const v = fx[k]; f[k] = Array.isArray(v) ? (v as unknown[]).filter(esVal).slice(0, MAX_VALS) : esVal(v) ? [v] : []; });
-  return { desde, hasta, mes, canal, modo, dim, pdim, sucs, f };
+  return { desde, hasta, mes, canal, modo, terr, dim, pdim, sucs, f };
 }
 
 const sqlStr = (s: string) => "'" + (s === VACIO ? "" : s).replace(/\\/g, "\\\\").replace(/'/g, "\\'") + "'";
@@ -92,6 +107,7 @@ const AGG = `SUM(leads) leads, SUM(citas) citas, SUM(pvr) pvr, SUM(sucursal_camb
 function whereSql(e: Estado, withCanal: boolean, col = "fecha") {
   const w = [`tipo_fila = 'lead'`, `${col} BETWEEN '${e.desde}' AND '${e.hasta}'`];
   const si = sucsIn(e, "sucursal_real"); if (si) w.push(si);
+  const ts = terrSql(e.terr); if (ts) w.push(ts);
   if (withCanal) { const chs = channels(e); if (chs.length < 3) w.push(`${CANAL_SQL} IN (${inList(chs)})`); if (e.mes !== "todo") w.push(`FORMAT_DATE('%Y-%m', ${col}) = '${e.mes}'`); }
   FILTER_DIMS.forEach((k) => { if (e.f[k].length) w.push(filtroIn(k, e.f[k])); });
   return w.join("\n  AND ");
