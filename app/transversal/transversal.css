@@ -269,7 +269,8 @@ tr.total td { font-weight: 700; color: var(--primary); border-top: 1px solid var
 .ver-filtros span { font-size: 16px; line-height: 1; }
 .ver-filtros:hover { background: var(--soft); }
 &.compacta .ver-filtros { display: inline-flex; }
-&.compacta .sticky-filters { padding-block: 8px; }
+&.compacta .sticky-filters { position: fixed; top: 0; padding-block: 8px; box-shadow: 0 8px 20px rgba(37,63,120,.18); }
+.espacio-barra { display: none; }
 &.compacta .sticky-filters .selects { display: none; }
 &.compacta .modo-row { margin-bottom: 0; padding-bottom: 0; border-bottom: 0; }
 &.compacta #modoNote { display: none; }

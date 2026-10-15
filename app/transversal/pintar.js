@@ -774,7 +774,7 @@ function pintarPliegue() {
   sideBadge.textContent = state.sucs.length === 0 ? "∀" : String(state.sucs.length);
   sideBadge.title = `${sucsLabel()} · clic para abrir el menú`;
 }
-const alternarPliegue = () => { plegado = !plegado; try { localStorage.setItem("reporte-transversal-menu", plegado ? "plegado" : "abierto"); } catch (e) {} pintarPliegue(); clearTimeout(resizeT); resizeT = setTimeout(renderCharts, 200); };
+const alternarPliegue = () => { plegado = !plegado; try { localStorage.setItem("reporte-transversal-menu", plegado ? "plegado" : "abierto"); } catch (e) {} pintarPliegue(); clearTimeout(resizeT); resizeT = setTimeout(() => { renderCharts(); medirBarra(); }, 200); };
 on(sideToggle, "click", alternarPliegue); on(sideBadge, "click", alternarPliegue);
 pintarPliegue();
 /* Barra de filtros compacta al hacer scroll (Alin, 2026-10-15): congelada ocupaba demasiado. Al pasar de su sitio solo
@@ -782,7 +782,20 @@ pintarPliegue();
    los selectores, y al volver arriba la barra regresa completa. */
 const barraEl = document.querySelector(".sticky-filters"), verFiltros = byId("verFiltros"), modoRowEl = document.querySelector(".modo-row"), chipsEl = byId("filterNote");
 let compacta = false, filtrosAbiertos = false;
+/* Al compactar, la barra sale del flujo (position: fixed) y un espaciador conserva su altura original: así el contenido
+   no brinca y el scroll sigue fluido (antes el cambio de altura peleaba con el scroll, Alin 2026-10-15). */
+const espacio = document.createElement("div"); espacio.className = "espacio-barra"; if (barraEl) barraEl.insertAdjacentElement("afterend", espacio);
+function medirBarra() {
+  if (!compacta) return;
+  const r = (espacio.offsetHeight ? espacio : barraEl).getBoundingClientRect();
+  barraEl.style.left = r.left + "px"; barraEl.style.width = r.width + "px";
+}
 function pintarBarra() {
+  if (compacta && !rtEl.classList.contains("compacta")) {
+    const r = barraEl.getBoundingClientRect();
+    espacio.style.height = r.height + "px"; espacio.style.display = "block";
+    barraEl.style.left = r.left + "px"; barraEl.style.width = r.width + "px";
+  } else if (!compacta) { espacio.style.display = "none"; espacio.style.height = "0"; barraEl.style.left = ""; barraEl.style.width = ""; }
   rtEl.classList.toggle("compacta", compacta);
   rtEl.classList.toggle("filtros-abiertos", compacta && filtrosAbiertos);
   verFiltros.setAttribute("aria-expanded", String(compacta && filtrosAbiertos));
@@ -798,6 +811,7 @@ if (barraEl && "IntersectionObserver" in window) {
   io.observe(centinela);
 }
 on(verFiltros, "click", () => { filtrosAbiertos = !filtrosAbiertos; pintarBarra(); });
+on(window, "resize", medirBarra);
 on(barraEl, "mouseenter", () => { if (compacta && !filtrosAbiertos) { filtrosAbiertos = true; pintarBarra(); } });
 on(barraEl, "mouseleave", () => { if (compacta && filtrosAbiertos && !selAbierto && periodPop.hidden) { filtrosAbiertos = false; pintarBarra(); } });
 
