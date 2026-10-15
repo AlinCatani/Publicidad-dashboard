@@ -352,7 +352,7 @@ function renderDesglose() {
   const d = DIMS[state.dim];
   const t = resultTable(ROWS, d.label, k => dimName(state.dim, k));
   byId("tDesg").innerHTML = t.html;
-  byId("desgHint").textContent = `${d.label}, ordenado por leads. ${t.n} valores${t.rest ? `; se muestran 30 y el resto se agrupa en «Otros»` : ""}.`;
+  byId("desgHint").textContent = `${d.label}: ${t.n} valores en el periodo. Los filtros de arriba aplican.`;
 }
 function renderPerfil() {
   const d = DIMS[state.pdim];

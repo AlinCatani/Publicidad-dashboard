@@ -96,12 +96,11 @@ const PLANTILLA = `<div class="wrap">
     <div class="phead">
       <div>
         <h2 id="h-desg">Desglose por campaña</h2>
-        <p class="hint" id="desgHint">Elige por qué dimensión abrir los resultados. Los filtros de arriba aplican.</p>
+        <p class="hint" id="desgHint">Elige por qué dimensión abrir los resultados en el tiempo. Los filtros de arriba aplican.</p>
       </div>
     </div>
     <div class="seg" role="group" aria-label="Dimensión" id="fDim" style="margin-bottom:12px"></div>
-    <div class="tscroll"><table id="tDesg"></table></div>
-    <div class="subpanel" id="bloqueDesg">
+    <div class="subpanel sin-linea" id="bloqueDesg">
       <div class="phead">
         <div><h3 id="h-desg-tend">Tendencia por campaña</h3><p class="hint" id="desgTendHint">Resultados por día, apilados por la dimensión elegida arriba.</p></div>
       </div>
