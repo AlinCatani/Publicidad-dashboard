@@ -672,7 +672,8 @@ function renderEvol() {
     el.innerHTML = `<svg class="chart" viewBox="0 0 ${W} ${H}" role="img" aria-label="${label} por ${sem ? "semana" : "día"}">${s}</svg>`;
   });
 }
-const PAL = ["#1a73e8", "#7ab83b", "#e6007e", "#5e35b1", "#c8a040", "#00acc1", "#9aa7bd", "#8a6a1c"];
+/* 20 colores distinguibles (como las gráficas de Looker que usa Alin); el 21.º en adelante se junta en «Otros». */
+const PAL = ["#1a73e8", "#7ab83b", "#e6007e", "#ff7043", "#5e35b1", "#00acc1", "#fbbc04", "#f06292", "#757575", "#8d6e63", "#3949ab", "#00897b", "#c0ca33", "#ab47bc", "#ef5350", "#26c6da", "#ffa726", "#5c6bc0", "#9ccc65", "#78909c"];
 /* Colores fijos para los valores que ya tienen color en Looker (referencia de Alin, 2026-10-15). */
 const PAL_FIJA = { Azul: "#1a73e8", Verde: "#7ab83b", LP: "#5e35b1", LS: "#f06292", LeadING: "#e6007e", "No LeadING": "#00acc1" };
 const fDiaMet = byId("fDiaMet");
@@ -692,7 +693,7 @@ function renderApilada(c) {
   const totV = {}; DROWS.forEach(r => { if (r.dim !== "") totV[r.dim] = (totV[r.dim] || 0) + r[met]; }); // sin dato: fuera, como en la tabla
   let vals = Object.keys(totV).filter(k => totV[k] > 0);
   if (d.sortKey) vals.sort((x, y) => x.localeCompare(y, "es", { numeric: true })); else vals.sort((x, y) => totV[y] - totV[x]);
-  const MAXV = 7, otros = vals.length > MAXV ? vals.slice(MAXV) : [];
+  const MAXV = 20, otros = vals.length > MAXV ? vals.slice(MAXV) : [];
   if (otros.length) vals = vals.slice(0, MAXV).concat(["__otros"]);
   const key = v => otros.includes(v) ? "__otros" : v;
   const name = v => v === "__otros" ? `Otros (${otros.length})` : dimName(c.dim, v);
