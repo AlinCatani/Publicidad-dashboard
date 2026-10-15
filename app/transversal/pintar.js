@@ -638,7 +638,9 @@ function renderMes() {
 const fGran = byId("fGran");
 fGran.addEventListener("click", e => { const b = e.target.closest("button"); if (!b) return; state.gran = b.dataset.v; save(); renderDiario(); });
 function monday(d) { const x = new Date(d + "T12:00:00"); x.setDate(x.getDate() - ((x.getDay() + 6) % 7)); return iso(x); }
-const PAL = ["#253f78", "#7ab83b", "#c8a040", "#5b8fd6", "#9aa7bd", "#8a6a1c", "#a90707", "#3d558a"];
+const PAL = ["#1a73e8", "#7ab83b", "#e6007e", "#5e35b1", "#c8a040", "#00acc1", "#9aa7bd", "#8a6a1c"];
+/* Colores fijos para los valores que ya tienen color en Looker (referencia de Alin, 2026-10-15). */
+const PAL_FIJA = { Azul: "#1a73e8", Verde: "#7ab83b", LP: "#5e35b1", LS: "#f06292", LeadING: "#e6007e", "No LeadING": "#00acc1" };
 const fDiaMet = byId("fDiaMet");
 fDiaMet.innerHTML = MES_MET_KEYS.map(k => `<button type="button" data-v="${k}">${MES_MET[k]}</button>`).join("");
 fDiaMet.addEventListener("click", e => { const b = e.target.closest("button"); if (!b) return; state.diaMet = b.dataset.v; save(); renderDiario(); });
@@ -659,25 +661,30 @@ function renderDiario() {
   if (otros.length) vals = vals.slice(0, MAXV).concat(["__otros"]);
   const key = v => otros.includes(v) ? "__otros" : v;
   const name = v => v === "__otros" ? `Otros (${otros.length})` : dimName(state.pdim, v);
-  const color = i => PAL[i % PAL.length];
+  const color = i => PAL_FIJA[vals[i]] || PAL[i % PAL.length];
   const map = new Map();
   DROWS.forEach(r => { if (r.dim === "") return; const k = mes ? r.dia.slice(0, 7) + "-01" : sem ? monday(r.dia) : r.dia; const o = map.get(k) || { k, by: {}, tot: 0 }; const kv = key(r.dim); o.by[kv] = (o.by[kv] || 0) + r[met]; o.tot += r[met]; map.set(k, o); });
   const pts = [...map.values()].sort((a, b) => a.k < b.k ? -1 : 1);
   const total = pts.reduce((a, p) => a + p.tot, 0);
-  leg.innerHTML = vals.map((v, i) => { const t = v === "__otros" ? otros.reduce((a, o) => a + totV[o], 0) : totV[v]; return `<span><i class="dot" style="background:${color(i)}"></i>${esc(name(v))} <b>${nf.format(t)}</b> <small>(${pct(div(t, total))})</small></span>`; }).join("") + `<span><b>Total ${nf.format(total)}</b></span>`;
+  leg.innerHTML = vals.map((v, i) => { const t = v === "__otros" ? otros.reduce((a, o) => a + totV[o], 0) : totV[v]; return `<span><i class="sw" style="background:${color(i)}"></i>${esc(name(v))} <small>${nf.format(t)} · ${pct(div(t, total))}</small></span>`; }).join("") + `<span><small>Total ${nf.format(total)}</small></span>`;
   if (!pts.length) { host.innerHTML = `<p class="hint">Sin datos con estos filtros.</p>`; return; }
   const fmtK = k => mes ? cap(new Date(k + "T12:00:00").toLocaleDateString("es-MX", { month: "long", year: "numeric" })) : sem ? `Semana del ${fmtDate(k)}` : fmtDate(k);
-  setDims(host); H = 300; ih = H - M.t - M.b;
-  const yMax = niceMax(Math.max(1, ...pts.map(p => p.tot)) * 1.1);
-  const n = pts.length, step = iw / n, bw = Math.max(1.5, Math.min(34, step * 0.72));
+  setDims(host); H = W < 520 ? 300 : 380; const mb = 40; ih = H - M.t - mb;
+  const top = Math.max(1, ...pts.map(p => p.tot)) * 1.06, pw = Math.pow(10, Math.floor(Math.log10(top))), q = top / pw;
+  const yMax = ([1, 1.2, 1.5, 2, 2.5, 3, 4, 5, 6, 8, 10].find(m => q <= m) || 10) * pw; // tope ajustado, sin aire de más
+  const n = pts.length, step = iw / n, bw = Math.max(1.5, Math.min(64, step * 0.84));
   const x = i => M.l + step * (i + 0.5), y = v => M.t + ih - v / yMax * ih;
   let s = axes(yMax, v => nf.format(v));
-  const every = Math.max(1, Math.ceil(n / (W < 420 ? 4 : W < 800 ? 7 : 12)));
-  pts.forEach((p, i) => { if (i % every === 0 || i === n - 1) s += `<text x="${x(i)}" y="${H - 8}" text-anchor="middle">${new Date(p.k + "T12:00:00").toLocaleDateString("es-MX", mes ? { month: "short", year: "2-digit" } : { day: "numeric", month: "short" }).replace(".", "")}</text>`; });
+  /* Etiquetas del eje: todas si caben (en dos renglones alternados, como Looker); si no, cada N. */
+  const fx = k => new Date(k + "T12:00:00").toLocaleDateString("es-MX", mes ? { month: "short", year: "numeric" } : { day: "numeric", month: "short" }).replace(".", "");
+  const every = step >= 30 ? 1 : Math.max(1, Math.ceil(n / (W < 420 ? 4 : W < 800 ? 7 : 12)));
+  pts.forEach((p, i) => { if (i % every === 0 || i === n - 1) s += `<text x="${x(i)}" y="${H - (every === 1 && step < 64 && i % 2 ? 6 : 20)}" text-anchor="middle">${fx(p.k)}</text>`; });
   pts.forEach((p, i) => {
     let acc = 0;
-    vals.forEach((v, j) => { const val = p.by[v] || 0; if (!val) return; const y1 = y(acc + val), h = y(acc) - y1; s += `<rect x="${(x(i) - bw / 2).toFixed(1)}" y="${y1.toFixed(1)}" width="${bw.toFixed(1)}" height="${h.toFixed(1)}" fill="${color(j)}" pointer-events="none"/>`; acc += val; });
-    if (p.tot > 0 && (bw >= 18 || every === 1)) s += `<text x="${x(i)}" y="${(y(p.tot) - 4).toFixed(1)}" text-anchor="middle" class="lbl">${nf.format(p.tot)}</text>`;
+    vals.forEach((v, j) => { const val = p.by[v] || 0; if (!val) return; const y1 = y(acc + val), h = y(acc) - y1;
+      s += `<rect x="${(x(i) - bw / 2).toFixed(1)}" y="${y1.toFixed(1)}" width="${bw.toFixed(1)}" height="${h.toFixed(1)}" fill="${color(j)}" stroke="#fff" stroke-width="1" pointer-events="none"/>`;
+      if (h >= 12 && bw >= 11) s += `<text x="${x(i)}" y="${(y1 + 12).toFixed(1)}" text-anchor="middle" class="seglbl${bw < 26 ? " chica" : ""}">${nf.format(val)}</text>`;
+      acc += val; });
     const tip = `<div class="tt">${fmtK(p.k)} · ${metN}</div>` + tipRows(vals.filter(v => p.by[v]).map((v, j) => [`<i class="dot" style="background:${color(vals.indexOf(v))}"></i>${esc(name(v))}`, `${nf.format(p.by[v])} · ${pct(div(p.by[v], p.tot))}`]).concat([["Total", nf.format(p.tot)]]));
     s += `<g class="col" data-tip="${encodeURIComponent(tip)}"><rect class="hit" x="${(x(i) - step / 2).toFixed(1)}" y="${M.t}" width="${step.toFixed(1)}" height="${ih}"/></g>`;
   });
