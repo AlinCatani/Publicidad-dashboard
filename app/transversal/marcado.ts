@@ -101,6 +101,17 @@ const PLANTILLA = `<div class="wrap">
     </div>
     <div class="seg" role="group" aria-label="Dimensión" id="fDim" style="margin-bottom:12px"></div>
     <div class="tscroll"><table id="tDesg"></table></div>
+    <div class="subpanel" id="bloqueDesg">
+      <div class="phead">
+        <div><h3 id="h-desg-tend">Tendencia por campaña</h3><p class="hint" id="desgTendHint">Resultados por día, apilados por la dimensión elegida arriba.</p></div>
+      </div>
+      <div class="fila-ctrl">
+        <div class="seg" role="group" aria-label="Métrica" id="fDesgMet"></div>
+        <div class="seg" role="group" aria-label="Granularidad" id="fDesgGran" style="margin-left:auto"><button type="button" data-v="dia">Día</button><button type="button" data-v="semana">Semana</button><button type="button" data-v="mes">Mes</button></div>
+      </div>
+      <div class="legend" id="desgLeg" style="margin-bottom:10px"></div>
+      <div id="cDesgTend"></div>
+    </div>
   </section>
 
   <section class="panel" aria-labelledby="h-funnel" data-sec="funnel">

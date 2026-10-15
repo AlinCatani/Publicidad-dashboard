@@ -70,7 +70,7 @@ const today = iso(new Date());
 
 /* ===== Estado ===== */
 const MES_MET_KEYS = ["leads", "citas", "pvr"];
-const state = { desde: MIN_DATE, hasta: today, mes: "todo", canal: "pagado", modo: "directo", terr: "", diaMet: "leads", gran: "dia", evolGran: "dia", dim: "campaign", pdim: "tipo_de_paciente", sucs: ["MONTERREY"], f: {} };
+const state = { desde: MIN_DATE, hasta: today, mes: "todo", canal: "pagado", modo: "directo", terr: "", diaMet: "leads", gran: "dia", evolGran: "dia", desgMet: "leads", desgGran: "dia", dim: "campaign", pdim: "tipo_de_paciente", sucs: ["MONTERREY"], f: {} };
 FILTER_DIMS.forEach(k => state.f[k] = []);
 try {
   const s = JSON.parse(localStorage.getItem("reporte-transversal-v3") || "{}");
@@ -78,6 +78,8 @@ try {
   if (s.gran === "semana" || s.gran === "mes") state.gran = s.gran;
   if (MES_MET_KEYS.includes(s.diaMet)) state.diaMet = s.diaMet;
   if (s.evolGran === "semana") state.evolGran = "semana";
+  if (MES_MET_KEYS.includes(s.desgMet)) state.desgMet = s.desgMet;
+  if (["dia", "semana", "mes"].includes(s.desgGran)) state.desgGran = s.desgGran;
   if (typeof s.mesMet === "string") state.mesMet = s.mesMet;
   if (/^\d{4}-\d\d-\d\d$/.test(s.desde || "")) state.desde = s.desde < MIN_DATE ? MIN_DATE : s.desde;
   if (/^\d{4}-\d\d-\d\d$/.test(s.hasta || "")) state.hasta = s.hasta;
@@ -101,7 +103,7 @@ function monthsSel() {
 
 const REG_SKIP = { perfil: 1, es_leading: 1, internacional: 1 };
 /* ===== Datos ===== */
-let ALL = [], ROWS = [], PROWS = [], RROWS = [], WEEKS = [], DROWS = [], AROWS = [], OPTIONS = null;
+let ALL = [], ROWS = [], PROWS = [], RROWS = [], WEEKS = [], DROWS = [], GROWS = [], AROWS = [], OPTIONS = null;
 let MROWS = [];
 const inMes = r => state.mes === "todo" || r.mes === state.mes;
 const applyCanal = () => { const chs = channels(); MROWS = ALL.filter(r => chs.includes(r.canal)); ROWS = MROWS.filter(inMes); };
@@ -166,7 +168,7 @@ pintarModo();
 byId("fCanal").addEventListener("click", e => { const b = e.target.closest("button"); if (!b) return; state.canal = b.dataset.v; save(); applyCanal(); render(); refreshPerfil(false); refreshDiario(false); refreshReg(false); refreshAds(false); });
 const fDim = byId("fDim");
 fDim.innerHTML = DESG_DIMS.map(k => `<button type="button" data-v="${k}">${DIMS[k].label}</button>`).join("");
-fDim.addEventListener("click", e => { const b = e.target.closest("button"); if (!b) return; state.dim = b.dataset.v; save(); paintFilters(); refresh(false); });
+fDim.addEventListener("click", e => { const b = e.target.closest("button"); if (!b) return; state.dim = b.dataset.v; save(); paintFilters(); refresh(false); refreshDesgDiario(false); });
 const fPerfil = byId("fPerfil");
 fPerfil.innerHTML = PERFIL_DIMS.map(k => `<button type="button" data-v="${k}">${DIMS[k].label}</button>`).join("");
 fPerfil.addEventListener("click", e => { const b = e.target.closest("button"); if (!b) return; state.pdim = b.dataset.v; save(); paintFilters(); refreshPerfil(false); refreshDiario(false); });
@@ -678,13 +680,14 @@ fDiaMet.innerHTML = MES_MET_KEYS.map(k => `<button type="button" data-v="${k}">$
 fDiaMet.addEventListener("click", e => { const b = e.target.closest("button"); if (!b) return; state.diaMet = b.dataset.v; save(); renderDiario(); });
 /* Una sola gráfica de barras apiladas: por día / semana / mes, un color por valor de la característica elegida en la tabla
    de paciente (Alin, 2026-10-15: «identificar por día cuántos fueron LS y cuántos LP»). */
-function renderDiario() {
-  fGran.querySelectorAll("button").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.v === state.gran)));
-  fDiaMet.querySelectorAll("button").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.v === state.diaMet)));
-  const host = byId("cDiario"), leg = byId("diarioLeg");
-  const sem = state.gran === "semana", mes = state.gran === "mes", met = state.diaMet, metN = MES_MET[met];
-  const d = DIMS[state.pdim], gran = mes ? "mes" : sem ? "semana" : "día";
-  byId("diarioHint").textContent = `${metN} por ${gran}, apilados por ${d.label.toLowerCase()}, del ${fmtDate(state.desde)} al ${fmtDate(state.hasta)}, con los filtros y el medio elegidos. Cambia la característica con los botones de la tabla de arriba.`;
+/* Gráfica apilada genérica (la usan la tendencia por paciente y la tendencia por campaña). */
+function renderApilada(c) {
+  c.fGran.querySelectorAll("button").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.v === c.gran)));
+  c.fMet.querySelectorAll("button").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.v === c.met)));
+  const host = byId(c.chart), leg = byId(c.leg), DROWS = c.rows;
+  const sem = c.gran === "semana", mes = c.gran === "mes", met = c.met, metN = MES_MET[met];
+  const d = DIMS[c.dim], gran = mes ? "mes" : sem ? "semana" : "día";
+  byId(c.hint).textContent = `${metN} por ${gran}, apilados por ${d.label.toLowerCase()}, del ${fmtDate(state.desde)} al ${fmtDate(state.hasta)}, con los filtros y el medio elegidos. ${c.nota}`;
   /* valores de la característica, ordenados por total; los que pasan de 7 se juntan en «Otros» */
   const totV = {}; DROWS.forEach(r => { if (r.dim !== "") totV[r.dim] = (totV[r.dim] || 0) + r[met]; }); // sin dato: fuera, como en la tabla
   let vals = Object.keys(totV).filter(k => totV[k] > 0);
@@ -692,7 +695,7 @@ function renderDiario() {
   const MAXV = 7, otros = vals.length > MAXV ? vals.slice(MAXV) : [];
   if (otros.length) vals = vals.slice(0, MAXV).concat(["__otros"]);
   const key = v => otros.includes(v) ? "__otros" : v;
-  const name = v => v === "__otros" ? `Otros (${otros.length})` : dimName(state.pdim, v);
+  const name = v => v === "__otros" ? `Otros (${otros.length})` : dimName(c.dim, v);
   const color = i => PAL_FIJA[vals[i]] || PAL[i % PAL.length];
   const map = new Map();
   DROWS.forEach(r => { if (r.dim === "") return; const k = mes ? r.dia.slice(0, 7) + "-01" : sem ? monday(r.dia) : r.dia; const o = map.get(k) || { k, by: {}, tot: 0 }; const kv = key(r.dim); o.by[kv] = (o.by[kv] || 0) + r[met]; o.tot += r[met]; map.set(k, o); });
@@ -722,6 +725,18 @@ function renderDiario() {
   });
   host.innerHTML = `<svg class="chart" viewBox="0 0 ${W} ${H}" role="img" aria-label="${metN} por ${gran} y ${d.label}">${s}</svg>`;
 }
+function renderDiario() {
+  renderApilada({ rows: DROWS, dim: state.pdim, met: state.diaMet, gran: state.gran, fMet: fDiaMet, fGran, hint: "diarioHint", leg: "diarioLeg", chart: "cDiario", nota: "Cambia la característica con los botones de la tabla de arriba." });
+}
+const fDesgMet = byId("fDesgMet"), fDesgGran = byId("fDesgGran");
+fDesgMet.innerHTML = MES_MET_KEYS.map(k => `<button type="button" data-v="${k}">${MES_MET[k]}</button>`).join("");
+fDesgMet.addEventListener("click", e => { const b = e.target.closest("button"); if (!b) return; state.desgMet = b.dataset.v; save(); renderDesgTend(); });
+fDesgGran.addEventListener("click", e => { const b = e.target.closest("button"); if (!b) return; state.desgGran = b.dataset.v; save(); renderDesgTend(); });
+function renderDesgTend() {
+  if (!hay("desg")) return;
+  byId("h-desg-tend").textContent = `Tendencia por ${DIMS[state.dim].label.toLowerCase()}`;
+  renderApilada({ rows: GROWS, dim: state.dim, met: state.desgMet, gran: state.desgGran, fMet: fDesgMet, fGran: fDesgGran, hint: "desgTendHint", leg: "desgLeg", chart: "cDesgTend", nota: "Cambia la dimensión con los botones de la tabla de arriba." });
+}
 
 /* ===== Notas al pie con datos en vivo ===== */
 function renderNotes() {
@@ -743,7 +758,7 @@ on(document, "mousemove", e => {
   tip.style.top = Math.min(e.clientY + 14, window.innerHeight - r.height - 8) + "px";
 });
 
-function renderCharts() { renderEvol(); renderDiario(); renderMes(); renderReg(); renderLine("cCag", "legCag", "citas", "Costo por cita agendada"); renderLine("cCpvr", "legCpvr", "pvr", "Costo por primera visita"); renderWeekly(); }
+function renderCharts() { renderEvol(); renderDiario(); renderDesgTend(); renderMes(); renderReg(); renderLine("cCag", "legCag", "citas", "Costo por cita agendada"); renderLine("cCpvr", "legCpvr", "pvr", "Costo por primera visita"); renderWeekly(); }
 function render() { paintFilters(); renderAds(); renderKpis(); renderFunnel(); renderOrigen(); renderLocal(); renderCanal(); renderDesglose(); renderCharts(); renderNotes(); }
 /* Menú lateral plegable (preferencia de pantalla, aparte de los filtros) */
 const wrapEl = document.querySelector(".wrap"), sideToggle = byId("sideToggle"), sideEl = document.querySelector(".side");
@@ -853,6 +868,17 @@ async function refreshDiario(force) {
     renderEvol(); renderDiario();
   } catch (e) { /* la sección conserva lo anterior */ }
 }
+let gseq = 0;
+async function refreshDesgDiario(force) {
+  if (!hay("desg")) return;
+  const my = ++gseq;
+  try {
+    const { rows } = await runSql("desg_diario", force);
+    if (my !== gseq || !rows) return;
+    GROWS = rows.map(r => ({ dia: String(r.dia).slice(0, 10), dim: r.dim == null ? "" : String(r.dim), leads: +r.leads || 0, citas: +r.citas || 0, pvr: +r.pvr || 0 })).sort((a, b) => a.dia < b.dia ? -1 : 1);
+    renderDesgTend();
+  } catch (e) { /* la sección conserva lo anterior */ }
+}
 async function refreshPerfil(force) {
   if (!hay("perfil")) return;
   const my = ++pseq;
@@ -866,7 +892,7 @@ async function refresh(force) {
   const my = ++seq;
   btn.disabled = true;
   setStatus("snap", "Consultando", "Consultando BigQuery…");
-  refreshPerfil(force); refreshReg(force); refreshWeekly(force); refreshDiario(force); refreshAds(force);
+  refreshPerfil(force); refreshReg(force); refreshWeekly(force); refreshDiario(force); refreshDesgDiario(force); refreshAds(force);
   try {
     const { rows, at } = await runSql("principal", force);
     if (my !== seq) return;

@@ -51,7 +51,7 @@ const FILTER_DIMS = ["campaign", "medium", "landing", "region", "anuncio", "mens
 const DESG_DIMS = ["campaign", "medium", "landing", "region", "anuncio", "mensaje", "sucursal_real", "canal", "mes"];
 const PERFIL_DIMS = ["tipo_de_paciente", "perfil", "score", "user_persona", "es_leading", "grupo_edad"];
 const CANALES = ["pagado", "todos", "meta", "google", "otros"];
-export const TIPOS = ["principal", "registros", "semanal", "perfil", "opciones", "diario", "publicidad"] as const;
+export const TIPOS = ["principal", "registros", "semanal", "perfil", "opciones", "diario", "desg_diario", "publicidad"] as const;
 const VACIO = "__vacio__"; // el select manda esto para «(vacío)»; en SQL es ''
 const MAX_SUCS = 40;
 const MAX_VALS = 60; // valores por filtro
@@ -192,6 +192,13 @@ const diarioSql = (e: Estado) => esInd(e)
 FROM ${VIEW}
 WHERE ${whereSql(e, true)}
 GROUP BY 1,2 ORDER BY 1`;
+/* Lo mismo, abierto por la dimensión del desglose (campaña, medio, landing…): alimenta la gráfica apilada de esa sección (2026-10-15). */
+const desgDiarioSql = (e: Estado) => esInd(e)
+  ? indirectoSql(e, (col) => `CAST(${col} AS STRING) dia, ${DIMS[e.dim].sql} dim, `, true, "dia, dim") + " ORDER BY 1"
+  : `SELECT CAST(fecha AS STRING) dia, ${DIMS[e.dim].sql} dim, SUM(leads) leads, SUM(citas) citas, SUM(pvr) pvr
+FROM ${VIEW}
+WHERE ${whereSql(e, true)}
+GROUP BY 1,2 ORDER BY 1`;
 const perfilSql = (e: Estado) => esInd(e)
   ? indirectoSql(e, () => `${DIMS[e.pdim].sql} dim, `, true, "dim")
   : `SELECT ${DIMS[e.pdim].sql} dim, ${AGG}
@@ -223,6 +230,7 @@ export function construirSql(tipo: Tipo, e: Estado): string | null {
     case "perfil": return perfilSql(e);
     case "opciones": return optionsSql();
     case "diario": return diarioSql(e);
+    case "desg_diario": return desgDiarioSql(e);
     case "publicidad": return adsSql(e);
   }
 }
