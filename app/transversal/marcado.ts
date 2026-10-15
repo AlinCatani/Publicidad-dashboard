@@ -210,7 +210,7 @@ const PLANTILLA = `<div class="wrap">
   </section>
 
   <section class="panel notes" aria-label="Cómo se calculó" id="notes" data-sec="notes">
-    <div><h3>Fuente</h3><p>BigQuery, proyecto <code>gtm-pvkx9p9-ndk3z</code>, vista <code>looker_dashboard.claude_reporte_transversal</code>: una fila por lead, <b>sin nombre, correo ni teléfono</b>. Se consulta en vivo con los filtros elegidos; no hay cortes guardados en esta página.</p></div>
+    <div><h3>Fuente</h3><p>BigQuery, proyecto <code>gtm-pvkx9p9-ndk3z</code>, vista <code>claude_vistas.reporte_transversal</code>: una fila por lead, <b>sin nombre, correo ni teléfono</b>. Se consulta en vivo con los filtros elegidos; no hay cortes guardados en esta página.</p></div>
     <div><h3>Qué hay detrás de la vista</h3><p>Leads de <code>leads_historico</code> (Airtable). Citas agendadas de <code>BIC</code> y primeras visitas de <code>BIP</code> (clínica), cruzadas con el lead por correo normalizado, dentro de BigQuery; una cita y una visita por correo, la más reciente. Inversión de <code>inversion_diaria</code>: el gasto de cada día y combinación de campaña, medio, landing, anuncio, mensaje y región se reparte entre los leads de esa misma combinación (inversión asignada). USD × 18.</p></div>
     <div><h3>Sucursal real</h3><p id="noteSucursal">La sucursal es la de la visita cuando la hubo (<code>BIP.nom_suc</code>); si no, la que eligió el lead al registrarse. La cita no aporta sucursal.</p></div>
     <div><h3>TAL%</h3><p>Tasa de asistencia de leads: primeras visitas ÷ leads del periodo. Es la conversión completa de lead a PVR.</p></div>

@@ -5,11 +5,11 @@ import "server-only";
 // estado (periodo, canal, mes, dimensiones y filtros); aquí se valida y se arma el SQL, así que
 // ningún usuario del sitio puede ejecutar SQL libre ni tocar tablas con datos personales.
 //
-// Fuentes: la vista `claude_reporte_transversal` (una fila por lead, sin nombre/email/teléfono) y
+// Fuentes (dataset `claude_vistas`, 2026-10-15): la vista `reporte_transversal` (una fila por lead, sin nombre/email/teléfono) y
 // `registros_historico` (solo cuentas por mes/canal/origen). Ver ../../../memory/ en dashboards/.
 
-const VIEW = "`gtm-pvkx9p9-ndk3z.looker_dashboard.claude_reporte_transversal`";
-const REG = "`gtm-pvkx9p9-ndk3z.looker_dashboard.registros_historico`";
+const VIEW = "`gtm-pvkx9p9-ndk3z.claude_vistas.reporte_transversal`";
+const REG = "`gtm-pvkx9p9-ndk3z.claude_vistas.registros_historico`";
 export const MIN_DATE = "2026-03-01";
 const META_M = ["facebook", "instagram", "socialmedia", "social_media"];
 const GOOGLE_M = ["google_search", "pmax", "dgen", "google", "youtube", "display"];
@@ -17,7 +17,7 @@ const inList = (a: string[]) => a.map((m) => `'${m}'`).join(",");
 const canalSql = (col: string) => `CASE WHEN LOWER(TRIM(IFNULL(${col},''))) IN (${inList(META_M)}) THEN 'meta' WHEN LOWER(TRIM(IFNULL(${col},''))) IN (${inList(GOOGLE_M)}) THEN 'google' ELSE 'otros' END`;
 const CANAL_SQL = canalSql("medium");
 /* Publicidad: inversión, impresiones, clics y vistas por anuncio × día (la arma extraccion-de-gasto/). Sin sucursal ni perfil. */
-const ADS = "`gtm-pvkx9p9-ndk3z.looker_dashboard.inversion_y_metricas_anuncio_diaria`";
+const ADS = "`gtm-pvkx9p9-ndk3z.claude_vistas.inversion_y_metricas_anuncio_diaria`";
 const ADS_DIMS: Record<string, string> = { campaign: "IFNULL(campaing,'')", medium: "LOWER(TRIM(IFNULL(medio,'')))", landing: "IFNULL(landing,'')", region: "LOWER(TRIM(IFNULL(region,'')))", anuncio: "IFNULL(anuncio,'')", mensaje: "IFNULL(mensaje,'')" };
 
 /* Región de campaña que corresponde a cada sucursal (valores de utm region, en minúsculas). */
