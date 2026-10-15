@@ -296,6 +296,7 @@ td.hl { color: var(--primary); font-weight: 700; }
 .oname { display: flex; flex-direction: column; } .oname small { color: var(--muted); font-size: 11.5px; }
 tr.hl td { background: var(--accent-soft); }
 .subpanel { margin-top: 18px; padding-top: 16px; border-top: 1px dashed var(--axis); }
+.fila-ctrl { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 14px; margin-bottom: 12px; }
 .subpanel h3 { font-family: var(--font-serif); font-size: 20px; font-weight: 600; color: var(--primary); margin: 0; }
 .chart text.seglbl { font-size: 11px; fill: #fff; font-weight: 700; } .chart text.seglbl.chica { font-size: 8.5px; }
 .legend .sw { width: 22px; height: 12px; border-radius: 2px; display: inline-block; flex: none; }

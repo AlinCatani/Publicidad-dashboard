@@ -82,8 +82,10 @@ const PLANTILLA = `<div class="wrap">
     <div class="subpanel" id="bloqueDiario">
       <div class="phead">
         <div><h3 id="h-diario">Tendencia de resultados</h3><p class="hint" id="diarioHint">Resultados por día, apilados por la característica elegida arriba (por ejemplo LS y LP por día).</p></div>
+      </div>
+      <div class="fila-ctrl">
         <div class="seg" role="group" aria-label="Métrica" id="fDiaMet"></div>
-        <div class="seg" role="group" aria-label="Granularidad" id="fGran"><button type="button" data-v="dia">Por día</button><button type="button" data-v="semana">Por semana</button><button type="button" data-v="mes">Por mes</button></div>
+        <div class="seg" role="group" aria-label="Granularidad" id="fGran" style="margin-left:auto"><button type="button" data-v="dia">Día</button><button type="button" data-v="semana">Semana</button><button type="button" data-v="mes">Mes</button></div>
       </div>
       <div class="legend" id="diarioLeg" style="margin-bottom:10px"></div>
       <div id="cDiario"></div>
