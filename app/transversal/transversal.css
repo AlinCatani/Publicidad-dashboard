@@ -300,6 +300,10 @@ tr.hl td { background: var(--accent-soft); }
 .fila-ctrl { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 14px; margin-bottom: 12px; }
 .subpanel h3 { font-family: var(--font-serif); font-size: 20px; font-weight: 600; color: var(--primary); margin: 0; }
 .chart text.seglbl { font-size: 11px; fill: #fff; font-weight: 700; } .chart text.seglbl.chica { font-size: 8.5px; }
+.legend .lg-item { font: inherit; font-size: 13px; color: var(--ink-2); background: transparent; border: 1px solid transparent; border-radius: 999px; padding: 2px 8px 2px 6px; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; }
+.legend .lg-item:hover { background: var(--soft); }
+.legend .lg-item.on { background: var(--soft); border-color: var(--axis); color: var(--primary); font-weight: 700; }
+.legend .lg-item.off { opacity: .45; }
 .legend .sw { width: 22px; height: 12px; border-radius: 2px; display: inline-block; flex: none; }
 .legend small { color: var(--muted); font-size: 12px; }
 tr.rate td { color: var(--ink-2); } tr.rate td:first-child { padding-left: 12px; }

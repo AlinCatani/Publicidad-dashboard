@@ -682,6 +682,7 @@ fDiaMet.addEventListener("click", e => { const b = e.target.closest("button"); i
 /* Una sola gráfica de barras apiladas: por día / semana / mes, un color por valor de la característica elegida en la tabla
    de paciente (Alin, 2026-10-15: «identificar por día cuántos fueron LS y cuántos LP»). */
 /* Gráfica apilada genérica (la usan la tendencia por paciente y la tendencia por campaña). */
+const APILADA_SEL = new Map(); // valor resaltado por gráfica (clic en la leyenda)
 function renderApilada(c) {
   c.fGran.querySelectorAll("button").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.v === c.gran)));
   c.fMet.querySelectorAll("button").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.v === c.met)));
@@ -696,17 +697,21 @@ function renderApilada(c) {
   const MAXV = 20, otros = vals.length > MAXV ? vals.slice(MAXV) : [];
   if (otros.length) vals = vals.slice(0, MAXV).concat(["__otros"]);
   const key = v => otros.includes(v) ? "__otros" : v;
-  const name = v => v === "__otros" ? `Otros (${otros.length})` : dimName(c.dim, v);
+  const name = v => v === "__otros" ? `Otros (${otros.length})` : c.dim === "sucursal_real" && SUC[v] ? SUC[v][0] : dimName(c.dim, v); // sucursales a 3 letras (Alin, 2026-10-15)
+  const nameLargo = v => v === "__otros" ? `Otros (${otros.length})` : dimName(c.dim, v);
+  /* clic en la leyenda: deja solo ese valor; otro clic lo quita */
+  const selV = APILADA_SEL.get(c.chart) || "";
   const color = i => PAL_FIJA[vals[i]] || PAL[i % PAL.length];
   const map = new Map();
   DROWS.forEach(r => { if (r.dim === "") return; const k = mes ? r.dia.slice(0, 7) + "-01" : sem ? monday(r.dia) : r.dia; const o = map.get(k) || { k, by: {}, tot: 0 }; const kv = key(r.dim); o.by[kv] = (o.by[kv] || 0) + r[met]; o.tot += r[met]; map.set(k, o); });
   const pts = [...map.values()].sort((a, b) => a.k < b.k ? -1 : 1);
   const total = pts.reduce((a, p) => a + p.tot, 0);
-  leg.innerHTML = vals.map((v, i) => { const t = v === "__otros" ? otros.reduce((a, o) => a + totV[o], 0) : totV[v]; return `<span><i class="sw" style="background:${color(i)}"></i>${esc(name(v))} <small>${nf.format(t)} · ${pct(div(t, total))}</small></span>`; }).join("") + `<span><small>Total ${nf.format(total)}</small></span>`;
+  leg.innerHTML = vals.map((v, i) => { const t = v === "__otros" ? otros.reduce((a, o) => a + totV[o], 0) : totV[v]; return `<button type="button" class="lg-item${selV === v ? " on" : selV ? " off" : ""}" data-v="${esc(v)}" title="${esc(nameLargo(v))} · ${nf.format(t)} · ${pct(div(t, total))}. Clic para ver solo este valor"><i class="sw" style="background:${color(i)}"></i>${esc(name(v))} <small>${nf.format(t)}</small></button>`; }).join("") + `<span><small>Total ${nf.format(total)}</small></span>`;
+  leg.querySelectorAll(".lg-item").forEach(b => b.addEventListener("click", () => { const v = b.dataset.v; APILADA_SEL.set(c.chart, selV === v ? "" : v); c.repintar(); }));
   if (!pts.length) { host.innerHTML = `<p class="hint">Sin datos con estos filtros.</p>`; return; }
   const fmtK = k => mes ? cap(new Date(k + "T12:00:00").toLocaleDateString("es-MX", { month: "long", year: "numeric" })) : sem ? `Semana del ${fmtDate(k)}` : fmtDate(k);
   setDims(host); H = W < 520 ? 300 : 380; const mb = 40; ih = H - M.t - mb;
-  const top = Math.max(1, ...pts.map(p => p.tot)) * 1.06, pw = Math.pow(10, Math.floor(Math.log10(top))), q = top / pw;
+  const top = Math.max(1, ...pts.map(p => selV ? (p.by[selV] || 0) : p.tot)) * 1.06, pw = Math.pow(10, Math.floor(Math.log10(top))), q = top / pw;
   const yMax = ([1, 1.2, 1.5, 2, 2.5, 3, 4, 5, 6, 8, 10].find(m => q <= m) || 10) * pw; // tope ajustado, sin aire de más
   const n = pts.length, step = iw / n, bw = Math.max(1.5, Math.min(64, step * 0.84));
   const x = i => M.l + step * (i + 0.5), y = v => M.t + ih - v / yMax * ih;
@@ -717,7 +722,7 @@ function renderApilada(c) {
   pts.forEach((p, i) => { if (i % every === 0 || i === n - 1) s += `<text x="${x(i)}" y="${H - (every === 1 && step < 64 && i % 2 ? 6 : 20)}" text-anchor="middle">${fx(p.k)}</text>`; });
   pts.forEach((p, i) => {
     let acc = 0;
-    vals.forEach((v, j) => { const val = p.by[v] || 0; if (!val) return; const y1 = y(acc + val), h = y(acc) - y1;
+    vals.forEach((v, j) => { const val = p.by[v] || 0; if (!val || (selV && v !== selV)) return; const y1 = y(acc + val), h = y(acc) - y1;
       s += `<rect x="${(x(i) - bw / 2).toFixed(1)}" y="${y1.toFixed(1)}" width="${bw.toFixed(1)}" height="${h.toFixed(1)}" fill="${color(j)}" stroke="#fff" stroke-width="1" pointer-events="none"/>`;
       if (h >= 12 && bw >= 11) s += `<text x="${x(i)}" y="${(y1 + 12).toFixed(1)}" text-anchor="middle" class="seglbl${bw < 26 ? " chica" : ""}">${nf.format(val)}</text>`;
       acc += val; });
@@ -727,7 +732,7 @@ function renderApilada(c) {
   host.innerHTML = `<svg class="chart" viewBox="0 0 ${W} ${H}" role="img" aria-label="${metN} por ${gran} y ${d.label}">${s}</svg>`;
 }
 function renderDiario() {
-  renderApilada({ rows: DROWS, dim: state.pdim, met: state.diaMet, gran: state.gran, fMet: fDiaMet, fGran, hint: "diarioHint", leg: "diarioLeg", chart: "cDiario", nota: "Cambia la característica con los botones de la tabla de arriba." });
+  renderApilada({ rows: DROWS, dim: state.pdim, met: state.diaMet, gran: state.gran, fMet: fDiaMet, fGran, hint: "diarioHint", leg: "diarioLeg", chart: "cDiario", nota: "Cambia la característica con los botones de la tabla de arriba.", repintar: renderDiario });
 }
 const fDesgMet = byId("fDesgMet"), fDesgGran = byId("fDesgGran");
 fDesgMet.innerHTML = MES_MET_KEYS.map(k => `<button type="button" data-v="${k}">${MES_MET[k]}</button>`).join("");
@@ -736,7 +741,7 @@ fDesgGran.addEventListener("click", e => { const b = e.target.closest("button");
 function renderDesgTend() {
   if (!hay("desg")) return;
   byId("h-desg-tend").textContent = `Tendencia por ${DIMS[state.dim].label.toLowerCase()}`;
-  renderApilada({ rows: GROWS, dim: state.dim, met: state.desgMet, gran: state.desgGran, fMet: fDesgMet, fGran: fDesgGran, hint: "desgTendHint", leg: "desgLeg", chart: "cDesgTend", nota: "Cambia la dimensión con los botones de la tabla de arriba." });
+  renderApilada({ rows: GROWS, dim: state.dim, met: state.desgMet, gran: state.desgGran, fMet: fDesgMet, fGran: fDesgGran, hint: "desgTendHint", leg: "desgLeg", chart: "cDesgTend", nota: "Cambia la dimensión con los botones de la tabla de arriba; clic en un color de la leyenda para ver solo ese valor.", repintar: renderDesgTend });
 }
 
 /* ===== Notas al pie con datos en vivo ===== */
