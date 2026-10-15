@@ -51,7 +51,7 @@ const FILTER_DIMS = ["campaign", "medium", "landing", "region", "anuncio", "mens
 const DESG_DIMS = ["campaign", "medium", "landing", "region", "anuncio", "mensaje", "sucursal_real", "canal", "mes"];
 const PERFIL_DIMS = ["tipo_de_paciente", "perfil", "score", "user_persona", "es_leading", "grupo_edad"];
 const CANALES = ["pagado", "todos", "meta", "google", "otros"];
-export const TIPOS = ["principal", "registros", "reg_diario", "semanal", "perfil", "opciones", "diario", "desg_diario", "publicidad"] as const;
+export const TIPOS = ["principal", "registros", "reg_diario", "semanal", "perfil", "opciones", "diario", "desg_diario", "costos", "publicidad"] as const;
 const VACIO = "__vacio__"; // el select manda esto para «(vacío)»; en SQL es ''
 const MAX_SUCS = 40;
 const MAX_VALS = 60; // valores por filtro
@@ -204,6 +204,14 @@ const desgDiarioSql = (e: Estado) => esInd(e)
 FROM ${VIEW}
 WHERE ${whereSql(e, true)}
 GROUP BY 1,2 ORDER BY 1`;
+/* Costos por mes y tipo de campaña (Alin, 2026-10-15): paid, paid_us, paid_int y todo lo demás = OLE. */
+const GRUPO_SQL = `CASE WHEN LOWER(TRIM(IFNULL(campaign,''))) = 'paid_us' THEN 'paid_us' WHEN LOWER(TRIM(IFNULL(campaign,''))) = 'paid_int' THEN 'paid_int' WHEN STARTS_WITH(LOWER(TRIM(IFNULL(campaign,''))),'paid') THEN 'paid' ELSE 'OLE' END`;
+const costosSql = (e: Estado) => esInd(e)
+  ? indirectoSql(e, (col) => `FORMAT_DATE('%Y-%m', ${col}) mes, ${GRUPO_SQL} grupo, `, true, "mes, grupo")
+  : `SELECT FORMAT_DATE('%Y-%m', fecha) mes, ${GRUPO_SQL} grupo, ${AGG}
+FROM ${VIEW}
+WHERE ${whereSql(e, true)}
+GROUP BY 1,2`;
 const perfilSql = (e: Estado) => esInd(e)
   ? indirectoSql(e, () => `${DIMS[e.pdim].sql} dim, `, true, "dim")
   : `SELECT ${DIMS[e.pdim].sql} dim, ${AGG}
@@ -236,6 +244,7 @@ export function construirSql(tipo: Tipo, e: Estado): string | null {
     case "opciones": return optionsSql();
     case "diario": return diarioSql(e);
     case "reg_diario": return regDiarioSql(e);
+    case "costos": return costosSql(e);
     case "desg_diario": return desgDiarioSql(e);
     case "publicidad": return adsSql(e);
   }

@@ -184,20 +184,15 @@ const PLANTILLA = `<div class="wrap">
     <p class="caveat" id="regNote"></p>
   </section>
 
-  <section class="panel" aria-labelledby="h-cag" data-sec="cag">
+  <section class="panel" aria-labelledby="h-costos" data-sec="costos">
     <div class="phead">
-      <div><h2 id="h-cag">Costo por cita agendada</h2><p class="hint">Inversión asignada ÷ citas agendadas, por mes y medio, en MXN.</p></div>
-      <div class="legend" id="legCag"></div>
+      <div><h2 id="h-costos">Costo por resultado por tipo de campaña</h2><p class="hint" id="costosHint">Inversión asignada ÷ resultados, por mes, en MXN. Una línea por tipo de campaña: paid, paid_us, paid_int y OLE (todo lo que no es campaña pagada).</p></div>
     </div>
-    <div id="cCag"></div>
-  </section>
-
-  <section class="panel" aria-labelledby="h-cpvr" data-sec="cpvr">
-    <div class="phead">
-      <div><h2 id="h-cpvr">Costo por primera visita</h2><p class="hint">Inversión asignada ÷ PVRs, por mes y medio, en MXN.</p></div>
-      <div class="legend" id="legCpvr"></div>
+    <div class="fila-ctrl">
+      <div class="seg" role="group" aria-label="Métrica" id="fCostoMet"></div>
+      <div class="legend" id="legCostos" style="margin-left:auto"></div>
     </div>
-    <div id="cCpvr"></div>
+    <div id="cCostos"></div>
   </section>
 
   <section class="panel" aria-labelledby="h-mes" data-sec="mes">
@@ -235,7 +230,7 @@ const PLANTILLA = `<div class="wrap">
 </nav>
 <div class="tip" id="tip" hidden></div>`;
 
-export const SECCIONES = ["ads", "kpis", "diario", "perfil", "funnel", "origen", "local", "wk", "reg", "cag", "cpvr", "canal", "desg", "mes", "notes"];
+export const SECCIONES = ["ads", "kpis", "evol", "perfil", "desg", "funnel", "origen", "canal", "local", "wk", "reg", "costos", "mes", "notes"];
 
 /* Arma el marcado de un reporte: mismo cascarón (menú, cabecera, filtros, botones) con las secciones elegidas. */
 export function armarMarcado(o: { titulo: string; sub: string; secciones: string[] }) {

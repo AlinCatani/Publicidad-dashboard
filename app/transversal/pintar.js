@@ -70,7 +70,7 @@ const today = iso(new Date());
 
 /* ===== Estado ===== */
 const MES_MET_KEYS = ["leads", "citas", "pvr"];
-const state = { desde: MIN_DATE, hasta: today, mes: "todo", canal: "todos", modo: "directo", terr: "", diaMet: "leads", gran: "dia", evolGran: "dia", desgMet: "leads", desgGran: "dia", regMet: "registros", regGran: "dia", dim: "campaign", pdim: "tipo_de_paciente", sucs: [], f: {} }; // arranca en ALL y con todos los medios (Alin, 2026-10-15): «no dejes fuera nada»
+const state = { desde: MIN_DATE, hasta: today, mes: "todo", canal: "todos", modo: "directo", terr: "", diaMet: "leads", gran: "dia", evolGran: "dia", desgMet: "leads", desgGran: "dia", regMet: "registros", regGran: "dia", costoMet: "leads", dim: "campaign", pdim: "tipo_de_paciente", sucs: [], f: {} }; // arranca en ALL y con todos los medios (Alin, 2026-10-15): «no dejes fuera nada»
 FILTER_DIMS.forEach(k => state.f[k] = []);
 try {
   const s = JSON.parse(localStorage.getItem("reporte-transversal-v3") || "{}");
@@ -82,6 +82,7 @@ try {
   if (["dia", "semana", "mes"].includes(s.desgGran)) state.desgGran = s.desgGran;
   if (["registros", "leads", "citas", "pvr"].includes(s.regMet)) state.regMet = s.regMet;
   if (["dia", "semana", "mes"].includes(s.regGran)) state.regGran = s.regGran;
+  if (["leads", "citas", "pvr"].includes(s.costoMet)) state.costoMet = s.costoMet;
   if (typeof s.mesMet === "string") state.mesMet = s.mesMet;
   if (/^\d{4}-\d\d-\d\d$/.test(s.desde || "")) state.desde = s.desde < MIN_DATE ? MIN_DATE : s.desde;
   if (/^\d{4}-\d\d-\d\d$/.test(s.hasta || "")) state.hasta = s.hasta;
@@ -105,7 +106,7 @@ function monthsSel() {
 
 const REG_SKIP = { perfil: 1, es_leading: 1, internacional: 1 };
 /* ===== Datos ===== */
-let ALL = [], ROWS = [], PROWS = [], RROWS = [], RDROWS = [], WEEKS = [], DROWS = [], GROWS = [], AROWS = [], OPTIONS = null;
+let ALL = [], ROWS = [], PROWS = [], RROWS = [], RDROWS = [], CROWS = [], WEEKS = [], DROWS = [], GROWS = [], AROWS = [], OPTIONS = null;
 let MROWS = [];
 const inMes = r => state.mes === "todo" || r.mes === state.mes;
 const applyCanal = () => { const chs = channels(); MROWS = ALL.filter(r => chs.includes(r.canal)); ROWS = MROWS.filter(inMes); };
@@ -578,6 +579,33 @@ function renderReg() {
   byId("regNote").textContent = (state.sucs.length ? "Registros por la sucursal que eligió la persona (el formulario no sabe dónde terminará la visita). " : "") + (state.terr ? "En registros el territorio se aproxima con el país del formulario (no guarda teléfono). " : "") + (skipped.length ? `Los filtros de ${skipped.join(" y ")} no aplican a registros; leads, citas y PVR sí los obedecen.` : "");
 }
 
+/* ===== Costo por resultado por tipo de campaña: líneas por mes (paid, paid_us, paid_int, OLE) ===== */
+const GRUPOS = [["paid", "paid", "#253f78"], ["paid_us", "paid_us", "#1a73e8"], ["paid_int", "paid_int", "#c8a040"], ["OLE", "OLE", "#7ab83b"]];
+const COSTO_MET = { leads: ["CPL", "Costo por lead"], citas: ["Costo por cita agendada", "Costo por cita agendada"], pvr: ["Costo por PVR", "Costo por primera visita"] };
+const fCostoMet = byId("fCostoMet");
+fCostoMet.innerHTML = Object.keys(COSTO_MET).map(k => `<button type="button" data-v="${k}">${COSTO_MET[k][0]}</button>`).join("");
+fCostoMet.addEventListener("click", e => { const b = e.target.closest("button"); if (!b) return; state.costoMet = b.dataset.v; save(); renderCostos(); });
+function renderCostos() {
+  if (!hay("costos")) return;
+  fCostoMet.querySelectorAll("button").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.v === state.costoMet)));
+  const ms = monthsSel(), host = byId("cCostos"), met = state.costoMet, metN = COSTO_MET[met][1]; setDims(host);
+  const cel = (g, mo) => CROWS.filter(r => r.grupo === g && r.mes === mo.key).reduce((o, r) => { o.n += r[met]; o.inv += r.inversion; return o; }, { n: 0, inv: 0 });
+  const val = (g, mo) => { const a = cel(g, mo); return a.n > 0 && a.inv > 0 ? a.inv / a.n : NaN; };
+  const all = GRUPOS.flatMap(([g]) => ms.map(mo => val(g, mo))).filter(isFinite);
+  const yMax = niceMax((all.length ? Math.max(...all) : 1) * 1.15);
+  const step = iw / ms.length, x = i => M.l + step * i + step / 2, y = v => M.t + ih - v / yMax * ih;
+  let s = axes(yMax, v => "$" + compact.format(v));
+  ms.forEach((mo, i) => s += `<text x="${x(i)}" y="${H - 8}" text-anchor="middle">${cap(mo.short)}</text>`);
+  GRUPOS.forEach(([g, , col]) => { let d = "", pen = false; ms.forEach((mo, i) => { const v = val(g, mo); if (!isFinite(v)) { pen = false; return; } d += `${pen ? "L" : "M"}${x(i).toFixed(1)},${y(v).toFixed(1)}`; pen = true; });
+    s += `<path d="${d}" fill="none" stroke="${col}" stroke-width="2.25" stroke-linejoin="round" stroke-linecap="round" pointer-events="none"/>`;
+    ms.forEach((mo, i) => { const v = val(g, mo); if (isFinite(v)) s += `<circle fill="${col}" class="mk" cx="${x(i)}" cy="${y(v)}" r="4" pointer-events="none"/>`; }); });
+  ms.forEach((mo, i) => { const tip = `<div class="tt">${cap(mo.long)} · ${metN}</div>` + tipRows(GRUPOS.map(([g, l, col]) => { const a = cel(g, mo), v = val(g, mo); return [`<i class="dot" style="background:${col}"></i>${l}`, isFinite(v) ? `${money(v)} · ${nf.format(a.n)} · ${money(a.inv)}` : a.n ? `sin inversión · ${nf.format(a.n)}` : "—"]; }));
+    s += `<g class="col" data-tip="${encodeURIComponent(tip)}"><rect class="hit" x="${M.l + step * i}" y="${M.t}" width="${step}" height="${ih}"/><line class="guide" x1="${x(i)}" x2="${x(i)}" y1="${M.t}" y2="${M.t + ih}"/></g>`; });
+  host.innerHTML = `<svg class="chart" viewBox="0 0 ${W} ${H}" role="img" aria-label="${metN} por mes y tipo de campaña">${s}</svg>`;
+  byId("legCostos").innerHTML = GRUPOS.map(([, l, col]) => `<span><i class="dot" style="background:${col}"></i>${l}</span>`).join("");
+  byId("costosHint").textContent = `${metN}: inversión asignada ÷ ${met === "leads" ? "leads" : met === "citas" ? "citas agendadas" : "primeras visitas"}, por mes, en MXN. Una línea por tipo de campaña: paid, paid_us, paid_int y OLE (todo lo que no es campaña pagada: orgánico, sin campaña, etc.). Si un grupo no tiene inversión en el mes, no se dibuja; el detalle sale al pasar el cursor.`;
+}
+
 /* ===== Líneas de costo por mes y canal ===== */
 function renderLine(elId, legId, metric, label) {
   const chs = channels(), ms = monthsSel(), host = byId(elId); setDims(host);
@@ -788,7 +816,7 @@ on(document, "mousemove", e => {
   tip.style.top = Math.min(e.clientY + 14, window.innerHeight - r.height - 8) + "px";
 });
 
-function renderCharts() { renderEvol(); renderDiario(); renderDesgTend(); renderMes(); renderReg(); renderLine("cCag", "legCag", "citas", "Costo por cita agendada"); renderLine("cCpvr", "legCpvr", "pvr", "Costo por primera visita"); renderWeekly(); }
+function renderCharts() { renderEvol(); renderDiario(); renderDesgTend(); renderMes(); renderReg(); renderCostos(); renderWeekly(); }
 function render() { paintFilters(); renderAds(); renderKpis(); renderFunnel(); renderOrigen(); renderLocal(); renderCanal(); renderDesglose(); renderCharts(); renderNotes(); }
 /* Menú lateral plegable (preferencia de pantalla, aparte de los filtros) */
 const wrapEl = document.querySelector(".wrap"), sideToggle = byId("sideToggle"), sideEl = document.querySelector(".side");
@@ -916,6 +944,17 @@ async function refreshDiario(force) {
     renderEvol(); renderDiario(); renderReg();
   } catch (e) { /* la sección conserva lo anterior */ }
 }
+let cseq = 0;
+async function refreshCostos(force) {
+  if (!hay("costos")) return;
+  const my = ++cseq;
+  try {
+    const { rows } = await runSql("costos", force);
+    if (my !== cseq || !rows) return;
+    CROWS = rows.map(r => ({ mes: String(r.mes), grupo: String(r.grupo), leads: +r.leads || 0, citas: +r.citas || 0, pvr: +r.pvr || 0, inversion: +r.inversion || 0 }));
+    renderCostos();
+  } catch (e) { /* la sección conserva lo anterior */ }
+}
 let gseq = 0;
 async function refreshDesgDiario(force) {
   if (!hay("desg")) return;
@@ -940,7 +979,7 @@ async function refresh(force) {
   const my = ++seq;
   btn.disabled = true;
   setStatus("snap", "Consultando", "Consultando BigQuery…");
-  refreshPerfil(force); refreshReg(force); refreshWeekly(force); refreshDiario(force); refreshDesgDiario(force); refreshAds(force);
+  refreshPerfil(force); refreshReg(force); refreshWeekly(force); refreshDiario(force); refreshDesgDiario(force); refreshCostos(force); refreshAds(force);
   try {
     const { rows, at } = await runSql("principal", force);
     if (my !== seq) return;
