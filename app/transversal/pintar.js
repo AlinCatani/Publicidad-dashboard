@@ -663,10 +663,8 @@ function renderDiario() {
     let s = axes(yMax, v => nf.format(v));
     const every = Math.max(1, Math.ceil(n / (W < 420 ? 4 : 6)));
     pts.forEach((p, i) => { if (i % every === 0 || i === n - 1) s += `<text x="${x(i)}" y="${H - 8}" text-anchor="middle">${new Date(p.k + "T12:00:00").toLocaleDateString("es-MX", mes ? { month: "short", year: "2-digit" } : { day: "numeric", month: "short" }).replace(".", "")}</text>`; });
-    let d = ""; pts.forEach((p, i) => d += `${i ? "L" : "M"}${x(i).toFixed(1)},${y(p[m]).toFixed(1)}`);
-    s += `<path d="${d}" fill="none" class="s-${cls}" stroke-width="2" stroke-linejoin="round" pointer-events="none"/>`;
-    if (n <= 60) pts.forEach((p, i) => s += `<circle class="f-${cls} mk" cx="${x(i)}" cy="${y(p[m])}" r="3" pointer-events="none"/>`);
-    const step = n > 1 ? iw / (n - 1) : iw;
+    const step = n > 1 ? iw / (n - 1) : iw, bw = Math.max(1.5, Math.min(26, step * 0.7));
+    pts.forEach((p, i) => { if (p[m] > 0) s += `<rect class="f-${cls}" x="${(x(i) - bw / 2).toFixed(1)}" y="${y(p[m]).toFixed(1)}" width="${bw.toFixed(1)}" height="${(M.t + ih - y(p[m])).toFixed(1)}" rx="${Math.min(3, bw / 2)}" pointer-events="none"/>`; });
     pts.forEach((p, i) => { const tip = `<div class="tt">${fmtK(p.k)}</div>` + tipRows(series.map(([mm, ll]) => [ll, nf.format(p[mm])]));
       s += `<g class="col" data-tip="${encodeURIComponent(tip)}"><rect class="hit" x="${x(i) - step / 2}" y="${M.t}" width="${step}" height="${ih}"/><line class="guide" x1="${x(i)}" x2="${x(i)}" y1="${M.t}" y2="${M.t + ih}"/></g>`; });
     el.innerHTML = `<svg class="chart" viewBox="0 0 ${W} ${H}" role="img" aria-label="${label} por ${mes ? "mes" : sem ? "semana" : "día"}">${s}</svg>`;
