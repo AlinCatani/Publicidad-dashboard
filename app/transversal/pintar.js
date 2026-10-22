@@ -242,6 +242,7 @@ function renderSelects() {
 on(byId("filterNote"), "click", e => {
   const b = e.target.closest(".chip"); if (!b) return;
   if (b.dataset.all) FILTER_DIMS.forEach(k => state.f[k] = []);
+  else if (b.dataset.todo) state.f[b.dataset.k] = [];
   else { const cur = state.f[b.dataset.k], i = cur.indexOf(b.dataset.v); if (i >= 0) cur.splice(i, 1); }
   save(); renderSelects(); paintFilters(); renderTabs(); refresh(false);
 });
@@ -276,7 +277,10 @@ function paintFilters() {
   byId("eyebrow").textContent = `Marketing · ${sucsLabel()}`;
   pintarPliegue();
   const chips = [];
-  FILTER_DIMS.forEach(k => state.f[k].forEach(v => chips.push(`<button type="button" class="chip" data-k="${k}" data-v="${esc(v)}" title="Quitar este filtro">${DIMS[k].label}: <b>${esc(selLabel(v))}</b><i>×</i></button>`)));
+  /* Un filtro con más de 3 valores se resume en un solo chip («Landing: 23 valores»), si no la barra se vuelve enorme (Alin, 2026-10-22) */
+  FILTER_DIMS.forEach(k => { const vs = state.f[k];
+    if (vs.length > 3) chips.push(`<button type="button" class="chip" data-k="${k}" data-todo="1" title="${esc(vs.map(selLabel).join(", "))} · clic para quitar este filtro">${DIMS[k].label}: <b>${vs.length} valores</b><i>×</i></button>`);
+    else vs.forEach(v => chips.push(`<button type="button" class="chip" data-k="${k}" data-v="${esc(v)}" title="Quitar este filtro">${DIMS[k].label}: <b>${esc(selLabel(v))}</b><i>×</i></button>`)); });
   byId("filterNote").innerHTML = chips.length
     ? `<span class="chips-lbl">Filtros activos:</span> ${chips.join("")}${chips.length > 1 ? `<button type="button" class="chip chip-all" data-all="1" title="Quitar todos los filtros">Quitar todos</button>` : ""}`
     : "Sin filtros: se muestran todas las sucursales, campañas y perfiles.";
