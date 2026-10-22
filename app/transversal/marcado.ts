@@ -33,7 +33,7 @@ const PLANTILLA = `<div class="wrap">
       </div>
       <button type="button" class="ver-filtros" id="verFiltros" aria-expanded="false" title="Mostrar los filtros"><span aria-hidden="true">⌄</span><small>Ver filtros</small></button>
       <span class="caveat" id="modoNote" style="margin:0"></span>
-      <span class="flabel" id="lbl-periodo" style="margin-left:auto">Periodo</span>
+      <div class="periodo-esq"><span class="flabel" id="lbl-periodo">Periodo</span>
       <div class="period-wrap">
       <button type="button" class="period" id="periodBtn" aria-haspopup="dialog" aria-expanded="false">—</button>
       <div class="popover" id="periodPop" role="dialog" aria-label="Elegir periodo" hidden>
@@ -47,7 +47,7 @@ const PLANTILLA = `<div class="wrap">
         </div>
         <p class="caveat" style="margin-top:8px">Las fechas son de creación del lead. Los datos empiezan el 1 de marzo de 2026.</p>
       </div>
-      </div>
+      </div></div>
     </div>
     <div class="selects" id="selects1"></div>
     <div class="selects" id="selects2"></div>

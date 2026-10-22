@@ -261,7 +261,11 @@ tr.total td { font-weight: 700; color: var(--primary); border-top: 1px solid var
 .sticky-filters .seg { background: #ffffff; border-color: #bfcde8; }
 .sticky-filters .sel-btn { border-color: #bfcde8; }
 /* Botón maestro Directo / Indirecto (Alin, 2026-10-09). Con Indirecto todo el reporte se tiñe de amarillo pastel para que no se confunda con el directo. */
-.modo-row { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 14px; margin-bottom: 10px; padding-bottom: 10px; border-bottom: 1px dashed #bfcde8; }
+.modo-row { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 14px; margin-bottom: 10px; padding-bottom: 10px; padding-right: 330px; border-bottom: 1px dashed #bfcde8; }
+/* El periodo vive clavado en la esquina superior derecha de la barra, pase lo que pase con los chips (Alin, 2026-10-22). */
+.periodo-esq { position: absolute; right: 16px; top: 12px; display: flex; align-items: center; gap: 10px; }
+&.compacta .periodo-esq { top: 8px; }
+@media (max-width: 760px) { .modo-row { padding-right: 0; } .periodo-esq { position: static; margin-left: auto; } }
 .seg-modo button { font-weight: 700; }
 /* Indirecto en verde Ingenes (#7ab83b, el de las pestañas MX), pedido por Alin el 2026-10-15; antes era amarillo. */
 .seg-modo button[data-v="indirecto"][aria-pressed="true"] { background: #7ab83b; color: #fff; }

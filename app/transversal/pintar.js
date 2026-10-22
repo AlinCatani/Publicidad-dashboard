@@ -896,7 +896,7 @@ function pintarBarra() {
   verFiltros.title = filtrosAbiertos ? "Ocultar los filtros" : "Mostrar los filtros";
   verFiltros.firstElementChild.textContent = filtrosAbiertos ? "⌃" : "⌄";
   /* los chips viajan a la fila de arriba cuando la barra está compacta y vuelven abajo cuando no */
-  if (compacta && chipsEl.parentElement !== modoRowEl) modoRowEl.insertBefore(chipsEl, byId("lbl-periodo"));
+  if (compacta && chipsEl.parentElement !== modoRowEl) modoRowEl.insertBefore(chipsEl, modoRowEl.querySelector(".periodo-esq"));
   else if (!compacta && chipsEl.parentElement === modoRowEl) barraEl.appendChild(chipsEl);
 }
 if (barraEl && "IntersectionObserver" in window) {
