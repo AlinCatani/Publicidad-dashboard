@@ -43,15 +43,16 @@ const DIMS: Record<string, { sql: string; fixed?: boolean }> = {
   grupo_edad: { sql: EDAD_SQL },
   es_leading: { sql: "IF(es_leading=1,'LeadING','No LeadING')", fixed: true },
   ole: { sql: "IF(STARTS_WITH(LOWER(TRIM(IFNULL(campaign,''))),'paid'),'Con campaña','OLE')", fixed: true }, // OLE = lead orgánico: sin campaña pagada (sin parámetros)
+  estado: { sql: "IFNULL(estado,'')" }, // estado de residencia que declaró el lead (Alin, 2026-10-22, como en Looker)
   internacional: { sql: "IF(LOWER(TRIM(IFNULL(internacional,'')))='internacional','Internacional','Nacional')", fixed: true }, // columna de leads_historico: teléfono fuera de +52 o vive fuera; vacío = Nacional
   canal: { sql: CANAL_SQL },
   mes: { sql: "FORMAT_DATE('%Y-%m', fecha)" },
 };
-const FILTER_DIMS = ["campaign", "medium", "landing", "region", "anuncio", "mensaje", "tipo_de_paciente", "perfil", "score", "user_persona", "grupo_edad", "es_leading", "ole", "internacional"];
+const FILTER_DIMS = ["campaign", "medium", "landing", "region", "anuncio", "mensaje", "tipo_de_paciente", "perfil", "score", "user_persona", "grupo_edad", "es_leading", "ole", "internacional", "estado"];
 const DESG_DIMS = ["campaign", "medium", "landing", "region", "anuncio", "mensaje", "sucursal_real", "canal", "mes"];
-const PERFIL_DIMS = ["tipo_de_paciente", "perfil", "score", "user_persona", "es_leading", "grupo_edad"];
+const PERFIL_DIMS = ["tipo_de_paciente", "perfil", "score", "user_persona", "es_leading", "grupo_edad", "internacional"]; // Nacional / Internacional como barras apiladas (Alin, 2026-10-22)
 const CANALES = ["pagado", "todos", "meta", "google", "otros"];
-export const TIPOS = ["principal", "registros", "reg_diario", "semanal", "perfil", "opciones", "diario", "desg_diario", "costos", "publicidad"] as const;
+export const TIPOS = ["principal", "registros", "reg_diario", "semanal", "perfil", "opciones", "diario", "desg_diario", "costos", "hora", "reg_hora", "publicidad"] as const;
 const VACIO = "__vacio__"; // el select manda esto para «(vacío)»; en SQL es ''
 const MAX_SUCS = 40;
 const MAX_VALS = 200; // valores por filtro (subido de 60 el 2026-10-22: «Marcar todas» las landings con «web» rebasa 60)
@@ -153,6 +154,16 @@ function regWhereSql(e: Estado) {
   });
   return w.join("\n  AND ");
 }
+/* Por hora del día (Alin, 2026-10-22): leads, citas y PVR por la hora de creación del lead (creada es ISO en UTC → hora de
+   México); registros por su columna Hora. Siempre por hora de creación, también en Indirecto (la hora de una cita no se mide). */
+const horaSql = (e: Estado) => `SELECT EXTRACT(HOUR FROM DATETIME(SAFE_CAST(creada AS TIMESTAMP), 'America/Mexico_City')) hora, SUM(leads) leads, SUM(citas) citas, SUM(pvr) pvr
+FROM ${VIEW}
+WHERE ${whereSql(e, true)} AND SAFE_CAST(creada AS TIMESTAMP) IS NOT NULL
+GROUP BY 1 ORDER BY 1`;
+const regHoraSql = (e: Estado) => `SELECT SAFE_CAST(Hora AS INT64) hora, COUNT(*) registros
+FROM ${REG}
+WHERE ${regWhereSql(e)} AND SAFE_CAST(Hora AS INT64) IS NOT NULL
+GROUP BY 1 ORDER BY 1`;
 /* Registros por día, para la tendencia (2026-10-15). */
 const regDiarioSql = (e: Estado) => `SELECT CAST(Fecha AS STRING) dia, COUNT(*) registros
 FROM ${REG}
@@ -246,6 +257,8 @@ export function construirSql(tipo: Tipo, e: Estado): string | null {
     case "opciones": return optionsSql();
     case "diario": return diarioSql(e);
     case "reg_diario": return regDiarioSql(e);
+    case "hora": return horaSql(e);
+    case "reg_hora": return regHoraSql(e);
     case "costos": return costosSql(e);
     case "desg_diario": return desgDiarioSql(e);
     case "publicidad": return adsSql(e);

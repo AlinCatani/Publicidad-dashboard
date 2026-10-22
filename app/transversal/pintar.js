@@ -34,23 +34,23 @@ const DIMS = {
   sucursal_real: { label: "Sucursal" }, campaign: { label: "Campaña" }, medium: { label: "Medio" }, landing: { label: "Landing", top: 300 },
   region: { label: "Región" }, anuncio: { label: "Anuncio", top: 300 }, mensaje: { label: "Mensaje" },
   tipo_de_paciente: { label: "Tipo de paciente" }, perfil: { label: "Perfil" }, score: { label: "Score" }, user_persona: { label: "User persona" },
-  grupo_edad: { label: "Grupo de edad", sortKey: true }, es_leading: { label: "LeadING", fixed: ["LeadING", "No LeadING"] }, ole: { label: "OLE", fixed: ["OLE", "Con campaña"] }, internacional: { label: "Nacional / Internacional", fixed: ["Nacional", "Internacional"] },
+  grupo_edad: { label: "Grupo de edad", sortKey: true }, es_leading: { label: "LeadING", fixed: ["LeadING", "No LeadING"] }, ole: { label: "OLE", fixed: ["OLE", "Con campaña"] }, internacional: { label: "Nacional / Internacional", fixed: ["Nacional", "Internacional"] }, estado: { label: "Estado de residencia" },
   canal: { label: "Meta / Google" }, mes: { label: "Mes" }
 };
 const FILTER_ROW1 = ["sucursal_real", "campaign", "medium", "landing", "region", "anuncio", "mensaje"]; // sucursal también como filtro (Alin, 2026-10-22); es la misma selección que el menú lateral
-const FILTER_ROW2 = ["tipo_de_paciente", "perfil", "score", "user_persona", "grupo_edad", "es_leading", "ole", "internacional"];
+const FILTER_ROW2 = ["tipo_de_paciente", "perfil", "score", "user_persona", "grupo_edad", "es_leading", "ole", "internacional", "estado"];
 const FILTER_DIMS = FILTER_ROW1.concat(FILTER_ROW2);
 const DESG_DIMS = ["campaign", "medium", "landing", "region", "anuncio", "mensaje", "sucursal_real"]; // «canal» (Meta/Google/otros) salió de los botones el 2026-10-15 a pedido de Alin; el servidor lo sigue aceptando
-const PERFIL_DIMS = ["tipo_de_paciente", "perfil", "score", "user_persona", "es_leading", "grupo_edad"];
+const PERFIL_DIMS = ["tipo_de_paciente", "perfil", "score", "user_persona", "es_leading", "grupo_edad", "internacional"]; // Nacional / Internacional como barras apiladas (Alin, 2026-10-22)
 
 /* Sucursales: abreviatura y grupo de color (mx = verde del logo, us = azul marino, tur = dorado). */
 const SUC = {
-  "CIUDAD DE MEXICO": ["CDM", "mx"], "MONTERREY": ["MTY", "mx"], "GUADALAJARA": ["GDL", "mx"], "PUEBLA": ["PUE", "mx"], "TIJUANA": ["TIJ", "mx"],
+  "CIUDAD DE MEXICO": ["CDMX", "mx"], "MONTERREY": ["MTY", "mx"], "GUADALAJARA": ["GDL", "mx"], "PUEBLA": ["PUE", "mx"], "TIJUANA": ["TIJ", "mx"],
   "CANCUN": ["CUN", "mx"], "MERIDA": ["MID", "mx"], "QUERETARO": ["QRO", "mx"], "VERACRUZ": ["VER", "mx"], "TOLUCA": ["TOL", "mx"],
   "CIUDAD JUAREZ": ["CJS", "mx"], "LEON": ["LEO", "mx"], "MORELIA": ["MOR", "mx"], "MEXICALI": ["MXL", "mx"], "CHIHUAHUA": ["CHI", "mx"],
   "AGUASCALIENTES": ["AGS", "mx"], "HERMOSILLO": ["HMO", "mx"], "MAZATLAN": ["MZT", "mx"], "PUERTO VALLARTA": ["VTA", "mx"],
   "HOUSTON": ["HOU", "us"], "ORANGE COUNTY": ["OCO", "us"], "NEW YORK": ["NYC", "us"], "MIAMI": ["MIA", "us"],
-  "NO SE": ["NSE", "tur"], "INTERNACIONAL": ["INT", "tur"], "SIN SUCURSAL": ["S/S", "tur"]
+  "NO SE": ["No sé", "tur"], "INTERNACIONAL": ["INT", "tur"], "SIN SUCURSAL": ["S/S", "tur"]
 };
 const sucInfo = v => SUC[v] || [String(v || "").replace(/[^A-Z]/g, "").slice(0, 3) || "—", "tur"];
 const sucName = v => v ? v.toLowerCase().replace(/(^|\s)\S/g, c => c.toUpperCase()).replace("Ciudad De Mexico", "Ciudad de México").replace("Ciudad Juarez", "Ciudad Juárez").replace("Cancun", "Cancún").replace("Merida", "Mérida").replace("Queretaro", "Querétaro").replace("Leon", "León").replace("Mazatlan", "Mazatlán").replace("No Se", "No sé") : "(vacío)";
@@ -71,7 +71,7 @@ const today = iso(new Date());
 /* ===== Estado ===== */
 const MES_MET_KEYS = ["leads", "citas", "pvr"];
 const MAX_VALS_F = 200; // valores por filtro; igual que MAX_VALS en consultas.ts
-const state = { desde: MIN_DATE, hasta: today, mes: "todo", canal: "todos", modo: "directo", terr: "", diaMet: "leads", gran: "dia", evolGran: "dia", desgMet: "leads", desgGran: "dia", regMet: "registros", regGran: "dia", costoMet: "leads", costoVista: "pagado", dim: "campaign", pdim: "tipo_de_paciente", sucs: [], f: {} }; // arranca en ALL y con todos los medios (Alin, 2026-10-15): «no dejes fuera nada»
+const state = { desde: MIN_DATE, hasta: today, mes: "todo", canal: "todos", modo: "directo", terr: "", diaMet: "leads", gran: "dia", evolGran: "dia", desgMet: "leads", desgGran: "dia", regMet: "registros", regGran: "dia", costoMet: "leads", costoVista: "pagado", horaMet: "registros", dim: "campaign", pdim: "tipo_de_paciente", sucs: [], f: {} }; // arranca en ALL y con todos los medios (Alin, 2026-10-15): «no dejes fuera nada»
 /* El filtro «Sucursal» de la barra y el menú lateral son la misma selección: state.f.sucursal_real es un alias de state.sucs
    (no enumerable, así no se guarda dos veces ni viaja al servidor como filtro aparte). */
 Object.defineProperty(state.f, "sucursal_real", { get: () => state.sucs, set: v => { state.sucs = v; }, enumerable: false });
@@ -88,6 +88,7 @@ try {
   if (["dia", "semana", "mes"].includes(s.regGran)) state.regGran = s.regGran;
   if (["leads", "citas", "pvr"].includes(s.costoMet)) state.costoMet = s.costoMet;
   if (s.costoVista === "ole") state.costoVista = "ole";
+  if (["registros", "leads", "citas", "pvr"].includes(s.horaMet)) state.horaMet = s.horaMet;
   if (typeof s.mesMet === "string") state.mesMet = s.mesMet;
   if (/^\d{4}-\d\d-\d\d$/.test(s.desde || "")) state.desde = s.desde < MIN_DATE ? MIN_DATE : s.desde;
   if (/^\d{4}-\d\d-\d\d$/.test(s.hasta || "")) state.hasta = s.hasta;
@@ -111,7 +112,7 @@ function monthsSel() {
 
 const REG_SKIP = { perfil: 1, es_leading: 1, internacional: 1 };
 /* ===== Datos ===== */
-let ALL = [], ROWS = [], PROWS = [], RROWS = [], RDROWS = [], CROWS = [], WEEKS = [], DROWS = [], GROWS = [], AROWS = [], OPTIONS = null;
+let ALL = [], ROWS = [], PROWS = [], RROWS = [], RDROWS = [], CROWS = [], HROWS = [], HRROWS = [], WEEKS = [], DROWS = [], GROWS = [], AROWS = [], OPTIONS = null;
 let MROWS = [];
 const inMes = r => state.mes === "todo" || r.mes === state.mes;
 const applyCanal = () => { const chs = channels(); MROWS = ALL.filter(r => chs.includes(r.canal)); ROWS = MROWS.filter(inMes); };
@@ -597,6 +598,46 @@ function renderReg() {
   byId("regNote").textContent = (state.sucs.length ? "Registros por la sucursal que eligió la persona (el formulario no sabe dónde terminará la visita). " : "") + (state.terr ? "En registros el territorio se aproxima con el país del formulario (no guarda teléfono). " : "") + (skipped.length ? `Los filtros de ${skipped.join(" y ")} no aplican a registros; leads, citas y PVR sí los obedecen.` : "");
 }
 
+/* ===== Por hora del día: barras 0–23 de una métrica (Alin, 2026-10-22) ===== */
+const fHoraMet = byId("fHoraMet");
+fHoraMet.innerHTML = Object.keys(REG_MET).map(k => `<button type="button" data-v="${k}">${REG_MET[k][0]}</button>`).join("");
+fHoraMet.addEventListener("click", e => { const b = e.target.closest("button"); if (!b) return; state.horaMet = b.dataset.v; save(); renderHora(); });
+function renderHora() {
+  if (!hay("hora")) return;
+  fHoraMet.querySelectorAll("button").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.v === state.horaMet)));
+  const host = byId("cHora"), met = state.horaMet, [metN, col] = REG_MET[met];
+  const vals = Array.from({ length: 24 }, () => 0);
+  if (met === "registros") HRROWS.forEach(r => { if (r.hora >= 0 && r.hora < 24) vals[r.hora] += r.registros; });
+  else HROWS.forEach(r => { if (r.hora >= 0 && r.hora < 24) vals[r.hora] += r[met]; });
+  const total = vals.reduce((a, b) => a + b, 0);
+  byId("horaHint").textContent = `${metN} por hora del día (hora de México), del ${fmtDate(state.desde)} al ${fmtDate(state.hasta)}, con los filtros de arriba. ${met === "registros" ? "Hora del formulario." : "Hora en que se creó el lead."}`;
+  if (!total) { host.innerHTML = `<p class="hint">Sin datos con estos filtros.</p>`; return; }
+  setDims(host); H = W < 520 ? 260 : 300; const mb = 34; ih = H - M.t - mb;
+  const top = Math.max(1, ...vals) * 1.08, pw = Math.pow(10, Math.floor(Math.log10(top))), q = top / pw;
+  const yMax = ([1, 1.2, 1.5, 2, 2.5, 3, 4, 5, 6, 8, 10].find(m => q <= m) || 10) * pw;
+  const step = iw / 24, bw = Math.max(2, Math.min(44, step * 0.74)), x = i => M.l + step * (i + 0.5), y = v => M.t + ih - v / yMax * ih;
+  let s = axes(yMax, v => nf.format(v));
+  vals.forEach((v, h) => {
+    if (h % (W < 520 ? 3 : 1) === 0) s += `<text x="${x(h)}" y="${H - 10}" text-anchor="middle">${h}h</text>`;
+    if (v > 0) s += `<rect x="${(x(h) - bw / 2).toFixed(1)}" y="${y(v).toFixed(1)}" width="${bw.toFixed(1)}" height="${(M.t + ih - y(v)).toFixed(1)}" fill="${col}" rx="${Math.min(3, bw / 2)}" pointer-events="none"/>`;
+    if (v > 0 && bw >= 14) s += `<text x="${x(h)}" y="${(y(v) - 4).toFixed(1)}" text-anchor="middle" class="lbl${bw < 26 ? " chica" : ""}">${nf.format(v)}</text>`;
+    s += `<g class="col" data-tip="${encodeURIComponent(`<div class="tt">${h}:00 – ${h}:59</div>` + tipRows([[metN, nf.format(v)], ["% del total", pct(div(v, total))]]))}"><rect class="hit" x="${(x(h) - step / 2).toFixed(1)}" y="${M.t}" width="${step.toFixed(1)}" height="${ih}"/></g>`;
+  });
+  host.innerHTML = `<svg class="chart" viewBox="0 0 ${W} ${H}" role="img" aria-label="${metN} por hora del día">${s}</svg>`;
+}
+let hseq = 0;
+async function refreshHora(force) {
+  if (!hay("hora")) return;
+  const my = ++hseq;
+  try {
+    const [a, b] = await Promise.all([runSql("hora", force), runSql("reg_hora", force)]);
+    if (my !== hseq) return;
+    if (a.rows) HROWS = a.rows.map(r => ({ hora: +r.hora, leads: +r.leads || 0, citas: +r.citas || 0, pvr: +r.pvr || 0 }));
+    if (b.rows) HRROWS = b.rows.map(r => ({ hora: +r.hora, registros: +r.registros || 0 }));
+    renderHora();
+  } catch (e) { /* la sección conserva lo anterior */ }
+}
+
 /* ===== Costo por resultado por medio: líneas por mes, un medio por línea (solo campañas pagadas) + OLE ===== */
 const COSTO_PAL = ["#1a73e8", "#e6007e", "#ff7043", "#5e35b1", "#00acc1", "#fbbc04", "#f06292", "#757575", "#8d6e63", "#3949ab", "#00897b", "#c0ca33", "#ab47bc", "#ef5350", "#26c6da", "#ffa726", "#5c6bc0", "#9ccc65", "#78909c", "#253f78"];
 const COSTO_FIJO = { facebook: "#1a73e8", google_search: "#c8a040", instagram: "#e6007e", web: "#7ab83b", "(sin medio)": "#9aa7bd" };
@@ -857,7 +898,7 @@ on(document, "mousemove", e => {
   tip.style.top = Math.min(e.clientY + 14, window.innerHeight - r.height - 8) + "px";
 });
 
-function renderCharts() { renderEvol(); renderDiario(); renderDesgTend(); renderMes(); renderReg(); renderCostos(); renderWeekly(); }
+function renderCharts() { renderEvol(); renderDiario(); renderDesgTend(); renderMes(); renderReg(); renderHora(); renderCostos(); renderWeekly(); }
 function render() { paintFilters(); renderAds(); renderKpis(); renderFunnel(); renderOrigen(); renderLocal(); renderCanal(); renderDesglose(); renderCharts(); renderNotes(); }
 /* Menú lateral plegable (preferencia de pantalla, aparte de los filtros) */
 const wrapEl = document.querySelector(".wrap"), sideToggle = byId("sideToggle"), sideEl = document.querySelector(".side");
@@ -942,7 +983,8 @@ async function loadOptions(force) {
     const { rows } = await runSql("opciones", force);
     if (!rows) return;
     OPTIONS = {};
-    rows.forEach(r => { (OPTIONS[r.k] = OPTIONS[r.k] || []).push({ v: r.v == null ? "" : String(r.v), n: Number(r.n) || 0 }); });
+    rows.forEach(r => { if (r.k === "sucursal_real" && String(r.v) === "INTERNACIONAL") return; /* sucursal «Internacional» fuera del menú y del filtro (Alin, 2026-10-22); sus leads siguen en ALL */
+      (OPTIONS[r.k] = OPTIONS[r.k] || []).push({ v: r.v == null ? "" : String(r.v), n: Number(r.n) || 0 }); });
     renderSelects(); renderTabs();
   } catch (e) { /* los selects se quedan con lo fijo */ }
 }
@@ -1020,7 +1062,7 @@ async function refresh(force) {
   const my = ++seq;
   btn.disabled = true;
   setStatus("snap", "Consultando", "Consultando BigQuery…");
-  refreshPerfil(force); refreshReg(force); refreshWeekly(force); refreshDiario(force); refreshDesgDiario(force); refreshCostos(force); refreshAds(force);
+  refreshPerfil(force); refreshReg(force); refreshWeekly(force); refreshDiario(force); refreshDesgDiario(force); refreshCostos(force); refreshHora(force); refreshAds(force);
   try {
     const { rows, at } = await runSql("principal", force);
     if (my !== seq) return;

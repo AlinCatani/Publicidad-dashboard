@@ -185,6 +185,16 @@ const PLANTILLA = `<div class="wrap">
     <p class="caveat" id="regNote"></p>
   </section>
 
+  <section class="panel" aria-labelledby="h-hora" data-sec="hora">
+    <div class="phead">
+      <div><h2 id="h-hora">Por hora del día</h2><p class="hint" id="horaHint">A qué hora llegan los registros y los leads (hora de México), con los filtros de arriba. Citas y PVR por la hora en que se creó el lead.</p></div>
+    </div>
+    <div class="fila-ctrl">
+      <div class="seg" role="group" aria-label="Métrica" id="fHoraMet"></div>
+    </div>
+    <div id="cHora"></div>
+  </section>
+
   <section class="panel" aria-labelledby="h-costos" data-sec="costos">
     <div class="phead">
       <div><h2 id="h-costos">Costo por resultado por medio</h2><p class="hint" id="costosHint">Una línea por medio. «Pagado»: campañas que empiezan con paid, paid_int o paid_us, costo = inversión asignada ÷ resultados. «OLE»: todo lo que no es pagado, incluso sin parámetros, en volumen de resultados.</p></div>
@@ -232,7 +242,7 @@ const PLANTILLA = `<div class="wrap">
 </nav>
 <div class="tip" id="tip" hidden></div>`;
 
-export const SECCIONES = ["ads", "kpis", "evol", "perfil", "desg", "funnel", "origen", "canal", "local", "wk", "reg", "costos", "mes", "notes"];
+export const SECCIONES = ["ads", "kpis", "evol", "perfil", "desg", "funnel", "origen", "canal", "local", "wk", "reg", "hora", "costos", "mes", "notes"];
 
 /* Arma el marcado de un reporte: mismo cascarón (menú, cabecera, filtros, botones) con las secciones elegidas. */
 export function armarMarcado(o: { titulo: string; sub: string; secciones: string[] }) {
