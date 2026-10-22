@@ -37,7 +37,7 @@ const DIMS = {
   grupo_edad: { label: "Grupo de edad", sortKey: true }, es_leading: { label: "LeadING", fixed: ["LeadING", "No LeadING"] }, ole: { label: "OLE", fixed: ["OLE", "Con campaña"] }, internacional: { label: "Nacional / Internacional", fixed: ["Nacional", "Internacional"] },
   canal: { label: "Meta / Google" }, mes: { label: "Mes" }
 };
-const FILTER_ROW1 = ["campaign", "medium", "landing", "region", "anuncio", "mensaje"];
+const FILTER_ROW1 = ["sucursal_real", "campaign", "medium", "landing", "region", "anuncio", "mensaje"]; // sucursal también como filtro (Alin, 2026-10-22); es la misma selección que el menú lateral
 const FILTER_ROW2 = ["tipo_de_paciente", "perfil", "score", "user_persona", "grupo_edad", "es_leading", "ole", "internacional"];
 const FILTER_DIMS = FILTER_ROW1.concat(FILTER_ROW2);
 const DESG_DIMS = ["campaign", "medium", "landing", "region", "anuncio", "mensaje", "sucursal_real"]; // «canal» (Meta/Google/otros) salió de los botones el 2026-10-15 a pedido de Alin; el servidor lo sigue aceptando
@@ -72,6 +72,9 @@ const today = iso(new Date());
 const MES_MET_KEYS = ["leads", "citas", "pvr"];
 const MAX_VALS_F = 200; // valores por filtro; igual que MAX_VALS en consultas.ts
 const state = { desde: MIN_DATE, hasta: today, mes: "todo", canal: "todos", modo: "directo", terr: "", diaMet: "leads", gran: "dia", evolGran: "dia", desgMet: "leads", desgGran: "dia", regMet: "registros", regGran: "dia", costoMet: "leads", costoVista: "pagado", dim: "campaign", pdim: "tipo_de_paciente", sucs: [], f: {} }; // arranca en ALL y con todos los medios (Alin, 2026-10-15): «no dejes fuera nada»
+/* El filtro «Sucursal» de la barra y el menú lateral son la misma selección: state.f.sucursal_real es un alias de state.sucs
+   (no enumerable, así no se guarda dos veces ni viaja al servidor como filtro aparte). */
+Object.defineProperty(state.f, "sucursal_real", { get: () => state.sucs, set: v => { state.sucs = v; }, enumerable: false });
 FILTER_DIMS.forEach(k => state.f[k] = []);
 try {
   const s = JSON.parse(localStorage.getItem("reporte-transversal-v3") || "{}");
@@ -179,7 +182,7 @@ fPerfil.innerHTML = PERFIL_DIMS.map(k => `<button type="button" data-v="${k}">${
 fPerfil.addEventListener("click", e => { const b = e.target.closest("button"); if (!b) return; state.pdim = b.dataset.v; save(); paintFilters(); refreshPerfil(false); refreshDiario(false); });
 
 /* ===== Filtros de varias opciones: botón + desplegable con casillas, «Todas» y «Solo» ===== */
-const selVal = o => o.v === "" ? VACIO : o.v, selLabel = v => v === VACIO ? "(vacío)" : v;
+const selVal = o => o.v === "" ? VACIO : o.v, selLabel = (v, k) => v === VACIO ? "(vacío)" : k === "sucursal_real" ? sucName(v) : v;
 function selOpts(k) {
   const d = DIMS[k];
   let opts = d.fixed ? d.fixed.map(v => ({ v, n: null })) : ((OPTIONS && OPTIONS[k]) || []).slice(0, d.top || 200);
@@ -187,7 +190,7 @@ function selOpts(k) {
   const faltan = state.f[k].filter(v => !opts.some(o => selVal(o) === v)).map(v => ({ v: v === VACIO ? "" : v, n: null }));
   return faltan.concat(opts);
 }
-function selResumen(k) { const c = state.f[k]; return c.length === 0 ? "Todas" : c.length === 1 ? selLabel(c[0]) : `${c.length} elegidas`; }
+function selResumen(k) { const c = state.f[k]; return c.length === 0 ? "Todas" : c.length === 1 ? selLabel(c[0], k) : `${c.length} elegidas`; }
 function selectHtml(k) {
   const n = state.f[k].length;
   return `<div class="sel" data-k="${k}"><span>${DIMS[k].label}</span><button type="button" class="sel-btn${n ? " on" : ""}" aria-haspopup="listbox" aria-expanded="false"><em>${esc(selResumen(k))}</em><i>▾</i></button></div>`;
@@ -198,7 +201,7 @@ function cerrarSel() { if (!selAbierto) return; const pop = selAbierto.querySele
 function pintarSelLista(host) {
   const k = host.dataset.k, cur = state.f[k], pop = host.querySelector(".sel-pop"), q = (pop.querySelector(".sel-q") || {}).value || "";
   const qn = q.trim().toLowerCase();
-  const opts = selOpts(k).filter(o => !qn || selLabel(selVal(o)).toLowerCase().includes(qn));
+  const opts = selOpts(k).filter(o => !qn || selLabel(selVal(o), k).toLowerCase().includes(qn));
   pop.querySelector(".sel-all").disabled = cur.length === 0;
   /* «Marcar» / «Quitar» actúan sobre lo visible: con una búsqueda (p. ej. «web») marcan todas las coincidencias de un golpe (Alin, 2026-10-22) */
   const vis = opts.map(selVal), faltan = vis.filter(v => !cur.includes(v)).length, sobran = vis.length - faltan;
@@ -206,7 +209,7 @@ function pintarSelLista(host) {
   bm.textContent = qn ? `Marcar ${faltan}` : `Marcar todas`; bm.disabled = faltan === 0; bm.title = qn ? `Marcar las ${faltan} opciones que coinciden con «${q.trim()}»` : "Marcar todas las opciones";
   bq.textContent = qn ? `Quitar ${sobran}` : `Quitar`; bq.disabled = sobran === 0; bq.title = qn ? `Quitar las ${sobran} marcadas que coinciden con «${q.trim()}»` : "Quitar las marcadas";
   pop.querySelector(".sel-list").innerHTML = opts.map(o => { const v = selVal(o), on = cur.includes(v);
-    return `<label class="sel-opt${on ? " on" : ""}"><input type="checkbox" value="${esc(v)}"${on ? " checked" : ""}><b>${esc(selLabel(v))}</b>${o.n != null ? `<small>${compact.format(o.n)}</small>` : ""}<button type="button" class="sel-solo" data-v="${esc(v)}" title="Solo esta opción">Solo</button></label>`; }).join("") || `<div class="sel-nada">Sin coincidencias</div>`;
+    return `<label class="sel-opt${on ? " on" : ""}"><input type="checkbox" value="${esc(v)}"${on ? " checked" : ""}><b>${esc(selLabel(v, k))}</b>${o.n != null ? `<small>${compact.format(o.n)}</small>` : ""}<button type="button" class="sel-solo" data-v="${esc(v)}" title="Solo esta opción">Solo</button></label>`; }).join("") || `<div class="sel-nada">Sin coincidencias</div>`;
 }
 function abrirSel(host) {
   if (selAbierto === host) { cerrarSel(); return; }
@@ -225,7 +228,7 @@ function abrirSel(host) {
   });
   pop.addEventListener("click", e => {
     const b = e.target.closest("button"); if (!b) return; e.preventDefault();
-    const visibles = () => { const qn = ((pop.querySelector(".sel-q") || {}).value || "").trim().toLowerCase(); return selOpts(k).map(selVal).filter(v => !qn || selLabel(v).toLowerCase().includes(qn)); };
+    const visibles = () => { const qn = ((pop.querySelector(".sel-q") || {}).value || "").trim().toLowerCase(); return selOpts(k).map(selVal).filter(v => !qn || selLabel(v, k).toLowerCase().includes(qn)); };
     if (b.classList.contains("sel-marcar")) { const cur = state.f[k]; visibles().forEach(v => { if (!cur.includes(v)) cur.push(v); }); state.f[k] = cur.slice(0, MAX_VALS_F); }
     else if (b.classList.contains("sel-quitar")) { const vis = new Set(visibles()); state.f[k] = state.f[k].filter(v => !vis.has(v)); }
     else if (b.classList.contains("sel-all")) state.f[k] = []; else if (b.classList.contains("sel-solo")) state.f[k] = [b.dataset.v]; else return;
@@ -276,11 +279,12 @@ function paintFilters() {
   periodBtn.textContent = `${fmtDate(state.desde)} – ${fmtDate(state.hasta)} ▾`;
   byId("eyebrow").textContent = `Marketing · ${sucsLabel()}`;
   pintarPliegue();
+  document.querySelectorAll('.sel[data-k="sucursal_real"]').forEach(pintarSelBtn);
   const chips = [];
   /* Un filtro con más de 3 valores se resume en un solo chip («Landing: 23 valores»), si no la barra se vuelve enorme (Alin, 2026-10-22) */
   FILTER_DIMS.forEach(k => { const vs = state.f[k];
-    if (vs.length > 3) chips.push(`<button type="button" class="chip" data-k="${k}" data-todo="1" title="${esc(vs.map(selLabel).join(", "))} · clic para quitar este filtro">${DIMS[k].label}: <b>${vs.length} valores</b><i>×</i></button>`);
-    else vs.forEach(v => chips.push(`<button type="button" class="chip" data-k="${k}" data-v="${esc(v)}" title="Quitar este filtro">${DIMS[k].label}: <b>${esc(selLabel(v))}</b><i>×</i></button>`)); });
+    if (vs.length > 3) chips.push(`<button type="button" class="chip" data-k="${k}" data-todo="1" title="${esc(vs.map(v => selLabel(v, k)).join(", "))} · clic para quitar este filtro">${DIMS[k].label}: <b>${vs.length} valores</b><i>×</i></button>`);
+    else vs.forEach(v => chips.push(`<button type="button" class="chip" data-k="${k}" data-v="${esc(v)}" title="Quitar este filtro">${DIMS[k].label}: <b>${esc(selLabel(v, k))}</b><i>×</i></button>`)); });
   byId("filterNote").innerHTML = chips.length
     ? `<span class="chips-lbl">Filtros activos:</span> ${chips.join("")}${chips.length > 1 ? `<button type="button" class="chip chip-all" data-all="1" title="Quitar todos los filtros">Quitar todos</button>` : ""}`
     : "Sin filtros: se muestran todas las sucursales, campañas y perfiles.";
