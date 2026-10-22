@@ -70,6 +70,7 @@ const today = iso(new Date());
 
 /* ===== Estado ===== */
 const MES_MET_KEYS = ["leads", "citas", "pvr"];
+const MAX_VALS_F = 200; // valores por filtro; igual que MAX_VALS en consultas.ts
 const state = { desde: MIN_DATE, hasta: today, mes: "todo", canal: "todos", modo: "directo", terr: "", diaMet: "leads", gran: "dia", evolGran: "dia", desgMet: "leads", desgGran: "dia", regMet: "registros", regGran: "dia", costoMet: "leads", costoVista: "pagado", dim: "campaign", pdim: "tipo_de_paciente", sucs: [], f: {} }; // arranca en ALL y con todos los medios (Alin, 2026-10-15): «no dejes fuera nada»
 FILTER_DIMS.forEach(k => state.f[k] = []);
 try {
@@ -91,7 +92,7 @@ try {
   if (TERR[s.terr]) state.terr = s.terr;
   if (s.dim && DESG_DIMS.includes(s.dim)) state.dim = s.dim;
   if (s.pdim && PERFIL_DIMS.includes(s.pdim)) state.pdim = s.pdim;
-  if (s.f) FILTER_DIMS.forEach(k => { const v = s.f[k]; if (Array.isArray(v)) state.f[k] = v.filter(x => typeof x === "string" && x).slice(0, 60); else if (typeof v === "string" && v) state.f[k] = [v]; });
+  if (s.f) FILTER_DIMS.forEach(k => { const v = s.f[k]; if (Array.isArray(v)) state.f[k] = v.filter(x => typeof x === "string" && x).slice(0, MAX_VALS_F); else if (typeof v === "string" && v) state.f[k] = [v]; });
   const viejo = { Leading: "LeadING", "No leading": "No LeadING" }; state.f.es_leading = state.f.es_leading.map(v => viejo[v] || v);
 } catch (e) {}
 if (state.hasta < state.desde) state.hasta = state.desde;
@@ -199,6 +200,11 @@ function pintarSelLista(host) {
   const qn = q.trim().toLowerCase();
   const opts = selOpts(k).filter(o => !qn || selLabel(selVal(o)).toLowerCase().includes(qn));
   pop.querySelector(".sel-all").disabled = cur.length === 0;
+  /* «Marcar» / «Quitar» actúan sobre lo visible: con una búsqueda (p. ej. «web») marcan todas las coincidencias de un golpe (Alin, 2026-10-22) */
+  const vis = opts.map(selVal), faltan = vis.filter(v => !cur.includes(v)).length, sobran = vis.length - faltan;
+  const bm = pop.querySelector(".sel-marcar"), bq = pop.querySelector(".sel-quitar");
+  bm.textContent = qn ? `Marcar ${faltan}` : `Marcar todas`; bm.disabled = faltan === 0; bm.title = qn ? `Marcar las ${faltan} opciones que coinciden con «${q.trim()}»` : "Marcar todas las opciones";
+  bq.textContent = qn ? `Quitar ${sobran}` : `Quitar`; bq.disabled = sobran === 0; bq.title = qn ? `Quitar las ${sobran} marcadas que coinciden con «${q.trim()}»` : "Quitar las marcadas";
   pop.querySelector(".sel-list").innerHTML = opts.map(o => { const v = selVal(o), on = cur.includes(v);
     return `<label class="sel-opt${on ? " on" : ""}"><input type="checkbox" value="${esc(v)}"${on ? " checked" : ""}><b>${esc(selLabel(v))}</b>${o.n != null ? `<small>${compact.format(o.n)}</small>` : ""}<button type="button" class="sel-solo" data-v="${esc(v)}" title="Solo esta opción">Solo</button></label>`; }).join("") || `<div class="sel-nada">Sin coincidencias</div>`;
 }
@@ -207,7 +213,7 @@ function abrirSel(host) {
   cerrarSel();
   const k = host.dataset.k;
   const pop = document.createElement("div"); pop.className = "sel-pop"; pop.setAttribute("role", "listbox"); pop.setAttribute("aria-label", DIMS[k].label);
-  pop.innerHTML = `<div class="sel-top"><button type="button" class="sel-all">Todas</button>${selOpts(k).length > 8 ? `<input type="search" class="sel-q" placeholder="Buscar…" aria-label="Buscar opción">` : ""}</div><div class="sel-list"></div>`;
+  pop.innerHTML = `<div class="sel-top"><button type="button" class="sel-all" title="Sin filtro: todas las opciones">Todas</button>${selOpts(k).length > 8 ? `<input type="search" class="sel-q" placeholder="Buscar…" aria-label="Buscar opción">` : ""}<button type="button" class="sel-all sel-marcar">Marcar todas</button><button type="button" class="sel-all sel-quitar">Quitar</button></div><div class="sel-list"></div>`;
   host.appendChild(pop); host.querySelector(".sel-btn").setAttribute("aria-expanded", "true"); selAbierto = host;
   pintarSelLista(host);
   const aplicar = () => { save(); pintarSelBtn(host); paintFilters(); renderTabs(); refresh(false); };
@@ -219,7 +225,10 @@ function abrirSel(host) {
   });
   pop.addEventListener("click", e => {
     const b = e.target.closest("button"); if (!b) return; e.preventDefault();
-    if (b.classList.contains("sel-all")) state.f[k] = []; else if (b.classList.contains("sel-solo")) state.f[k] = [b.dataset.v]; else return;
+    const visibles = () => { const qn = ((pop.querySelector(".sel-q") || {}).value || "").trim().toLowerCase(); return selOpts(k).map(selVal).filter(v => !qn || selLabel(v).toLowerCase().includes(qn)); };
+    if (b.classList.contains("sel-marcar")) { const cur = state.f[k]; visibles().forEach(v => { if (!cur.includes(v)) cur.push(v); }); state.f[k] = cur.slice(0, MAX_VALS_F); }
+    else if (b.classList.contains("sel-quitar")) { const vis = new Set(visibles()); state.f[k] = state.f[k].filter(v => !vis.has(v)); }
+    else if (b.classList.contains("sel-all")) state.f[k] = []; else if (b.classList.contains("sel-solo")) state.f[k] = [b.dataset.v]; else return;
     pintarSelLista(host); aplicar();
   });
   const q = pop.querySelector(".sel-q"); if (q) { q.addEventListener("input", () => pintarSelLista(host)); q.focus(); }

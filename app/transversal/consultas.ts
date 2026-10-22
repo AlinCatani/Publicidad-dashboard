@@ -54,7 +54,7 @@ const CANALES = ["pagado", "todos", "meta", "google", "otros"];
 export const TIPOS = ["principal", "registros", "reg_diario", "semanal", "perfil", "opciones", "diario", "desg_diario", "costos", "publicidad"] as const;
 const VACIO = "__vacio__"; // el select manda esto para «(vacío)»; en SQL es ''
 const MAX_SUCS = 40;
-const MAX_VALS = 60; // valores por filtro
+const MAX_VALS = 200; // valores por filtro (subido de 60 el 2026-10-22: «Marcar todas» las landings con «web» rebasa 60)
 export type Tipo = (typeof TIPOS)[number];
 
 /* Territorio (Alin, 2026-10-15): México = número nacional y sucursal de México; Internacional = número extranjero y
