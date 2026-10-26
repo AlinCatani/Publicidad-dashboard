@@ -18,4 +18,9 @@ export const TABLEROS: Tablero[] = [
     nombre: "Análisis de campañas",
     descripcion: "Meta vs Google, etapa por etapa, con los mismos filtros del transversal.",
   },
+  {
+    ruta: "/inversion",
+    nombre: "Presupuesto vs inversión",
+    descripcion: "Lo autorizado contra lo gastado en Meta, Google y donación, con el formato del Sheet de presupuesto: por campaña, por corte semanal y por día.",
+  },
 ];
