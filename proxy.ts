@@ -6,9 +6,9 @@ import { auth } from "@/auth";
 //
 // La raíz ES el Reporte Transversal en los dos dominios (Alin, 2026-10-27; antes solo en
 // reportetransversal.vercel.app): se reescribe a /transversal sin cambiar la URL. La lista de
-// tableros ya no se muestra; /monterrey se eliminó del sitio y /campanas queda oculto: los dos mandan
-// a la raíz. /inversion sigue accesible por su URL directa.
-const OCULTOS = /^\/(monterrey|campanas)(\/|$)/i;
+// tableros ya no se muestra; /monterrey se eliminó del sitio y /campanas e /inversion quedan ocultos
+// (Alin, 2026-10-27): mandan a la raíz. Presupuesto vs inversión se sigue viendo en su artefacto.
+const OCULTOS = /^\/(monterrey|campanas|inversion)(\/|$)/i;
 
 export const proxy = auth((req) => {
   const ruta = req.nextUrl.pathname;
