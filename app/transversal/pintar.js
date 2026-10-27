@@ -850,7 +850,7 @@ function renderEvol() {
 /* 20 colores distinguibles (como las gráficas de Looker que usa Alin); el 21.º en adelante se junta en «Otros». */
 const PAL = ["#1a73e8", "#7ab83b", "#e6007e", "#ff7043", "#5e35b1", "#00acc1", "#fbbc04", "#f06292", "#757575", "#8d6e63", "#3949ab", "#00897b", "#c0ca33", "#ab47bc", "#ef5350", "#26c6da", "#ffa726", "#5c6bc0", "#9ccc65", "#78909c"];
 /* Colores fijos para los valores que ya tienen color en Looker (referencia de Alin, 2026-10-15). */
-const PAL_FIJA = { Azul: "#1a73e8", Verde: "#7ab83b", LP: "#5e35b1", LS: "#f06292", LeadING: "#e6007e", "No LeadING": "#00acc1",
+const PAL_FIJA = { Azul: "#0072f0", Verde: "#7cb342", /* perfil con los colores del Looker (Alin, 2026-10-27) */ LP: "#5e35b1", LS: "#f06292", LeadING: "#e6007e", "No LeadING": "#00acc1",
   /* Octantes con los colores de la gráfica «Hexantes» del Looker (Alin, 2026-10-27) */
   "Azul Amarillo": "#ffa800", "Azul Blanco": "#91c3dd", "Azul Intermedio": "#2298ce", "Sin clasificar": "#616161", "Verde Amarillo": "#186602", "Verde Blanco": "#b0eaae", "Verde Intermedio": "#0dcc29" };
 const fDiaMet = byId("fDiaMet");
