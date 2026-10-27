@@ -864,7 +864,7 @@ const PAL_FIJA = {
   "Quiero tener un bebé": "#ec407a", "Quiero evaluar mi fertilidad": "#ff7043",
   "segunda-opinion": "#0072f0", "investigando-opciones": "#00b6cb", ingenes: "#ffa800", "informacion-educativa": "#f10096", "agendar-cita": "#f66d00",
   Prelead: "#0072f0", "Lead Completo": "#00b6cb", "Lead Avanzado": "#ffa800", Lead: "#f10096",
-  __otros: "#ff7043" };
+  __otros: "#9aa7bd" }; // «Otros» (el resto agrupado) en gris, para no confundirlo con «Otro pais» (Alin, 2026-10-27)
 const fDiaMet = byId("fDiaMet");
 fDiaMet.innerHTML = MES_MET_KEYS.map(k => `<button type="button" data-v="${k}">${MES_MET[k]}</button>`).join("");
 fDiaMet.addEventListener("click", e => { const b = e.target.closest("button"); if (!b) return; state.diaMet = b.dataset.v; save(); renderDiario(); });
