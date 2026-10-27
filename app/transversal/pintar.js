@@ -373,40 +373,61 @@ function renderKpis() {
 }
 
 /* ===== Tabla genérica de resultados por valor ===== */
-function resultTable(rows, label, nameFn) {
+/* Columnas de la tabla: etiqueta, valor numérico (para ordenar) y formato. Clic en el encabezado ordena de mayor a menor por esa
+   métrica; otro clic, de menor a mayor (Alin, 2026-10-27). */
+const COLS_TABLA = [
+  { h: "Leads", v: a => a.leads, f: a => nf.format(a.leads) },
+  { h: "% leads", v: a => a.leads, f: (a, tot) => `<span class="share">${pct(div(a.leads, tot.leads))}<span class="bar"><i style="width:${(div(a.leads, tot.leads) * 100 || 0).toFixed(1)}%"></i></span></span>` },
+  { h: "Citas agendadas", v: a => a.citas, f: a => nf.format(a.citas) },
+  { h: "Lead → cita agendada", v: a => div(a.citas, a.leads), f: a => pct(div(a.citas, a.leads)) },
+  { h: "PVR", v: a => a.pvr, f: a => nf.format(a.pvr) },
+  { h: "TAL%", v: a => div(a.pvr, a.leads), f: a => pct(div(a.pvr, a.leads)) },
+  { h: "Ventas", v: a => a.ventas, f: a => nf.format(a.ventas) },
+  { h: "PVR → venta", v: a => div(a.ventas, a.pvr), f: a => pct(div(a.ventas, a.pvr)) },
+  { h: "Inversión", v: a => a.inversion, f: a => money(a.inversion), din: true },
+  { h: "CPL", v: a => div(a.inversion, a.leads), f: a => money(div(a.inversion, a.leads)), din: true, hl: true },
+  { h: "Costo/cita agendada", v: a => div(a.inversion, a.citas), f: a => money(div(a.inversion, a.citas)), din: true, hl: true },
+  { h: "Costo/PVR", v: a => div(a.inversion, a.pvr), f: a => money(div(a.inversion, a.pvr)), din: true, hl: true },
+  { h: "Costo/venta", v: a => div(a.inversion, a.ventas), f: a => money(div(a.inversion, a.ventas)), din: true, hl: true },
+  { h: "Importe vendido", v: a => a.importe, f: a => money(a.importe), din: true }
+];
+const ORDEN_TABLA = {}; // por tabla: { col, desc }
+function resultTable(rows, label, nameFn, tablaId) {
   const tot = sum(rows);
   const groups = {};
   rows.forEach(r => { (groups[r.dim] = groups[r.dim] || []).push(r); });
   // Los leads sin dato en la característica (clave vacía) no se listan como fila: son pocos y confunden (Alin, 2026-10-15); siguen en el Total.
   let list = Object.keys(groups).filter(k => k !== "").map(k => ({ k, a: sum(groups[k]) }));
-  if (DIMS[state.pdim] && label === DIMS[state.pdim].label && DIMS[state.pdim].sortKey) list.sort((x, y) => x.k.localeCompare(y.k, "es", { numeric: true }));
+  const ord = ORDEN_TABLA[tablaId];
+  if (ord) { const col = COLS_TABLA[ord.col]; const val = x => { const v = col.v(x.a); return isFinite(v) ? v : (ord.desc ? -Infinity : Infinity); }; list.sort((x, y) => (ord.desc ? val(y) - val(x) : val(x) - val(y)) || x.k.localeCompare(y.k, "es")); }
+  else if (DIMS[state.pdim] && label === DIMS[state.pdim].label && DIMS[state.pdim].sortKey) list.sort((x, y) => x.k.localeCompare(y.k, "es", { numeric: true }));
   else list.sort((x, y) => y.a.leads - x.a.leads);
   const shown = list.slice(0, 30), rest = list.slice(30);
   if (rest.length) shown.push({ k: `Otros (${rest.length})`, a: sum(rest.flatMap(x => groups[x.k])), raw: true });
-  const row = (name, a, cls) => `<tr${cls ? ` class="${cls}"` : ""}>
-      <td>${esc(name)}</td>
-      <td>${nf.format(a.leads)}</td>
-      <td><span class="share">${pct(div(a.leads, tot.leads))}<span class="bar"><i style="width:${(div(a.leads, tot.leads) * 100 || 0).toFixed(1)}%"></i></span></span></td>
-      <td>${nf.format(a.citas)}</td><td>${pct(div(a.citas, a.leads))}</td>
-      <td>${nf.format(a.pvr)}</td><td>${pct(div(a.pvr, a.leads))}</td>
-      <td>${nf.format(a.ventas)}</td><td>${pct(div(a.ventas, a.pvr))}</td>
-      <td class="din">${money(a.inversion)}</td><td class="hl din">${money(div(a.inversion, a.leads))}</td><td class="hl din">${money(div(a.inversion, a.citas))}</td><td class="hl din">${money(div(a.inversion, a.pvr))}</td><td class="hl din">${money(div(a.inversion, a.ventas))}</td><td class="din">${money(a.importe)}</td>
-    </tr>`;
-  return { html: `<thead><tr><th>${label}</th><th>Leads</th><th>% leads</th><th>Citas agendadas</th><th>Lead → cita agendada</th><th>PVR</th><th>TAL%</th><th>Ventas</th><th>PVR → venta</th><th class="din">Inversión</th><th class="din">CPL</th><th class="din">Costo/cita agendada</th><th class="din">Costo/PVR</th><th class="din">Costo/venta</th><th class="din">Importe vendido</th></tr></thead>
+  const row = (name, a, cls) => `<tr${cls ? ` class="${cls}"` : ""}><td>${esc(name)}</td>${COLS_TABLA.map(c => `<td class="${c.hl ? "hl " : ""}${c.din ? "din" : ""}">${c.f(a, tot)}</td>`).join("")}</tr>`;
+  const th = COLS_TABLA.map((c, i) => `<th class="${c.din ? "din " : ""}ord${ord && ord.col === i ? (ord.desc ? " on desc" : " on asc") : ""}" data-col="${i}" title="Ordenar por ${c.h}">${c.h}</th>`).join("");
+  return { html: `<thead><tr><th>${label}</th>${th}</tr></thead>
      <tbody>${shown.map(x => row(x.raw ? x.k : nameFn(x.k), x.a)).join("")}${row("Total", tot, "total")}</tbody>`, n: list.length, rest: rest.length };
 }
+/* Clic en un encabezado: ordena esa tabla por esa métrica, de mayor a menor; segundo clic invierte; tercero vuelve al orden normal. */
+["tPerfil", "tDesg"].forEach(id => on(byId(id), "click", e => {
+  const th = e.target.closest("th.ord"); if (!th) return;
+  const col = +th.dataset.col, ord = ORDEN_TABLA[id];
+  ORDEN_TABLA[id] = !ord || ord.col !== col ? { col, desc: true } : ord.desc ? { col, desc: false } : null;
+  if (id === "tPerfil") renderPerfil(); else renderDesglose();
+}));
 const monthName = key => { const m = monthsSel().find(x => x.key === key); return m ? cap(m.long) : key; };
 const dimName = (dim, k) => dim === "mes" ? monthName(k) : dim === "canal" ? (CH[k] || k) : dim === "sucursal_real" ? sucName(k) : (k || "(vacío)");
 
 function renderDesglose() {
   const d = DIMS[state.dim];
-  const t = resultTable(ROWS, d.label, k => dimName(state.dim, k));
+  const t = resultTable(ROWS, d.label, k => dimName(state.dim, k), "tDesg");
   byId("tDesg").innerHTML = t.html;
   byId("desgHint").textContent = `${d.label}, ordenado por leads: ${t.n} valores${t.rest ? ` (se muestran 30 y el resto se agrupa en «Otros»)` : ""}. Los filtros de arriba aplican; la tendencia de abajo se abre por la misma dimensión.`;
 }
 function renderPerfil() {
   const d = DIMS[state.pdim];
-  const t = resultTable(PROWS, d.label, k => dimName(state.pdim, k));
+  const t = resultTable(PROWS, d.label, k => dimName(state.pdim, k), "tPerfil");
   byId("tPerfil").innerHTML = t.html;
   byId("perfilHint").textContent = `CPL, costo por cita agendada y costo por primera visita por ${d.label.toLowerCase()}. Los filtros de arriba aplican; la tendencia de abajo se abre por la misma característica.`;
 }

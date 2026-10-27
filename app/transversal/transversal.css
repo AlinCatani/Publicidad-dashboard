@@ -193,6 +193,8 @@ table { border-collapse: collapse; width: 100%; font-size: 13.5px; }
 th, td { padding: 8px 10px; text-align: right; white-space: nowrap; font-variant-numeric: tabular-nums; border-bottom: 1px solid var(--grid); }
 th:first-child, td:first-child { text-align: left; padding-left: 0; }
 thead th { font-weight: 700; font-size: 11.5px; color: var(--muted); text-transform: uppercase; letter-spacing: .06em; border-bottom: 1px solid var(--axis); }
+thead th.ord { cursor: pointer; user-select: none; } thead th.ord:hover { color: var(--primary); }
+thead th.ord.on { color: var(--primary); } thead th.ord.on.desc::after { content: " ▼"; font-size: 9px; } thead th.ord.on.asc::after { content: " ▲"; font-size: 9px; } /* orden por columna (2026-10-27) */
 tbody tr:hover td { background: var(--soft); }
 tr.total td { font-weight: 700; color: var(--primary); border-top: 1px solid var(--axis); border-bottom: 0; }
 .share { display: flex; align-items: center; gap: 8px; justify-content: flex-end; }
