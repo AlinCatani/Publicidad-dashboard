@@ -18,7 +18,7 @@ export default async function Admin() {
   const enEdge = !!process.env.EDGE_CONFIG;
 
   return (
-    <><BarraSitio permiso={yo} actual="/admin" />
+    <><BarraSitio permiso={yo} actual="/growth" />
     <main className="contenedor adm">
       <header className="barra"><h1>Administración de reportes</h1></header>
 

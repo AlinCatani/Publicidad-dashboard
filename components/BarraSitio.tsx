@@ -14,7 +14,7 @@ export default function BarraSitio({ permiso, actual }: { permiso: Permiso; actu
         {mios.map((t) => (
           <Link key={t.ruta} href={t.ruta} className={actual === t.ruta ? "on" : ""} aria-current={actual === t.ruta ? "page" : undefined}>{t.nombre}</Link>
         ))}
-        {permiso.admin && <Link href="/admin" className={`nav-admin${actual === "/admin" ? " on" : ""}`}>Administración</Link>}
+        {permiso.admin && <Link href="/growth" className={`nav-admin${actual === "/growth" ? " on" : ""}`}>Administración</Link>}
       </div>
       <form action={async () => { "use server"; await signOut({ redirectTo: "/entrar" }); }} className="nav-sesion">
         <span className="tenue">{permiso.email}</span>

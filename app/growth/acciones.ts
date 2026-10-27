@@ -15,7 +15,7 @@ async function conLista(fn: (usuarios: Usuario[]) => Usuario[] | Promise<Usuario
   const acceso = await leerAcceso(true);
   const usuarios = await fn(acceso.usuarios.map((u) => ({ ...u, tableros: { ...u.tableros } })));
   await guardarAcceso({ ...acceso, usuarios });
-  revalidatePath("/admin");
+  revalidatePath("/growth");
 }
 
 /* Alta: acepta varios correos separados por coma, espacio o salto de línea (p. ej. la lista de Juan pegada). */
