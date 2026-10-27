@@ -476,10 +476,21 @@ function renderFunnel() {
       ${split}${conv}<div class="dline din">${st.cost} ${money(div(a.inversion, total))}</div></div>`;
     prevM = st.m;
   });
-  const o = ole(), oleMax = Math.max(1, o.leads);
-  const oleBar = (label, v, conv, cls) => `<div class="obar"><span class="ol">${label}</span><div class="otrack"><i class="${cls}" style="width:${(100 * v / oleMax).toFixed(1)}%"></i></div><b>${nf.format(v)}</b><small>${conv}</small></div>`;
-  html += `</div><div class="ole-funnel"><div class="fgroup-title">OLE · leads NO pagados (de todos los medios)</div>
-    ${oleBar("Leads", o.leads, "sin campaña pagada", "f-otros")}${oleBar("Citas agendadas", o.citas, `${pct(div(o.citas, o.leads))} de leads`, "f-google")}${oleBar("Primeras visitas", o.pvr, `${pct(div(o.pvr, o.citas))} de citas · TAL% ${pct(div(o.pvr, o.leads))}`, "f-meta")}${oleBar("Ventas", o.ventas, `${pct(div(o.ventas, o.pvr))} de primeras visitas`, "f-a")}
+  /* OLE con el mismo funnel que arriba (Alin, 2026-10-27): registros, leads, citas, PVR y ventas, en anillos; sin costos porque no hay inversión. */
+  const o = ole(), oReg = regBy(null, null, "sin_campana");
+  const OLE_ST = [["Registros", "formularios", oReg, null], ["Leads", "sin campaña pagada", o.leads, "de registros"], ["Citas agendadas", "en BIC", o.citas, "de leads"], ["Primeras visitas", "realizadas", o.pvr, "de citas agendadas"], ["Ventas", "BEC en BIT", o.ventas, "de primeras visitas"]];
+  let prevO = null;
+  html += `</div><div class="ole-funnel"><div class="fgroup-title">OLE · leads NO pagados (de todos los medios)</div><div class="donuts fila">`;
+  OLE_ST.forEach(([name, sub, v, convTxt]) => {
+    const segs = `<circle cx="60" cy="60" r="${R}" fill="none" class="ring-track" stroke-width="${SW}"/>` + (v > 0 ? `<circle cx="60" cy="60" r="${R}" fill="none" class="s-ole" stroke-width="${SW}" data-tip="${encodeURIComponent(`<div class="tt">${name} · OLE</div>` + tipRows([["Volumen", nf.format(v)], prevO != null ? [convTxt, pct(div(v, prevO))] : null].filter(Boolean)))}"/>` : "");
+    const sc = Math.min(1, Math.max(0.42, 1 + 0.35 * Math.log10(div(v, oReg || o.leads) || 0.001)));
+    const conv = prevO != null ? `<div class="dconv">${pct(div(v, prevO))} ${convTxt}</div>` : `<div class="dconv muted">Inicio del funnel</div>`;
+    html += `<div class="dcard${v ? "" : " pending"}"><div class="dname">${name}<small>${sub}</small></div>
+      <div class="dslot"><div class="dwrap" style="width:${(sc * 100).toFixed(1)}%">${ring(segs, `${name} OLE: ${nf.format(v)}`)}
+        <div class="dcenter"><span class="dval" style="font-size:${(12 + 7 * sc).toFixed(1)}px">${nf.format(v)}</span></div></div></div>${conv}</div>`;
+    prevO = v;
+  });
+  html += `</div><div class="overall"><span>Registro → lead <b>${pct(div(o.leads, oReg))}</b></span><span>Lead → cita agendada <b>${pct(div(o.citas, o.leads))}</b></span><span>TAL% <b>${pct(div(o.pvr, o.leads))}</b></span><span>PVR → venta <b>${pct(div(o.ventas, o.pvr))}</b></span></div>
   </div><div class="overall">${regTotal() ? `<span>Registro → PVR <b>${pct(div(a.pvr, regTotal()))}</b></span>` : ""}<span>Lead → cita agendada <b>${pct(div(a.citas, a.leads))}</b></span><span>Cita agendada → PVR <b>${pct(div(a.pvr, a.citas))}</b></span><span>TAL% <b>${pct(div(a.pvr, a.leads))}</b></span><span>PVR → venta <b>${pct(div(a.ventas, a.pvr))}</b></span><span class="din">Inversión asignada <b>${money(a.inversion)}</b></span><span class="din">Importe vendido <b>${money(a.importe)}</b></span></div>`;
   byId("funnel").innerHTML = html;
   byId("legFunnel").innerHTML = legendHtml(chs);

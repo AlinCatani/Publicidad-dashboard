@@ -155,6 +155,8 @@ h1 { font-family: var(--font-serif); font-size: 34px; line-height: 1.1; margin: 
 .obar .ol { color: var(--ink-2); font-weight: 700; } .obar b { text-align: right; font-family: var(--font-serif); font-size: 17px; color: #8a6a1c; }
 .obar small { color: var(--ink-2); font-size: 12px; }
 .otrack { height: 12px; background: rgba(255,255,255,.6); border-radius: 6px; overflow: hidden; } .otrack i { display: block; height: 100%; border-radius: 6px; }
+.s-ole { stroke: var(--accent); }
+.ole-funnel .overall { border-top-color: rgba(200,160,64,.4); }
 .otrack .f-otros { background: var(--otros); } .otrack .f-google { background: var(--google); } .otrack .f-meta { background: var(--meta); }
 @media (max-width: 640px) { .obar { grid-template-columns: 110px 1fr 56px; } .obar small { grid-column: 1 / -1; padding-left: 2px; } }
 .dot.d-otros { background: var(--otros); } .dot.d-meta { background: var(--meta); } .dot.d-google { background: var(--google); } .dot.d-a { background: var(--seg-a); }
