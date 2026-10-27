@@ -4,11 +4,6 @@ export type Tablero = { ruta: string; nombre: string; descripcion: string };
 
 export const TABLEROS: Tablero[] = [
   {
-    ruta: "/monterrey",
-    nombre: "Funnel Ingenes Monterrey",
-    descripcion: "Registros, leads, agendas y PVRs de Meta y Google en Monterrey, con su costo por etapa.",
-  },
-  {
     ruta: "/transversal",
     nombre: "Reporte Transversal",
     descripcion: "De las impresiones a las primeras visitas, por sucursal real, campaña y perfil del paciente, con todos los medios y sucursales.",

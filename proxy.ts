@@ -6,7 +6,7 @@ import { auth } from "@/auth";
 //
 // La raíz ES el Reporte Transversal en los dos dominios (Alin, 2026-10-27; antes solo en
 // reportetransversal.vercel.app): se reescribe a /transversal sin cambiar la URL. La lista de
-// tableros ya no se muestra, y los tableros viejos (/monterrey, /campanas) quedan ocultos: mandan
+// tableros ya no se muestra; /monterrey se eliminó del sitio y /campanas queda oculto: los dos mandan
 // a la raíz. /inversion sigue accesible por su URL directa.
 const OCULTOS = /^\/(monterrey|campanas)(\/|$)/i;
 
