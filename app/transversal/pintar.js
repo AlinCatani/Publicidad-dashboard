@@ -2,6 +2,7 @@
 // Diferencias con el artefacto: (1) el SQL no está aquí, lo arma el servidor en consultas.ts a partir
 // del estado (filtros) que se le manda; (2) los datos llegan por /api/transversal, no por el conector MCP.
 // `montar(raiz)` pinta dentro de `raiz` (que ya trae el marcado) y devuelve la función que limpia.
+import { MAPA_PATHS, MAPA_BOX, MAPA_PAIS } from "./mapa.js";
 export function montar(raiz, opciones) {
 let vivo = true, resizeT = 0;
 const escuchas = [];
@@ -78,7 +79,7 @@ const MAX_VALS_F = 200; // valores por filtro; igual que MAX_VALS en consultas.t
 const raizNivel = (typeof raiz !== "undefined" && raiz) || document.querySelector(".rt"); // en el artefacto no hay `raiz` (se quita el envoltorio montar)
 const SIN_MONTOS = !!(raizNivel && raizNivel.dataset && raizNivel.dataset.nivel === "resultados");
 if (SIN_MONTOS && raizNivel.classList) raizNivel.classList.add("sin-montos");
-const state = { desde: MIN_DATE, hasta: today, mes: "todo", canal: "todos", modo: "directo", terr: "", diaMet: "leads", gran: "dia", evolGran: "dia", desgMet: "leads", desgGran: "dia", regMet: "registros", regGran: "dia", costoMet: "leads", costoVista: "pagado", horaMet: "registros", dim: "campaign", pdim: "tipo_de_paciente", sucs: [], f: {} }; // arranca en ALL y con todos los medios (Alin, 2026-10-15): «no dejes fuera nada»
+const state = { desde: MIN_DATE, hasta: today, mes: "todo", canal: "todos", modo: "directo", terr: "", diaMet: "leads", gran: "dia", evolGran: "dia", desgMet: "leads", desgGran: "dia", regMet: "registros", regGran: "dia", costoMet: "leads", costoVista: "pagado", horaMet: "registros", mapaMet: "leads", dim: "campaign", pdim: "tipo_de_paciente", sucs: [], f: {} }; // arranca en ALL y con todos los medios (Alin, 2026-10-15): «no dejes fuera nada»
 /* El filtro «Sucursal» de la barra y el menú lateral son la misma selección: state.f.sucursal_real es un alias de state.sucs
    (no enumerable, así no se guarda dos veces ni viaja al servidor como filtro aparte). */
 Object.defineProperty(state.f, "sucursal_real", { get: () => state.sucs, set: v => { state.sucs = v; }, enumerable: false });
@@ -96,6 +97,7 @@ try {
   if (["leads", "citas", "pvr", "ventas"].includes(s.costoMet)) state.costoMet = s.costoMet;
   if (s.costoVista === "ole") state.costoVista = "ole";
   if (["registros", "leads", "citas", "pvr", "ventas"].includes(s.horaMet)) state.horaMet = s.horaMet;
+  if (["leads", "citas", "pvr", "ventas", "cpl"].includes(s.mapaMet)) state.mapaMet = s.mapaMet;
   if (typeof s.mesMet === "string") state.mesMet = s.mesMet;
   if (/^\d{4}-\d\d-\d\d$/.test(s.desde || "")) state.desde = s.desde < MIN_DATE ? MIN_DATE : s.desde;
   if (/^\d{4}-\d\d-\d\d$/.test(s.hasta || "")) state.hasta = s.hasta;
@@ -119,7 +121,7 @@ function monthsSel() {
 
 const REG_SKIP = { perfil: 1, es_leading: 1, internacional: 1 };
 /* ===== Datos ===== */
-let ALL = [], ROWS = [], PROWS = [], RROWS = [], RDROWS = [], CROWS = [], HROWS = [], HRROWS = [], WEEKS = [], DROWS = [], GROWS = [], AROWS = [], OPTIONS = null, OPTIONS_F = null; // OPTIONS: histórico completo (menú y colores); OPTIONS_F: en cascada con los filtros (selects)
+let ALL = [], ROWS = [], PROWS = [], RROWS = [], RDROWS = [], CROWS = [], HROWS = [], HRROWS = [], WEEKS = [], DROWS = [], GROWS = [], AROWS = [], MAPROWS = [], OPTIONS = null, OPTIONS_F = null; // OPTIONS: histórico completo (menú y colores); OPTIONS_F: en cascada con los filtros (selects)
 let MROWS = [];
 const inMes = r => state.mes === "todo" || r.mes === state.mes;
 const applyCanal = () => { const chs = channels(); MROWS = ALL.filter(r => chs.includes(r.canal)); ROWS = MROWS.filter(inMes); };
@@ -163,7 +165,7 @@ function renderMesButtons() {
   if (state.mes !== "todo" && !ms.some(m => m.key === state.mes)) state.mes = "todo";
   fMes.innerHTML = `<button type="button" data-v="todo">Todo</button>` + ms.map(m => `<button type="button" data-v="${m.key}">${cap(m.short)}</button>`).join("");
 }
-fMes.addEventListener("click", e => { const b = e.target.closest("button"); if (!b) return; state.mes = b.dataset.v; save(); applyCanal(); render(); refreshPerfil(false); refreshDiario(false); refreshAds(false); });
+fMes.addEventListener("click", e => { const b = e.target.closest("button"); if (!b) return; state.mes = b.dataset.v; save(); applyCanal(); render(); refreshPerfil(false); refreshDiario(false); refreshAds(false); refreshMapa(false); });
 
 /* ===== Reporte Directo / Indirecto: botón maestro; cambia toda la data (regla pendiente de Alin) y el color del reporte ===== */
 const rtEl = document.querySelector(".rt") || document.body;
@@ -182,7 +184,7 @@ on(byId("fModo"), "click", e => { const b = e.target.closest("button"); if (!b) 
 pintarModo();
 
 /* ===== Canal, desglose, perfil ===== */
-byId("fCanal").addEventListener("click", e => { const b = e.target.closest("button"); if (!b) return; state.canal = b.dataset.v; save(); applyCanal(); render(); refreshPerfil(false); refreshDiario(false); refreshReg(false); refreshAds(false); });
+byId("fCanal").addEventListener("click", e => { const b = e.target.closest("button"); if (!b) return; state.canal = b.dataset.v; save(); applyCanal(); render(); refreshPerfil(false); refreshDiario(false); refreshReg(false); refreshAds(false); refreshMapa(false); });
 const fDim = byId("fDim");
 fDim.innerHTML = DESG_DIMS.map(k => `<button type="button" data-v="${k}">${DIMS[k].label}</button>`).join("");
 fDim.addEventListener("click", e => { const b = e.target.closest("button"); if (!b) return; state.dim = b.dataset.v; save(); paintFilters(); refresh(false); refreshDesgDiario(false); });
@@ -451,6 +453,46 @@ function renderPerfil() {
   byId("perfilHint").textContent = `CPL, costo por cita agendada y costo por primera visita por ${d.label.toLowerCase()}. Los filtros de arriba aplican; la tendencia de abajo se abre por la misma característica.`;
 }
 
+
+/* ===== Mapa por estado de residencia (Alin, 2026-10-27): escala de color sobre México y EE. UU.; la tabla de paciente no se toca ===== */
+const MAPA_MET = { leads: ["Leads", nf.format], citas: ["Citas agendadas", nf.format], pvr: ["Primeras visitas", nf.format], ventas: ["Ventas", nf.format], cpl: ["CPL", money] };
+/* nombre en los datos → nombre del trazo */
+const MAPA_ALIAS = { "Veracruz de Ignacio de la Llave": "Veracruz", "Michoacán de Ocampo": "Michoacán", "Coahuila de Zaragoza": "Coahuila", "Pensilvania": "Pennsylvania", "Nuevo México": "New Mexico", "Carolina del Norte": "North Carolina", "Carolina del Sur": "South Carolina", "Nueva York": "New York", "Nueva Jersey": "New Jersey", "Distrito Federal": "Ciudad de México", "Estado de México": "México", "Queretaro": "Querétaro", "Yucatan": "Yucatán", "Nuevo Leon": "Nuevo León", "Michoacan": "Michoacán", "San Luis Potosi": "San Luis Potosí", "Mexico": "México" };
+const fMapaMet = byId("fMapaMet");
+fMapaMet.innerHTML = Object.keys(MAPA_MET).map(k => `<button type="button" data-v="${k}"${k === "cpl" ? ' class="din"' : ""}>${MAPA_MET[k][0]}</button>`).join("");
+on(fMapaMet, "click", e => { const b = e.target.closest("button"); if (!b) return; state.mapaMet = b.dataset.v; save(); renderMapa(); });
+const mezcla = (a, b, t) => "#" + [0, 1, 2].map(i => Math.round(parseInt(a.slice(1 + i * 2, 3 + i * 2), 16) * (1 - t) + parseInt(b.slice(1 + i * 2, 3 + i * 2), 16) * t).toString(16).padStart(2, "0")).join("");
+function renderMapa() {
+  if (!hay("perfil") || !document.getElementById("cMapa")) return;
+  const met = state.mapaMet, [metN, fmt] = MAPA_MET[met];
+  fMapaMet.querySelectorAll("button").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.v === met)));
+  const porEstado = {}, fuera = [];
+  MAPROWS.forEach(r => { const k = MAPA_ALIAS[r.dim] || r.dim; if (MAPA_PATHS[k]) porEstado[k] = sum((porEstado[k] ? [porEstado[k]] : []).concat([r])); else fuera.push(r); });
+  const val = a => met === "cpl" ? div(a.inversion, a.leads) : a[met];
+  const vals = Object.values(porEstado).map(val).filter(v => isFinite(v) && v > 0);
+  const vmax = Math.max(1, ...vals), vmin = vals.length ? Math.min(...vals) : 0;
+  const esc = v => !isFinite(v) || v <= 0 ? "#eef3fb" : mezcla("#dbe6f8", met === "cpl" ? "#a90707" : "#253f78", Math.sqrt((v - vmin) / Math.max(1e-9, vmax - vmin)));
+  const [x0, y0, x1, y1] = MAPA_BOX;
+  const paths = Object.keys(MAPA_PATHS).map(n => { const a = porEstado[n], v = a ? val(a) : NaN;
+    const tipo = a ? `<div class="tt">${n}</div>` + tipRows([["Leads", nf.format(a.leads)], ["Citas agendadas", nf.format(a.citas)], ["Primeras visitas", nf.format(a.pvr)], ["Ventas", nf.format(a.ventas)], SIN_MONTOS ? null : ["Inversión", money(a.inversion)], SIN_MONTOS ? null : ["CPL", money(div(a.inversion, a.leads))]].filter(Boolean)) : `<div class="tt">${n}</div><div class="row"><span>Sin leads con estos filtros</span></div>`;
+    const tip2 = !a && MAPA_PAIS[n] === "CA" ? `<div class="tt">${n}</div><div class="row"><span>Canadá: el formulario no guarda la provincia; sus leads van en «Otro pais»</span></div>` : tipo;
+    return `<path d="${MAPA_PATHS[n]}" fill="${esc(v)}" data-tip="${encodeURIComponent(tip2)}"><title>${n}</title></path>`; }).join("");
+  byId("cMapa").innerHTML = `<svg class="mapa" viewBox="${x0 - 4} ${y0 - 4} ${x1 - x0 + 8} ${y1 - y0 + 8}" role="img" aria-label="${metN} por estado de residencia">${paths}</svg>`;
+  byId("legMapa").innerHTML = vals.length ? `<span class="mapa-esc">${fmt(vmin)} <i style="background:linear-gradient(90deg,#dbe6f8,${met === "cpl" ? "#a90707" : "#253f78"})"></i> ${fmt(vmax)}</span>` : "";
+  const top = Object.keys(porEstado).map(n => [n, val(porEstado[n])]).filter(x => isFinite(x[1]) && x[1] > 0).sort((a, b) => met === "cpl" ? a[1] - b[1] : b[1] - a[1]).slice(0, 5);
+  const sinMapa = fuera.filter(r => r[met === "cpl" ? "leads" : met] > 0).sort((a, b) => b.leads - a.leads).slice(0, 6).map(r => `${r.dim || "(vacío)"} ${nf.format(r[met === "cpl" ? "leads" : met])}`);
+  byId("mapaNote").textContent = `${metN} por estado de residencia que declaró el lead. ${top.length ? (met === "cpl" ? "Menor CPL: " : "Mayores: ") + top.map(x => `${x[0]} ${fmt(x[1])}`).join(", ") + "." : ""}${sinMapa.length ? ` Sin estado en el mapa (Desconocido, vacío y «Otro pais», que incluye Canadá porque el formulario no guarda la provincia): ${sinMapa.join(", ")}.` : ""}`;
+}
+let mseq = 0;
+async function refreshMapa(force) {
+  if (!hay("perfil") || !document.getElementById("cMapa")) return;
+  const my = ++mseq;
+  try {
+    const { rows } = await runSql("mapa", force);
+    if (my !== mseq || !rows) return;
+    MAPROWS = parseRows(rows); renderMapa();
+  } catch (e) { /* el mapa conserva lo anterior */ }
+}
 /* ===== Funnel ===== */
 const STAGES = [
   { m: "leads", name: "Leads", sub: "Airtable", cost: "CPL" },
@@ -1176,7 +1218,7 @@ async function refresh(force) {
   const my = ++seq;
   btn.disabled = true;
   setStatus("snap", "Consultando", "Consultando BigQuery…");
-  refreshPerfil(force); refreshReg(force); refreshWeekly(force); refreshDiario(force); refreshDesgDiario(force); refreshCostos(force); refreshHora(force); refreshAds(force); loadOptionsF(force);
+  refreshPerfil(force); refreshReg(force); refreshWeekly(force); refreshDiario(force); refreshDesgDiario(force); refreshCostos(force); refreshHora(force); refreshAds(force); loadOptionsF(force); refreshMapa(force);
   try {
     const { rows, at } = await runSql("principal", force);
     if (my !== seq) return;

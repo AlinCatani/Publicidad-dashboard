@@ -55,7 +55,7 @@ const FILTER_DIMS = ["campaign", "medium", "landing", "region", "anuncio", "mens
 const DESG_DIMS = ["campaign", "medium", "landing", "region", "anuncio", "mensaje", "sucursal_real", "etapa", "canal", "mes"];
 const PERFIL_DIMS = ["tipo_de_paciente", "perfil", "score", "octante", "user_persona", "es_leading", "grupo_edad", "internacional", "estado", "motivo", "necesidad"]; // + octantes y estado de residencia (Alin, 2026-10-27) // Nacional / Internacional como barras apiladas (Alin, 2026-10-22)
 const CANALES = ["pagado", "todos", "meta", "google", "otros"];
-export const TIPOS = ["principal", "registros", "reg_diario", "semanal", "perfil", "opciones", "diario", "desg_diario", "costos", "hora", "reg_hora", "publicidad", "opciones_f"] as const;
+export const TIPOS = ["principal", "registros", "reg_diario", "semanal", "perfil", "opciones", "diario", "desg_diario", "costos", "hora", "reg_hora", "publicidad", "opciones_f", "mapa"] as const;
 const VACIO = "__vacio__"; // el select manda esto para «(vacío)»; en SQL es ''
 const MAX_SUCS = 40;
 const MAX_VALS = 200; // valores por filtro (subido de 60 el 2026-10-22: «Marcar todas» las landings con «web» rebasa 60)
@@ -269,6 +269,7 @@ export function construirSql(tipo: Tipo, e: Estado): string | null {
     case "perfil": return perfilSql(e);
     case "opciones": return optionsSql();
     case "opciones_f": return optionsSql(e);
+    case "mapa": return perfilSql({ ...e, pdim: "estado" }); // mapa por estado de residencia (2026-10-27): misma consulta de paciente, abierta por estado
     case "diario": return diarioSql(e);
     case "reg_diario": return regDiarioSql(e);
     case "hora": return horaSql(e);
