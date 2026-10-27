@@ -850,9 +850,21 @@ function renderEvol() {
 /* 20 colores distinguibles (como las gráficas de Looker que usa Alin); el 21.º en adelante se junta en «Otros». */
 const PAL = ["#1a73e8", "#7ab83b", "#e6007e", "#ff7043", "#5e35b1", "#00acc1", "#fbbc04", "#f06292", "#757575", "#8d6e63", "#3949ab", "#00897b", "#c0ca33", "#ab47bc", "#ef5350", "#26c6da", "#ffa726", "#5c6bc0", "#9ccc65", "#78909c"];
 /* Colores fijos para los valores que ya tienen color en Looker (referencia de Alin, 2026-10-15). */
-const PAL_FIJA = { Azul: "#0072f0", Verde: "#7cb342", /* perfil con los colores del Looker (Alin, 2026-10-27) */ LP: "#5e35b1", LS: "#f06292", LeadING: "#e6007e", "No LeadING": "#00acc1",
-  /* Octantes con los colores de la gráfica «Hexantes» del Looker (Alin, 2026-10-27) */
-  "Azul Amarillo": "#ffa800", "Azul Blanco": "#91c3dd", "Azul Intermedio": "#2298ce", "Sin clasificar": "#616161", "Verde Amarillo": "#186602", "Verde Blanco": "#b0eaae", "Verde Intermedio": "#0dcc29" };
+/* Colores fijos por valor, copiados de las gráficas del Looker «Seguimiento diario» (Alin, 2026-10-27: «copia los colores que
+   tenemos en Looker y no dejes que cambien»). Lo que no está aquí toma su color por su lugar en el total histórico (OPTIONS),
+   no por el periodo o los filtros, así que tampoco cambia. */
+const PAL_FIJA = {
+  Azul: "#0072f0", Verde: "#7cb342", LP: "#5e35b1", LS: "#f48fb1", LeadING: "#f10096", "No LeadING": "#00b6cb",
+  Blanco: "#e0e0e0", Intermedio: "#1a73e8", Amarillo: "#ffa800",
+  "Azul Amarillo": "#ffa800", "Azul Blanco": "#91c3dd", "Azul Intermedio": "#2298ce", "Sin clasificar": "#616161", "Verde Amarillo": "#186602", "Verde Blanco": "#b0eaae", "Verde Intermedio": "#0dcc29",
+  "Pareja Heterosexual": "#0072f0", "Pareja Homosexual": "#f10096", Salpingoclasia: "#00b6cb", Soltera: "#f66d00", "Surrogacy Hetero": "#ffa800", "Surrogacy Hombre": "#7cb342", "Surrogacy Hombres": "#5e35b1", "Surrogacy Mujer": "#ec407a", "Surrogacy Mujeres": "#03a9f4",
+  "20–24": "#ff7043", "25–29": "#ffa800", "30–34": "#00b6cb", "35–39": "#7cb342", "40–44": "#5e35b1", "45–49": "#03a9f4", "50–54": "#ec407a", "Sin edad": "#737373",
+  Nacional: "#03a9f4", Internacional: "#ec407a",
+  Desconocido: "#81d4fa", "México": "#7cb342", California: "#f48fb1", "Ciudad de México": "#0072f0", Texas: "#737373", Jalisco: "#f10096", "Veracruz de Ignacio de la Llave": "#5a9bd4", "Nuevo León": "#ec407a", "Otro pais": "#d77fb3", Puebla: "#f66d00", Chihuahua: "#f66d00", Guanajuato: "#03a9f4", Unknown: "#81d4fa", "Baja California": "#ffa800", Florida: "#faa75a", "Coahuila de Zaragoza": "#ce7058", "Michoacán de Ocampo": "#9e67ab", "Querétaro": "#5e35b1", "Quintana Roo": "#7ac36a",
+  "Quiero tener un bebé": "#ec407a", "Quiero evaluar mi fertilidad": "#ff7043",
+  "segunda-opinion": "#0072f0", "investigando-opciones": "#00b6cb", ingenes: "#ffa800", "informacion-educativa": "#f10096", "agendar-cita": "#f66d00",
+  Prelead: "#0072f0", "Lead Completo": "#00b6cb", "Lead Avanzado": "#ffa800", Lead: "#f10096",
+  __otros: "#ff7043" };
 const fDiaMet = byId("fDiaMet");
 fDiaMet.innerHTML = MES_MET_KEYS.map(k => `<button type="button" data-v="${k}">${MES_MET[k]}</button>`).join("");
 fDiaMet.addEventListener("click", e => { const b = e.target.closest("button"); if (!b) return; state.diaMet = b.dataset.v; save(); renderDiario(); });
@@ -878,7 +890,8 @@ function renderApilada(c) {
   const nameLargo = v => v === "__otros" ? `Otros (${otros.length})` : dimName(c.dim, v);
   /* clic en la leyenda: deja solo ese valor; otro clic lo quita */
   const selV = APILADA_SEL.get(c.chart) || "";
-  const color = i => PAL_FIJA[vals[i]] || PAL[i % PAL.length];
+  const globales = (OPTIONS && OPTIONS[c.dim]) || []; // orden histórico de cada valor, estable ante periodo y filtros
+  const color = i => { const v = vals[i]; if (PAL_FIJA[v]) return PAL_FIJA[v]; const g = globales.findIndex(o => o.v === v); return PAL[(g >= 0 ? g : i) % PAL.length]; };
   const map = new Map();
   DROWS.forEach(r => { if (r.dim === "") return; const k = mes ? r.dia.slice(0, 7) + "-01" : sem ? monday(r.dia) : r.dia; const o = map.get(k) || { k, by: {}, tot: 0 }; const kv = key(r.dim); o.by[kv] = (o.by[kv] || 0) + r[met]; o.tot += r[met]; map.set(k, o); });
   const pts = [...map.values()].sort((a, b) => a.k < b.k ? -1 : 1);
