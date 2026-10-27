@@ -422,8 +422,12 @@ const legendHtml = chs => chs.map(c => `<span><i class="dot ${c}"></i>${CH[c]}</
 const tipRows = rows => rows.map(r => `<div class="row"><span>${r[0]}</span><b>${r[1]}</b></div>`).join("");
 function renderFunnel() {
   const chs = channels();
-  const per = {}; chs.forEach(c => per[c] = sum(byCanal(c)));
-  const a = sum(ROWS);
+  /* Funnel PAGADO (Alin, 2026-10-27): todo lo que viene de campaña paid / paid_int / paid_us, de cualquier medio; lo no pagado va en el funnel de OLE abajo. */
+  const esPagado = r => r.origen !== "sin_campana";
+  const pagado = ROWS.filter(esPagado);
+  const per = {}; chs.forEach(c => per[c] = sum(pagado.filter(r => r.canal === c)));
+  const a = sum(pagado);
+  const regPag = c => regSum(RROWS.filter(r => inMes(r) && esPagado(r) && (!c || r.canal === c)));
   const R = 46, SW = 14, C = 2 * Math.PI * R, GAP = 3;
   const ring = (inner, label) => `<svg class="donut" viewBox="0 0 120 120" role="img" aria-label="${label}"><g transform="rotate(-90 60 60)">${inner}</g></svg>`;
   const pendingCard = (n, why) => `<div class="dcard pending"><div class="dname">${n}</div>
@@ -460,11 +464,11 @@ function renderFunnel() {
       prevA = st.m;
     });
   }
-  html += `<div class="fdiv"><span>Conversión</span></div>`;
+  html += `<div class="fdiv"><span>Conversión · pagado</span></div>`;
   let prevM = null;
   /* Registros: primer anillo, por canal */
-  { const total = regTotal(); let offset = 0, segs = `<circle cx="60" cy="60" r="${R}" fill="none" class="ring-track" stroke-width="${SW}"/>`;
-    const parts = chs.map(c => ({ c, v: regBy(c) })).filter(p => p.v > 0);
+  { const total = regPag(null); let offset = 0, segs = `<circle cx="60" cy="60" r="${R}" fill="none" class="ring-track" stroke-width="${SW}"/>`;
+    const parts = chs.map(c => ({ c, v: regPag(c) })).filter(p => p.v > 0);
     parts.forEach(p => { const frac = div(p.v, total) || 0, gap = parts.length > 1 ? GAP : 0, len = Math.max(0, frac * C - gap);
       const tip = `<div class="tt">Registros · ${CH[p.c]}</div>` + tipRows([["Volumen", nf.format(p.v)], ["Pasaron a lead", pct(div(per[p.c].leads, p.v))], ["Costo por registro", money(div(per[p.c].inversion, p.v))]]);
       segs += `<circle cx="60" cy="60" r="${R}" fill="none" class="s-${p.c}" stroke-width="${SW}" stroke-dasharray="${len.toFixed(2)} ${(C - len).toFixed(2)}" stroke-dashoffset="${(-offset - gap / 2).toFixed(2)}" data-tip="${encodeURIComponent(tip)}"/>`; offset += frac * C; });
@@ -483,7 +487,7 @@ function renderFunnel() {
       offset += frac * C;
     });
     const split = chs.length > 1 ? `<div class="dsplit">${chs.filter(c => per[c][st.m] > 0).map(c => `<span><i class="dot ${c}"></i>${pct(div(per[c][st.m], total))}</span>`).join("")}</div>` : "";
-    const regT = regTotal();
+    const regT = regPag(null);
     const conv = prevM ? `<div class="dconv">${pct(div(total, a[prevM]))} ${st.conv}</div>` : regT ? `<div class="dconv">${pct(div(total, regT))} de registros</div>` : `<div class="dconv muted">Inicio de la conversión</div>`;
     const sc = Math.min(1, Math.max(0.42, 1 + 0.35 * Math.log10(div(total, regT || a.leads) || 0.001)));
     html += `<div class="dcard"><div class="dname">${st.name}<small>${st.sub}</small></div>
@@ -507,7 +511,7 @@ function renderFunnel() {
     prevO = v;
   });
   html += `</div><div class="overall"><span>Registro → lead <b>${pct(div(o.leads, oReg))}</b></span><span>Lead → cita agendada <b>${pct(div(o.citas, o.leads))}</b></span><span>TAL% <b>${pct(div(o.pvr, o.leads))}</b></span><span>PVR → venta <b>${pct(div(o.ventas, o.pvr))}</b></span></div>
-  </div><div class="overall">${regTotal() ? `<span>Registro → PVR <b>${pct(div(a.pvr, regTotal()))}</b></span>` : ""}<span>Lead → cita agendada <b>${pct(div(a.citas, a.leads))}</b></span><span>Cita agendada → PVR <b>${pct(div(a.pvr, a.citas))}</b></span><span>TAL% <b>${pct(div(a.pvr, a.leads))}</b></span><span>PVR → venta <b>${pct(div(a.ventas, a.pvr))}</b></span><span class="din">Inversión asignada <b>${money(a.inversion)}</b></span><span class="din">Importe vendido <b>${money(a.importe)}</b></span></div>`;
+  </div><div class="overall"><span class="tenue">Pagado: campañas paid, paid_int y paid_us, de todos los medios.</span>${regPag(null) ? `<span>Registro → PVR <b>${pct(div(a.pvr, regPag(null)))}</b></span>` : ""}<span>Lead → cita agendada <b>${pct(div(a.citas, a.leads))}</b></span><span>Cita agendada → PVR <b>${pct(div(a.pvr, a.citas))}</b></span><span>TAL% <b>${pct(div(a.pvr, a.leads))}</b></span><span>PVR → venta <b>${pct(div(a.ventas, a.pvr))}</b></span><span class="din">Inversión asignada <b>${money(a.inversion)}</b></span><span class="din">Importe vendido <b>${money(a.importe)}</b></span></div>`;
   byId("funnel").innerHTML = html;
   byId("legFunnel").innerHTML = legendHtml(chs);
 }
