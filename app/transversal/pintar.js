@@ -2,7 +2,7 @@
 // Diferencias con el artefacto: (1) el SQL no está aquí, lo arma el servidor en consultas.ts a partir
 // del estado (filtros) que se le manda; (2) los datos llegan por /api/transversal, no por el conector MCP.
 // `montar(raiz)` pinta dentro de `raiz` (que ya trae el marcado) y devuelve la función que limpia.
-import { MAPA_PATHS, MAPA_BOX, MAPA_PAIS } from "./mapa.js";
+import { MAPA_PATHS, MAPA_BOX, MAPA_PAIS, MAPA_ETIQ } from "./mapa.js";
 export function montar(raiz, opciones) {
 let vivo = true, resizeT = 0;
 const escuchas = [];
@@ -482,7 +482,10 @@ function renderMapa() {
     const tipo = a ? `<div class="tt">${n}</div>` + tipRows([["Leads", nf.format(a.leads)], ["Citas agendadas", nf.format(a.citas)], ["Primeras visitas", nf.format(a.pvr)], ["Ventas", nf.format(a.ventas)], SIN_MONTOS ? null : ["Inversión", money(a.inversion)], SIN_MONTOS ? null : ["CPL", money(div(a.inversion, a.leads))]].filter(Boolean)) : `<div class="tt">${n}</div><div class="row"><span>Sin leads con estos filtros</span></div>`;
     const tip2 = !a && MAPA_PAIS[n] === "CA" ? `<div class="tt">${n}</div><div class="row"><span>Canadá: el formulario no guarda la provincia; sus leads van en «Otro pais»</span></div>` : tipo;
     return `<path d="${MAPA_PATHS[n]}" fill="${esc(v)}" data-tip="${encodeURIComponent(tip2)}"><title>${n}</title></path>`; }).join("");
-  byId("cMapa").innerHTML = `<svg class="mapa" viewBox="${x0 - 4} ${y0 - 4} ${x1 - x0 + 8} ${y1 - y0 + 8}" role="img" aria-label="${metN} por estado de residencia">${paths}</svg>`;
+  /* Abreviaturas sobre cada estado (Alin, 2026-10-27); los muy chicos (DC, RI, Tlaxcala…) solo con tooltip, para que no se encimen. */
+  const etiq = Object.keys(MAPA_ETIQ).filter(n => MAPA_ETIQ[n][3] >= 180 && MAPA_ETIQ[n][2] >= y0).map(n => { const [ab, cx, cy, area] = MAPA_ETIQ[n]; const v = porEstado[n] ? val(porEstado[n]) : NaN; const osc = isFinite(v) && v > 0 && Math.sqrt((v - vmin) / Math.max(1e-9, vmax - vmin)) > 0.55;
+    return `<text x="${cx}" y="${cy}" text-anchor="middle" dominant-baseline="middle" class="mapa-et${osc ? " clara" : ""}${area < 450 ? " chica" : ""}">${ab}</text>`; }).join("");
+  byId("cMapa").innerHTML = `<svg class="mapa" viewBox="${x0 - 4} ${y0 - 4} ${x1 - x0 + 8} ${y1 - y0 + 8}" role="img" aria-label="${metN} por estado de residencia">${paths}${etiq}</svg>`;
   byId("legMapa").innerHTML = vals.length ? `<span class="mapa-esc">${fmt(vmin)} <i style="background:linear-gradient(90deg,#dbe6f8,${met === "cpl" ? "#a90707" : "#253f78"})"></i> ${fmt(vmax)}</span>` : "";
   const top = Object.keys(porEstado).map(n => [n, val(porEstado[n])]).filter(x => isFinite(x[1]) && x[1] > 0).sort((a, b) => met === "cpl" ? a[1] - b[1] : b[1] - a[1]).slice(0, 5);
   const sinMapa = fuera.filter(r => r[met === "cpl" ? "leads" : met] > 0).sort((a, b) => b.leads - a.leads).slice(0, 6).map(r => `${r.dim || "(vacío)"} ${nf.format(r[met === "cpl" ? "leads" : met])}`);
