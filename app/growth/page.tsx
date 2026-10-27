@@ -15,7 +15,7 @@ export default async function Admin() {
   const acceso = await leerAcceso(true);
   const usuarios = [...acceso.usuarios].sort((a, b) => a.email.localeCompare(b.email));
   const nombreTablero = (id: string) => TABLEROS.find((t) => t.ruta === `/${id}`)?.nombre ?? id;
-  const enEdge = !!process.env.EDGE_CONFIG;
+  const enEdge = !!(process.env.GLOBAL_CONFIG || process.env.EDGE_CONFIG);
 
   return (
     <><BarraSitio permiso={yo} actual="/growth" />

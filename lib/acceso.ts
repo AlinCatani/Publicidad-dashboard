@@ -10,7 +10,7 @@ import { TABLEROS } from "@/lib/tableros";
 // BigQuery) bajo la clave `acceso`. En local, sin Edge Config, en un archivo fuera del repo (ACCESO_ARCHIVO,
 // por omisión ../secretos/acceso.json). Nunca hay correos de personas en el repo.
 //
-// Variables: EDGE_CONFIG (cadena de conexión de lectura, la pone Vercel al conectar el Edge Config al proyecto),
+// Variables: GLOBAL_CONFIG (o EDGE_CONFIG; cadena de conexión de lectura, la pone Vercel al conectar el Global Config al proyecto),
 // EDGE_CONFIG_ID y VERCEL_API_TOKEN (para escribir desde /admin), VERCEL_TEAM_ID (equipo ingenes-ads),
 // ADMINS (correos separados por coma que siempre son administradores, aunque la lista esté vacía o rota).
 
@@ -32,7 +32,7 @@ const admins = () => (process.env.ADMINS ?? "").split(",").map(normaliza).filter
 /* ---------- almacén ---------- */
 
 function edgeConfig() {
-  const cadena = process.env.EDGE_CONFIG;
+  const cadena = process.env.GLOBAL_CONFIG || process.env.EDGE_CONFIG; // Vercel lo renombró «Global Config» (2026-10); la API sigue siendo /v1/edge-config
   if (!cadena) return null;
   try {
     const u = new URL(cadena);
