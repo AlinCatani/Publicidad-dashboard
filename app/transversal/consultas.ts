@@ -109,7 +109,7 @@ const sqlStr = (s: string) => "'" + (s === VACIO ? "" : s).replace(/\\/g, "\\\\"
 const sucsIn = (e: Estado, col: string) => (e.sucs.length ? `${col} IN (${e.sucs.map(sqlStr).join(",")})` : null);
 const filtroIn = (k: string, vals: string[]) => `${DIMS[k].sql} IN (${vals.map(sqlStr).join(",")})`;
 const channels = (e: Estado) => (e.canal === "pagado" ? ["meta", "google"] : e.canal === "todos" ? ["meta", "google", "otros"] : [e.canal]);
-const AGG = `SUM(leads) leads, SUM(citas) citas, SUM(pvr) pvr, SUM(sucursal_cambio) cambio, ROUND(SUM(gasto_mxn_unif)) inversion`;
+const AGG = `SUM(leads) leads, SUM(citas) citas, SUM(pvr) pvr, SUM(sucursal_cambio) cambio, ROUND(SUM(gasto_mxn_unif)) inversion, SUM(ventas) ventas, ROUND(SUM(importe_venta)) importe`; // ventas = BEC de BIT (2026-10-27)
 
 /* `col` es la fecha que acota el periodo y el mes: `fecha` (creación del lead) en el reporte directo; en el indirecto,
    cada métrica usa la suya (fecha_cita = BIC.FechaCitaProg, fecha_visita = BIP.FechaPrimeraVisita). */
@@ -124,12 +124,12 @@ function whereSql(e: Estado, withCanal: boolean, col = "fecha") {
 /* Reporte INDIRECTO (Alin, 2026-10-09): leads por fecha de creación; citas agendadas por la fecha programada en BIC y
    primeras visitas por la fecha de la visita en BIP, es decir, todo lo que ocurre en el periodo o mes elegido, aunque
    el lead sea anterior. Se arma como unión de tres partes, una por métrica, cada una acotada por su propia fecha. */
-const PARTES: [string, string][] = [["fecha", "leads, 0 citas, 0 pvr, 0 cambio, gasto_mxn_unif gasto"], ["fecha_cita", "0 leads, citas, 0 pvr, 0 cambio, 0 gasto"], ["fecha_visita", "0 leads, 0 pvr_, pvr, sucursal_cambio cambio, 0 gasto"]];
-const AGG_IND = `SUM(leads) leads, SUM(citas) citas, SUM(pvr) pvr, SUM(cambio) cambio, ROUND(SUM(gasto)) inversion`;
+const PARTES: [string, string][] = [["fecha", "leads, 0 citas, 0 pvr, 0 cambio, gasto_mxn_unif gasto, 0 ventas, 0 importe"], ["fecha_cita", "0 leads, citas, 0 pvr, 0 cambio, 0 gasto, 0 ventas, 0 importe"], ["fecha_visita", "0 leads, 0 pvr_, pvr, sucursal_cambio cambio, 0 gasto, 0 ventas, 0 importe"], ["fecha_venta", "0 leads, 0 citas, 0 pvr, 0 cambio, 0 gasto, ventas, importe_venta importe"]];
+const AGG_IND = `SUM(leads) leads, SUM(citas) citas, SUM(pvr) pvr, SUM(cambio) cambio, ROUND(SUM(gasto)) inversion, SUM(ventas) ventas, ROUND(SUM(importe)) importe`;
 function indirectoSql(e: Estado, dims: (col: string) => string, withCanal: boolean, group: string) {
   const partes = PARTES.map(([col, sel]) => `SELECT ${dims(col)}${sel.replace("0 pvr_, pvr", "0 citas, pvr")}
   FROM ${VIEW}
-  WHERE ${whereSql(e, withCanal, col)}${col === "fecha_cita" ? " AND citas > 0" : col === "fecha_visita" ? " AND pvr > 0" : ""}`);
+  WHERE ${whereSql(e, withCanal, col)}${col === "fecha_cita" ? " AND citas > 0" : col === "fecha_visita" ? " AND pvr > 0" : col === "fecha_venta" ? " AND ventas > 0" : ""}`);
   return `SELECT ${group}, ${AGG_IND}\nFROM (\n${partes.join("\n  UNION ALL\n")}\n)\nGROUP BY ${group}`;
 }
 const esInd = (e: Estado) => e.modo === "indirecto";
@@ -156,7 +156,7 @@ function regWhereSql(e: Estado) {
 }
 /* Por hora del día (Alin, 2026-10-22): leads, citas y PVR por la hora de creación del lead (creada es ISO en UTC → hora de
    México); registros por su columna Hora. Siempre por hora de creación, también en Indirecto (la hora de una cita no se mide). */
-const horaSql = (e: Estado) => `SELECT EXTRACT(HOUR FROM DATETIME(SAFE_CAST(creada AS TIMESTAMP), 'America/Mexico_City')) hora, SUM(leads) leads, SUM(citas) citas, SUM(pvr) pvr
+const horaSql = (e: Estado) => `SELECT EXTRACT(HOUR FROM DATETIME(SAFE_CAST(creada AS TIMESTAMP), 'America/Mexico_City')) hora, SUM(leads) leads, SUM(citas) citas, SUM(pvr) pvr, SUM(ventas) ventas
 FROM ${VIEW}
 WHERE ${whereSql(e, true)} AND SAFE_CAST(creada AS TIMESTAMP) IS NOT NULL
 GROUP BY 1 ORDER BY 1`;
@@ -204,14 +204,14 @@ GROUP BY 1 ORDER BY 1`;
 /* Trae también la característica del paciente elegida (pdim) para que la gráfica siga la fila marcada en la tabla (Alin, 2026-10-15). */
 const diarioSql = (e: Estado) => esInd(e)
   ? indirectoSql(e, (col) => `CAST(${col} AS STRING) dia, ${DIMS[e.pdim].sql} dim, `, true, "dia, dim") + " ORDER BY 1"
-  : `SELECT CAST(fecha AS STRING) dia, ${DIMS[e.pdim].sql} dim, SUM(leads) leads, SUM(citas) citas, SUM(pvr) pvr
+  : `SELECT CAST(fecha AS STRING) dia, ${DIMS[e.pdim].sql} dim, SUM(leads) leads, SUM(citas) citas, SUM(pvr) pvr, SUM(ventas) ventas
 FROM ${VIEW}
 WHERE ${whereSql(e, true)}
 GROUP BY 1,2 ORDER BY 1`;
 /* Lo mismo, abierto por la dimensión del desglose (campaña, medio, landing…): alimenta la gráfica apilada de esa sección (2026-10-15). */
 const desgDiarioSql = (e: Estado) => esInd(e)
   ? indirectoSql(e, (col) => `CAST(${col} AS STRING) dia, ${DIMS[e.dim].sql} dim, `, true, "dia, dim") + " ORDER BY 1"
-  : `SELECT CAST(fecha AS STRING) dia, ${DIMS[e.dim].sql} dim, SUM(leads) leads, SUM(citas) citas, SUM(pvr) pvr
+  : `SELECT CAST(fecha AS STRING) dia, ${DIMS[e.dim].sql} dim, SUM(leads) leads, SUM(citas) citas, SUM(pvr) pvr, SUM(ventas) ventas
 FROM ${VIEW}
 WHERE ${whereSql(e, true)}
 GROUP BY 1,2 ORDER BY 1`;

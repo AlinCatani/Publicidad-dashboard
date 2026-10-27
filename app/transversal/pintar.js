@@ -69,12 +69,13 @@ const fmtDate = s => new Date(s + "T12:00:00").toLocaleDateString("es-MX", { day
 const today = iso(new Date());
 
 /* ===== Estado ===== */
-const MES_MET_KEYS = ["leads", "citas", "pvr"];
+const MES_MET_KEYS = ["leads", "citas", "pvr", "ventas"];
 const MAX_VALS_F = 200; // valores por filtro; igual que MAX_VALS en consultas.ts
 /* Nivel «resultados» (acceso por usuario, 2026-10-27): el sitio pone data-nivel en la raíz y la API ya no manda dinero.
    Aquí solo se esconde lo que lo mostraría (tarjetas, columnas y secciones de montos) para que no queden huecos. */
-const SIN_MONTOS = !!(raiz && raiz.dataset && raiz.dataset.nivel === "resultados");
-if (SIN_MONTOS && raiz.classList) raiz.classList.add("sin-montos");
+const raizNivel = (typeof raiz !== "undefined" && raiz) || document.querySelector(".rt"); // en el artefacto no hay `raiz` (se quita el envoltorio montar)
+const SIN_MONTOS = !!(raizNivel && raizNivel.dataset && raizNivel.dataset.nivel === "resultados");
+if (SIN_MONTOS && raizNivel.classList) raizNivel.classList.add("sin-montos");
 const state = { desde: MIN_DATE, hasta: today, mes: "todo", canal: "todos", modo: "directo", terr: "", diaMet: "leads", gran: "dia", evolGran: "dia", desgMet: "leads", desgGran: "dia", regMet: "registros", regGran: "dia", costoMet: "leads", costoVista: "pagado", horaMet: "registros", dim: "campaign", pdim: "tipo_de_paciente", sucs: [], f: {} }; // arranca en ALL y con todos los medios (Alin, 2026-10-15): «no dejes fuera nada»
 /* El filtro «Sucursal» de la barra y el menú lateral son la misma selección: state.f.sucursal_real es un alias de state.sucs
    (no enumerable, así no se guarda dos veces ni viaja al servidor como filtro aparte). */
@@ -88,11 +89,11 @@ try {
   if (s.evolGran === "semana") state.evolGran = "semana";
   if (MES_MET_KEYS.includes(s.desgMet)) state.desgMet = s.desgMet;
   if (["dia", "semana", "mes"].includes(s.desgGran)) state.desgGran = s.desgGran;
-  if (["registros", "leads", "citas", "pvr"].includes(s.regMet)) state.regMet = s.regMet;
+  if (["registros", "leads", "citas", "pvr", "ventas"].includes(s.regMet)) state.regMet = s.regMet;
   if (["dia", "semana", "mes"].includes(s.regGran)) state.regGran = s.regGran;
-  if (["leads", "citas", "pvr"].includes(s.costoMet)) state.costoMet = s.costoMet;
+  if (["leads", "citas", "pvr", "ventas"].includes(s.costoMet)) state.costoMet = s.costoMet;
   if (s.costoVista === "ole") state.costoVista = "ole";
-  if (["registros", "leads", "citas", "pvr"].includes(s.horaMet)) state.horaMet = s.horaMet;
+  if (["registros", "leads", "citas", "pvr", "ventas"].includes(s.horaMet)) state.horaMet = s.horaMet;
   if (typeof s.mesMet === "string") state.mesMet = s.mesMet;
   if (/^\d{4}-\d\d-\d\d$/.test(s.desde || "")) state.desde = s.desde < MIN_DATE ? MIN_DATE : s.desde;
   if (/^\d{4}-\d\d-\d\d$/.test(s.hasta || "")) state.hasta = s.hasta;
@@ -123,15 +124,16 @@ const applyCanal = () => { const chs = channels(); MROWS = ALL.filter(r => chs.i
 const prevMonthKey = () => { if (state.mes === "todo") return null; const d = new Date(state.mes + "-01T12:00:00"); d.setMonth(d.getMonth() - 1); return iso(d).slice(0, 7); };
 /* OLE = leads orgánicos: sin campaña pagada (campaign no empieza con "paid"), de todos los medios. */
 const ole = () => sum(ALL.filter(r => r.origen === "sin_campana" && inMes(r)));
-const METRICS = ["leads", "citas", "pvr", "cambio", "inversion"];
-const blank = () => ({ leads: 0, citas: 0, pvr: 0, cambio: 0, inversion: 0 });
+/* ventas = BEC de BIT cruzadas por correo con el lead (2026-10-27); importe en MXN (USD × 18). */
+const METRICS = ["leads", "citas", "pvr", "cambio", "inversion", "ventas", "importe"];
+const blank = () => ({ leads: 0, citas: 0, pvr: 0, cambio: 0, inversion: 0, ventas: 0, importe: 0 });
 function sum(rows) { const o = blank(); rows.forEach(r => METRICS.forEach(m => o[m] += r[m])); return o; }
 const byCanal = c => ROWS.filter(r => r.canal === c);
 const regSum = rows => rows.reduce((t, r) => t + r.registros, 0);
 const regBy = (canal, mes, origen) => regSum(RROWS.filter(r => (!canal || r.canal === canal) && (mes ? r.mes === mes : inMes(r)) && (!origen || r.origen === origen)));
 const regTotal = () => regBy(null, null, null);
 const parseRows = rows => rows.map(r => ({ mes: r.mes == null ? "" : String(r.mes), canal: r.canal == null ? "" : String(r.canal), origen: r.origen == null ? "" : String(r.origen), dim: r.dim == null ? "" : String(r.dim),
-  leads: +r.leads || 0, citas: +r.citas || 0, pvr: +r.pvr || 0, cambio: +r.cambio || 0, inversion: +r.inversion || 0 }));
+  leads: +r.leads || 0, citas: +r.citas || 0, pvr: +r.pvr || 0, cambio: +r.cambio || 0, inversion: +r.inversion || 0, ventas: +r.ventas || 0, importe: +r.importe || 0 }));
 
 /* ===== Periodo ===== */
 const periodBtn = byId("periodBtn"), periodPop = byId("periodPop");
@@ -335,8 +337,11 @@ function renderKpis() {
     { k: "Primeras visitas", v: a.pvr, f: nf.format, prev: has && p.pvr, sub: `${pct(div(a.pvr, a.citas))} de citas agendadas` },
     { k: "Costo por PVR", v: div(a.inversion, a.pvr), f: money, prev: has && div(p.inversion, p.pvr), cost: true },
     { k: "TAL% · lead → PVR", v: div(a.pvr, a.leads), f: pct, prev: has && div(p.pvr, p.leads) },
+    { k: "Ventas (BEC)", v: a.ventas, f: nf.format, prev: has && p.ventas, sub: `${pct(div(a.ventas, a.pvr))} de primeras visitas` },
+    { k: "Costo por venta", v: div(a.inversion, a.ventas), f: money, prev: has && div(p.inversion, p.ventas), cost: true },
+    { k: "Importe vendido", v: a.importe, f: money, prev: has && p.importe, din: true },
     { k: "OLE", v: ole().leads, f: nf.format, sub: `Leads NO pagados · ${nf.format(ole().citas)} citas agendadas · ${nf.format(ole().pvr)} PVR`, cls: "ole" }
-  ].filter(it => !(SIN_MONTOS && it.cost)); // nivel «resultados»: sin tarjetas de costo
+  ].filter(it => !(SIN_MONTOS && (it.cost || it.din))); // nivel «resultados»: sin tarjetas de dinero
   const prevName = pk ? new Date(pk + "-01T12:00:00").toLocaleDateString("es-MX", { month: "short" }).replace(".", "") : "";
   byId("kpis").innerHTML = items.map(it => {
     let d = it.sub || "", cls = "";
@@ -366,9 +371,10 @@ function resultTable(rows, label, nameFn) {
       <td><span class="share">${pct(div(a.leads, tot.leads))}<span class="bar"><i style="width:${(div(a.leads, tot.leads) * 100 || 0).toFixed(1)}%"></i></span></span></td>
       <td>${nf.format(a.citas)}</td><td>${pct(div(a.citas, a.leads))}</td>
       <td>${nf.format(a.pvr)}</td><td>${pct(div(a.pvr, a.leads))}</td>
-      <td class="din">${money(a.inversion)}</td><td class="hl din">${money(div(a.inversion, a.leads))}</td><td class="hl din">${money(div(a.inversion, a.citas))}</td><td class="hl din">${money(div(a.inversion, a.pvr))}</td>
+      <td>${nf.format(a.ventas)}</td><td>${pct(div(a.ventas, a.pvr))}</td>
+      <td class="din">${money(a.inversion)}</td><td class="hl din">${money(div(a.inversion, a.leads))}</td><td class="hl din">${money(div(a.inversion, a.citas))}</td><td class="hl din">${money(div(a.inversion, a.pvr))}</td><td class="hl din">${money(div(a.inversion, a.ventas))}</td><td class="din">${money(a.importe)}</td>
     </tr>`;
-  return { html: `<thead><tr><th>${label}</th><th>Leads</th><th>% leads</th><th>Citas agendadas</th><th>Lead → cita agendada</th><th>PVR</th><th>TAL%</th><th class="din">Inversión</th><th class="din">CPL</th><th class="din">Costo/cita agendada</th><th class="din">Costo/PVR</th></tr></thead>
+  return { html: `<thead><tr><th>${label}</th><th>Leads</th><th>% leads</th><th>Citas agendadas</th><th>Lead → cita agendada</th><th>PVR</th><th>TAL%</th><th>Ventas</th><th>PVR → venta</th><th class="din">Inversión</th><th class="din">CPL</th><th class="din">Costo/cita agendada</th><th class="din">Costo/PVR</th><th class="din">Costo/venta</th><th class="din">Importe vendido</th></tr></thead>
      <tbody>${shown.map(x => row(x.raw ? x.k : nameFn(x.k), x.a)).join("")}${row("Total", tot, "total")}</tbody>`, n: list.length, rest: rest.length };
 }
 const monthName = key => { const m = monthsSel().find(x => x.key === key); return m ? cap(m.long) : key; };
@@ -391,7 +397,8 @@ function renderPerfil() {
 const STAGES = [
   { m: "leads", name: "Leads", sub: "Airtable", cost: "CPL" },
   { m: "citas", name: "Citas agendadas", sub: "en BIC", conv: "de leads", cost: "Costo por cita agendada" },
-  { m: "pvr", name: "Primeras visitas", sub: "realizadas", conv: "de citas agendadas", cost: "Costo por PVR" }
+  { m: "pvr", name: "Primeras visitas", sub: "realizadas", conv: "de citas agendadas", cost: "Costo por PVR" },
+  { m: "ventas", name: "Ventas", sub: "BEC en BIT", conv: "de primeras visitas", cost: "Costo por venta" }
 ];
 const legendHtml = chs => chs.map(c => `<span><i class="dot ${c}"></i>${CH[c]}</span>`).join("");
 const tipRows = rows => rows.map(r => `<div class="row"><span>${r[0]}</span><b>${r[1]}</b></div>`).join("");
@@ -470,8 +477,8 @@ function renderFunnel() {
   const o = ole(), oleMax = Math.max(1, o.leads);
   const oleBar = (label, v, conv, cls) => `<div class="obar"><span class="ol">${label}</span><div class="otrack"><i class="${cls}" style="width:${(100 * v / oleMax).toFixed(1)}%"></i></div><b>${nf.format(v)}</b><small>${conv}</small></div>`;
   html += `</div><div class="ole-funnel"><div class="fgroup-title">OLE · leads NO pagados (de todos los medios)</div>
-    ${oleBar("Leads", o.leads, "sin campaña pagada", "f-otros")}${oleBar("Citas agendadas", o.citas, `${pct(div(o.citas, o.leads))} de leads`, "f-google")}${oleBar("Primeras visitas", o.pvr, `${pct(div(o.pvr, o.citas))} de citas · TAL% ${pct(div(o.pvr, o.leads))}`, "f-meta")}
-  </div><div class="overall">${regTotal() ? `<span>Registro → PVR <b>${pct(div(a.pvr, regTotal()))}</b></span>` : ""}<span>Lead → cita agendada <b>${pct(div(a.citas, a.leads))}</b></span><span>Cita agendada → PVR <b>${pct(div(a.pvr, a.citas))}</b></span><span>TAL% <b>${pct(div(a.pvr, a.leads))}</b></span><span>Inversión asignada <b>${money(a.inversion)}</b></span></div>`;
+    ${oleBar("Leads", o.leads, "sin campaña pagada", "f-otros")}${oleBar("Citas agendadas", o.citas, `${pct(div(o.citas, o.leads))} de leads`, "f-google")}${oleBar("Primeras visitas", o.pvr, `${pct(div(o.pvr, o.citas))} de citas · TAL% ${pct(div(o.pvr, o.leads))}`, "f-meta")}${oleBar("Ventas", o.ventas, `${pct(div(o.ventas, o.pvr))} de primeras visitas`, "f-a")}
+  </div><div class="overall">${regTotal() ? `<span>Registro → PVR <b>${pct(div(a.pvr, regTotal()))}</b></span>` : ""}<span>Lead → cita agendada <b>${pct(div(a.citas, a.leads))}</b></span><span>Cita agendada → PVR <b>${pct(div(a.pvr, a.citas))}</b></span><span>TAL% <b>${pct(div(a.pvr, a.leads))}</b></span><span>PVR → venta <b>${pct(div(a.ventas, a.pvr))}</b></span><span class="din">Inversión asignada <b>${money(a.inversion)}</b></span><span class="din">Importe vendido <b>${money(a.importe)}</b></span></div>`;
   byId("funnel").innerHTML = html;
   byId("legFunnel").innerHTML = legendHtml(chs);
 }
@@ -484,10 +491,10 @@ function renderOrigen() {
       <td><span class="oname">${o.name}<small>${o.sub}</small></span></td>
       <td>${nf.format(reg)}</td><td>${nf.format(a.leads)}</td>
       <td><span class="share">${pct(share)}<span class="bar"><i style="width:${(share * 100 || 0).toFixed(1)}%"></i></span></span></td>
-      <td>${nf.format(a.citas)}</td><td>${nf.format(a.pvr)}</td><td>${pct(div(a.pvr, a.leads))}</td>
-      <td class="din">${paid ? money(a.inversion) : "—"}</td><td class="din">${paid ? money(div(a.inversion, a.leads)) : "—"}</td><td class="din">${paid ? money(div(a.inversion, a.pvr)) : "—"}</td></tr>`; }).join("");
-  byId("tOrigen").innerHTML = `<thead><tr><th>Origen</th><th>Registros</th><th>Leads</th><th>% de leads</th><th>Citas agendadas</th><th>PVRs</th><th>TAL%</th><th class="din">Inversión</th><th class="din">CPL</th><th class="din">Costo/PVR</th></tr></thead>
-    <tbody>${body}<tr class="total"><td>Total</td><td>${nf.format(regT)}</td><td>${nf.format(tot.leads)}</td><td>100%</td><td>${nf.format(tot.citas)}</td><td>${nf.format(tot.pvr)}</td><td>${pct(div(tot.pvr, tot.leads))}</td><td class="din">${money(tot.inversion)}</td><td class="din">${money(div(tot.inversion, tot.leads))}</td><td class="din">${money(div(tot.inversion, tot.pvr))}</td></tr></tbody>`;
+      <td>${nf.format(a.citas)}</td><td>${nf.format(a.pvr)}</td><td>${pct(div(a.pvr, a.leads))}</td><td>${nf.format(a.ventas)}</td>
+      <td class="din">${paid ? money(a.inversion) : "—"}</td><td class="din">${paid ? money(div(a.inversion, a.leads)) : "—"}</td><td class="din">${paid ? money(div(a.inversion, a.pvr)) : "—"}</td><td class="din">${paid ? money(div(a.inversion, a.ventas)) : "—"}</td></tr>`; }).join("");
+  byId("tOrigen").innerHTML = `<thead><tr><th>Origen</th><th>Registros</th><th>Leads</th><th>% de leads</th><th>Citas agendadas</th><th>PVRs</th><th>TAL%</th><th>Ventas</th><th class="din">Inversión</th><th class="din">CPL</th><th class="din">Costo/PVR</th><th class="din">Costo/venta</th></tr></thead>
+    <tbody>${body}<tr class="total"><td>Total</td><td>${nf.format(regT)}</td><td>${nf.format(tot.leads)}</td><td>100%</td><td>${nf.format(tot.citas)}</td><td>${nf.format(tot.pvr)}</td><td>${pct(div(tot.pvr, tot.leads))}</td><td>${nf.format(tot.ventas)}</td><td class="din">${money(tot.inversion)}</td><td class="din">${money(div(tot.inversion, tot.leads))}</td><td class="din">${money(div(tot.inversion, tot.pvr))}</td><td class="din">${money(div(tot.inversion, tot.ventas))}</td></tr></tbody>`;
   const suc = state.sucs.length ? sucsLabel() : "", nac = sum(ROWS.filter(r => r.origen === "nacional")), loc = sum(ROWS.filter(r => r.origen === "local"));
   byId("origenHint").textContent = suc ? `Leads de ${suc.toLowerCase()}: las campañas nacionales aportan ${pct(div(nac.leads, tot.leads))} y la campaña local ${pct(div(loc.leads, tot.leads))}.` : "Elige una sucursal en las pestañas para separar su campaña local de las nacionales.";
   byId("origenNote").textContent = suc && localRegions().length ? `«Campaña local» agrupa todo lo etiquetado con región ${localRegions().slice(0, 2).join(" o ")} en campañas pagadas. Si una campaña cambió de segmentación sin cambiar sus UTM, aquí se ve junta.` : "";
@@ -561,7 +568,7 @@ function renderWeekly() {
 }
 
 /* ===== Registros por mes (apilado) ===== */
-const REG_MET = { registros: ["Registros", "#9aa7bd"], leads: ["Leads", "#253f78"], citas: ["Citas agendadas", "#c8a040"], pvr: ["Primeras visitas", "#4a3aa7"] };
+const REG_MET = { registros: ["Registros", "#9aa7bd"], leads: ["Leads", "#253f78"], citas: ["Citas agendadas", "#c8a040"], pvr: ["Primeras visitas", "#4a3aa7"], ventas: ["Ventas", "#2e7d32"] };
 const fRegMet = byId("fRegMet"), fRegGran = byId("fRegGran");
 fRegMet.innerHTML = Object.keys(REG_MET).map(k => `<button type="button" data-v="${k}">${REG_MET[k][0]}</button>`).join("");
 fRegMet.addEventListener("click", e => { const b = e.target.closest("button"); if (!b) return; state.regMet = b.dataset.v; save(); renderReg(); });
@@ -636,7 +643,7 @@ async function refreshHora(force) {
   try {
     const [a, b] = await Promise.all([runSql("hora", force), runSql("reg_hora", force)]);
     if (my !== hseq) return;
-    if (a.rows) HROWS = a.rows.map(r => ({ hora: +r.hora, leads: +r.leads || 0, citas: +r.citas || 0, pvr: +r.pvr || 0 }));
+    if (a.rows) HROWS = a.rows.map(r => ({ hora: +r.hora, leads: +r.leads || 0, citas: +r.citas || 0, pvr: +r.pvr || 0, ventas: +r.ventas || 0 }));
     if (b.rows) HRROWS = b.rows.map(r => ({ hora: +r.hora, registros: +r.registros || 0 }));
     renderHora();
   } catch (e) { /* la sección conserva lo anterior */ }
@@ -654,7 +661,7 @@ function gruposCosto() { // medios de la vista elegida (pagado u OLE), ordenados
 }
 const fCostoVista = byId("fCostoVista");
 fCostoVista.addEventListener("click", e => { const b = e.target.closest("button"); if (!b) return; state.costoVista = b.dataset.v; save(); renderCostos(); });
-const COSTO_MET = { leads: ["CPL", "Costo por lead"], citas: ["Costo por cita agendada", "Costo por cita agendada"], pvr: ["Costo por PVR", "Costo por primera visita"] };
+const COSTO_MET = { leads: ["CPL", "Costo por lead"], citas: ["Costo por cita agendada", "Costo por cita agendada"], pvr: ["Costo por PVR", "Costo por primera visita"], ventas: ["Costo por venta", "Costo por venta"] };
 const fCostoMet = byId("fCostoMet");
 fCostoMet.innerHTML = Object.keys(COSTO_MET).map(k => `<button type="button" data-v="${k}">${COSTO_MET[k][0]}</button>`).join("");
 fCostoMet.addEventListener("click", e => { const b = e.target.closest("button"); if (!b) return; state.costoMet = b.dataset.v; save(); renderCostos(); });
@@ -718,7 +725,8 @@ function renderCanal() {
     ["Inversión asignada", x => x.inversion, money], ["Registros", (x, r) => r, nf.format], ["Leads", x => x.leads, nf.format],
     ["Registro → lead", (x, r) => div(x.leads, r), pct, "high"], ["CPL", x => div(x.inversion, x.leads), money, "low"],
     ["Citas agendadas", x => x.citas, nf.format], ["Lead → cita agendada", x => div(x.citas, x.leads), pct, "high"], ["Costo por cita agendada", x => div(x.inversion, x.citas), money, "low"],
-    ["PVRs", x => x.pvr, nf.format], ["Cita → PVR", x => div(x.pvr, x.citas), pct, "high"], ["Costo por PVR", x => div(x.inversion, x.pvr), money, "low"]
+    ["PVRs", x => x.pvr, nf.format], ["Cita → PVR", x => div(x.pvr, x.citas), pct, "high"], ["Costo por PVR", x => div(x.inversion, x.pvr), money, "low"],
+    ["Ventas", x => x.ventas, nf.format], ["PVR → venta", x => div(x.ventas, x.pvr), pct, "high"], ["Costo por venta", x => div(x.inversion, x.ventas), money, "low"], ["Importe vendido", x => x.importe, money, "high"]
   ];
   const body = rows.map(([label, fn, f, better]) => { const vm = fn(m, rm), vg = fn(g, rg); let bm = "", bg = "";
     if (better === "low") { bm = vm < vg ? "better" : ""; bg = vg < vm ? "better" : ""; }
@@ -738,7 +746,7 @@ function axes(yMax, fmt) {
   for (let i = 0; i <= 4; i++) { const v = yMax * i / 4, y = M.t + ih - ih * i / 4; s += `<line class="${i === 0 ? "base" : "gridl"}" x1="${M.l}" x2="${W - M.r}" y1="${y}" y2="${y}"/><text x="${M.l - 8}" y="${y + 4}" text-anchor="end">${fmt(v)}</text>`; }
   return s;
 }
-const MES_MET = { leads: "Leads", citas: "Citas agendadas", pvr: "Primeras visitas" };
+const MES_MET = { leads: "Leads", citas: "Citas agendadas", pvr: "Primeras visitas", ventas: "Ventas" };
 state.mesMet = MES_MET[state.mesMet] ? state.mesMet : "leads";
 on(byId("fMesMet"), "click", e => { const b = e.target.closest("button"); if (!b) return; state.mesMet = b.dataset.v; save(); renderMes(); });
 function renderMes() {
@@ -761,15 +769,15 @@ function renderMes() {
     chs.forEach(c => { const v = per[i][c][met]; if (!v) return; const h = v / yMax * ih; yTop -= h; s += `<rect class="f-${c}" x="${x}" y="${yTop}" width="${bw}" height="${h}"/>`; });
     const a = per[i].all;
     const tip = `<div class="tt">${cap(mo.long)} · ${metN}</div>` + tipRows(chs.map(c => [`<i class="dot ${c}"></i>${CH[c]}`, `${nf.format(per[i][c][met])} · ${money(div(per[i][c].inversion, per[i][c][met]))} c/u`])
-      .concat([["Leads", nf.format(a.leads)], ["Citas agendadas", `${nf.format(a.citas)} (${pct(div(a.citas, a.leads))})`], ["PVR", `${nf.format(a.pvr)} (${pct(div(a.pvr, a.leads))})`], ["Costo por PVR", money(div(a.inversion, a.pvr))]]));
+      .concat([["Leads", nf.format(a.leads)], ["Citas agendadas", `${nf.format(a.citas)} (${pct(div(a.citas, a.leads))})`], ["PVR", `${nf.format(a.pvr)} (${pct(div(a.pvr, a.leads))})`], ["Ventas", nf.format(a.ventas)], ["Costo por PVR", money(div(a.inversion, a.pvr))]]));
     s += `<g class="col" data-tip="${encodeURIComponent(tip)}"><rect class="hit" x="${M.l + step * i}" y="${M.t}" width="${step}" height="${ih}"/></g>`;
     s += `<text x="${x + bw / 2}" y="${H - 8}" text-anchor="middle">${cap(mo.short)}</text>`;
     if (a[met]) s += `<text x="${x + bw / 2}" y="${yTop - 5}" text-anchor="middle" class="lbl">${nf.format(a[met])}</text>`;
   });
   host.innerHTML = `<svg class="chart" viewBox="0 0 ${W} ${H}" role="img" aria-label="${metN} por mes">${s}</svg>`;
   byId("legMes").innerHTML = legendHtml(chs);
-  const cols = [["Registros", (a, i) => nf.format(i == null ? regSum(RROWS) : regBy(null, ms[i].key))], ["Leads", a => nf.format(a.leads)], ["Citas agendadas", a => nf.format(a.citas)], ["Lead → cita agendada", a => pct(div(a.citas, a.leads))], ["PVR", a => nf.format(a.pvr)], ["TAL%", a => pct(div(a.pvr, a.leads))],
-    ["Inversión", a => money(a.inversion)], ["CPL", a => money(div(a.inversion, a.leads))], ["Costo/cita", a => money(div(a.inversion, a.citas))], ["Costo/PVR", a => money(div(a.inversion, a.pvr))]].filter(c => !(SIN_MONTOS && /Inversión|CPL|Costo/.test(c[0])));
+  const cols = [["Registros", (a, i) => nf.format(i == null ? regSum(RROWS) : regBy(null, ms[i].key))], ["Leads", a => nf.format(a.leads)], ["Citas agendadas", a => nf.format(a.citas)], ["Lead → cita agendada", a => pct(div(a.citas, a.leads))], ["PVR", a => nf.format(a.pvr)], ["TAL%", a => pct(div(a.pvr, a.leads))], ["Ventas", a => nf.format(a.ventas)],
+    ["Inversión", a => money(a.inversion)], ["CPL", a => money(div(a.inversion, a.leads))], ["Costo/cita", a => money(div(a.inversion, a.citas))], ["Costo/PVR", a => money(div(a.inversion, a.pvr))], ["Costo/venta", a => money(div(a.inversion, a.ventas))], ["Importe vendido", a => money(a.importe)]].filter(c => !(SIN_MONTOS && /Inversión|CPL|Costo|Importe/.test(c[0])));
   byId("tMes").innerHTML = `<thead><tr><th>Mes</th>${cols.map(c => `<th>${c[0]}</th>`).join("")}</tr></thead><tbody>` +
     ms.map((mo, i) => `<tr${state.mes === mo.key ? ' class="hl"' : ""}><td>${cap(mo.long)}</td>${cols.map(c => `<td>${c[1](per[i].all, i)}</td>`).join("")}</tr>`).join("") +
     `<tr class="total"><td>${state.mes === "todo" ? "Total" : "Total del periodo"}</td>${cols.map(c => `<td>${c[1](sum(MROWS), null)}</td>`).join("")}</tr></tbody>`;
@@ -788,9 +796,9 @@ function renderEvol() {
   fGranEvol.querySelectorAll("button").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.v === state.evolGran)));
   const host = byId("cEvol"), sem = state.evolGran === "semana";
   const map = new Map();
-  DROWS.forEach(r => { const k = sem ? monday(r.dia) : r.dia; const o = map.get(k) || { k, leads: 0, citas: 0, pvr: 0 }; o.leads += r.leads; o.citas += r.citas; o.pvr += r.pvr; map.set(k, o); });
+  DROWS.forEach(r => { const k = sem ? monday(r.dia) : r.dia; const o = map.get(k) || { k, leads: 0, citas: 0, pvr: 0, ventas: 0 }; o.leads += r.leads; o.citas += r.citas; o.pvr += r.pvr; o.ventas += r.ventas; map.set(k, o); });
   const pts = [...map.values()].sort((a, b) => a.k < b.k ? -1 : 1);
-  const series = [["leads", "Leads", "meta"], ["citas", "Citas agendadas", "google"], ["pvr", "Primeras visitas", "otros"]];
+  const series = [["leads", "Leads", "meta"], ["citas", "Citas agendadas", "google"], ["pvr", "Primeras visitas", "otros"], ["ventas", "Ventas", "a"]];
   if (!pts.length) { host.innerHTML = `<p class="hint">Sin datos con estos filtros.</p>`; return; }
   const fmtK = k => sem ? `Semana del ${fmtDate(k)}` : fmtDate(k);
   host.innerHTML = series.map(([m, label]) => `<div class="mini"><h3>${label}</h3><div id="cEvol-${m}"></div></div>`).join("");
@@ -1027,7 +1035,7 @@ async function refreshDiario(force) {
   try {
     const { rows } = await runSql("diario", force);
     if (my !== dseq || !rows) return;
-    DROWS = rows.map(r => ({ dia: String(r.dia).slice(0, 10), dim: r.dim == null ? "" : String(r.dim), leads: +r.leads || 0, citas: +r.citas || 0, pvr: +r.pvr || 0 })).sort((a, b) => a.dia < b.dia ? -1 : 1);
+    DROWS = rows.map(r => ({ dia: String(r.dia).slice(0, 10), dim: r.dim == null ? "" : String(r.dim), leads: +r.leads || 0, citas: +r.citas || 0, pvr: +r.pvr || 0, ventas: +r.ventas || 0 })).sort((a, b) => a.dia < b.dia ? -1 : 1);
     renderEvol(); renderDiario(); renderReg();
   } catch (e) { /* la sección conserva lo anterior */ }
 }
@@ -1038,7 +1046,7 @@ async function refreshCostos(force) {
   try {
     const { rows } = await runSql("costos", force);
     if (my !== cseq || !rows) return;
-    CROWS = rows.map(r => ({ mes: String(r.mes), pagado: +r.pagado || 0, medio: String(r.medio), leads: +r.leads || 0, citas: +r.citas || 0, pvr: +r.pvr || 0, inversion: +r.inversion || 0 }));
+    CROWS = rows.map(r => ({ mes: String(r.mes), pagado: +r.pagado || 0, medio: String(r.medio), leads: +r.leads || 0, citas: +r.citas || 0, pvr: +r.pvr || 0, ventas: +r.ventas || 0, inversion: +r.inversion || 0 }));
     renderCostos();
   } catch (e) { /* la sección conserva lo anterior */ }
 }
@@ -1049,7 +1057,7 @@ async function refreshDesgDiario(force) {
   try {
     const { rows } = await runSql("desg_diario", force);
     if (my !== gseq || !rows) return;
-    GROWS = rows.map(r => ({ dia: String(r.dia).slice(0, 10), dim: r.dim == null ? "" : String(r.dim), leads: +r.leads || 0, citas: +r.citas || 0, pvr: +r.pvr || 0 })).sort((a, b) => a.dia < b.dia ? -1 : 1);
+    GROWS = rows.map(r => ({ dia: String(r.dia).slice(0, 10), dim: r.dim == null ? "" : String(r.dim), leads: +r.leads || 0, citas: +r.citas || 0, pvr: +r.pvr || 0, ventas: +r.ventas || 0 })).sort((a, b) => a.dia < b.dia ? -1 : 1);
     renderDesgTend();
   } catch (e) { /* la sección conserva lo anterior */ }
 }

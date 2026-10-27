@@ -5,7 +5,7 @@ import { consultarCon } from "@/lib/bigquery";
 import { TIPOS, construirSql, validarEstado, type Tipo } from "@/app/transversal/consultas";
 
 // Campos con dinero: con nivel «resultados» no salen del servidor (2026-10-27). Publicidad y costos no se consultan.
-const CAMPOS_DINERO = new Set(["inversion", "inv_asig", "inv_all", "gasto", "costo"]);
+const CAMPOS_DINERO = new Set(["inversion", "inv_asig", "inv_all", "gasto", "costo", "importe"]);
 const SIN_MONTOS_TIPOS = new Set(["publicidad", "costos"]);
 
 // Datos del Reporte Transversal+Ole. El navegador manda { tipo, estado, force };

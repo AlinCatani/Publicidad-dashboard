@@ -118,7 +118,7 @@ const PLANTILLA = `<div class="wrap">
     <div class="phead">
       <div>
         <h2 id="h-funnel">Funnel por etapa</h2>
-        <p class="hint">Una sola línea: atracción (impresiones y clics de los anuncios, con CPM y CPC) y conversión (registros, leads, citas agendadas y PVR). Abajo, el funnel de OLE. Cada anillo muestra el total de la etapa y su reparto entre medios; su tamaño baja con el volumen (escala logarítmica). Pasa el cursor sobre un segmento para ver el detalle.</p>
+        <p class="hint">Una sola línea: atracción (impresiones y clics de los anuncios, con CPM y CPC) y conversión (registros, leads, citas agendadas, PVR y ventas BEC de BIT, cruzadas por correo con el lead). Abajo, el funnel de OLE. Cada anillo muestra el total de la etapa y su reparto entre medios; su tamaño baja con el volumen (escala logarítmica). Pasa el cursor sobre un segmento para ver el detalle.</p>
       </div>
       <div class="legend" id="legFunnel"></div>
     </div>
@@ -211,7 +211,7 @@ const PLANTILLA = `<div class="wrap">
     <div class="phead">
       <div><h2 id="h-mes">Por mes</h2><p class="hint" id="mesHint">Leads por mes apilados por medio; la tabla trae costos y conversiones de cada cohorte.</p></div>
       <div style="display:flex;flex-wrap:wrap;gap:10px;align-items:center">
-        <div class="seg" role="group" aria-label="Métrica de la gráfica" id="fMesMet"><button type="button" data-v="leads">Leads</button><button type="button" data-v="citas">Citas agendadas</button><button type="button" data-v="pvr">Primeras visitas</button></div>
+        <div class="seg" role="group" aria-label="Métrica de la gráfica" id="fMesMet"><button type="button" data-v="leads">Leads</button><button type="button" data-v="citas">Citas agendadas</button><button type="button" data-v="pvr">Primeras visitas</button><button type="button" data-v="ventas">Ventas</button></div>
         <div class="legend" id="legMes"></div>
       </div>
     </div>
