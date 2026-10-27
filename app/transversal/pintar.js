@@ -119,7 +119,7 @@ function monthsSel() {
 
 const REG_SKIP = { perfil: 1, es_leading: 1, internacional: 1 };
 /* ===== Datos ===== */
-let ALL = [], ROWS = [], PROWS = [], RROWS = [], RDROWS = [], CROWS = [], HROWS = [], HRROWS = [], WEEKS = [], DROWS = [], GROWS = [], AROWS = [], OPTIONS = null;
+let ALL = [], ROWS = [], PROWS = [], RROWS = [], RDROWS = [], CROWS = [], HROWS = [], HRROWS = [], WEEKS = [], DROWS = [], GROWS = [], AROWS = [], OPTIONS = null, OPTIONS_F = null; // OPTIONS: histórico completo (menú y colores); OPTIONS_F: en cascada con los filtros (selects)
 let MROWS = [];
 const inMes = r => state.mes === "todo" || r.mes === state.mes;
 const applyCanal = () => { const chs = channels(); MROWS = ALL.filter(r => chs.includes(r.canal)); ROWS = MROWS.filter(inMes); };
@@ -194,7 +194,8 @@ fPerfil.addEventListener("click", e => { const b = e.target.closest("button"); i
 const selVal = o => o.v === "" ? VACIO : o.v, selLabel = (v, k) => v === VACIO ? "(vacío)" : k === "sucursal_real" ? sucName(v) : v;
 function selOpts(k) {
   const d = DIMS[k];
-  let opts = d.fixed ? d.fixed.map(v => ({ v, n: null })) : ((OPTIONS && OPTIONS[k]) || []).slice(0, d.top || 200);
+  const fuente = OPTIONS_F || OPTIONS; // en cascada (Looker): cada filtro lista solo lo que queda con los demás filtros
+  let opts = d.fixed ? d.fixed.map(v => ({ v, n: null })) : ((fuente && fuente[k]) || []).slice(0, d.top || 200);
   if (d.sortKey) opts = opts.slice().sort((a, b) => a.v.localeCompare(b.v, "es", { numeric: true }));
   const faltan = state.f[k].filter(v => !opts.some(o => selVal(o) === v)).map(v => ({ v: v === VACIO ? "" : v, n: null }));
   return faltan.concat(opts);
@@ -1089,6 +1090,18 @@ async function loadOptions(force) {
     renderSelects(); renderTabs();
   } catch (e) { /* los selects se quedan con lo fijo */ }
 }
+let oseq = 0;
+async function loadOptionsF(force) {
+  const my = ++oseq;
+  try {
+    const { rows } = await runSql("opciones_f", force);
+    if (my !== oseq || !rows) return;
+    OPTIONS_F = {};
+    rows.forEach(r => { if (r.k === "sucursal_real" && String(r.v) === "INTERNACIONAL") return;
+      (OPTIONS_F[r.k] = OPTIONS_F[r.k] || []).push({ v: r.v == null ? "" : String(r.v), n: Number(r.n) || 0 }); });
+    renderSelects();
+  } catch (e) { /* los selects se quedan con lo anterior */ }
+}
 async function refreshReg(force) {
   try { const { rows } = await runSql("registros", force); if (!rows) return;
     RROWS = rows.map(r => ({ mes: String(r.mes), canal: String(r.canal), origen: String(r.origen), medio: medioKey(r.medio), registros: +r.registros || 0 })); render();
@@ -1163,7 +1176,7 @@ async function refresh(force) {
   const my = ++seq;
   btn.disabled = true;
   setStatus("snap", "Consultando", "Consultando BigQuery…");
-  refreshPerfil(force); refreshReg(force); refreshWeekly(force); refreshDiario(force); refreshDesgDiario(force); refreshCostos(force); refreshHora(force); refreshAds(force);
+  refreshPerfil(force); refreshReg(force); refreshWeekly(force); refreshDiario(force); refreshDesgDiario(force); refreshCostos(force); refreshHora(force); refreshAds(force); loadOptionsF(force);
   try {
     const { rows, at } = await runSql("principal", force);
     if (my !== seq) return;
