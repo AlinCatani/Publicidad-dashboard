@@ -409,6 +409,24 @@ function resultTable(rows, label, nameFn, tablaId) {
   return { html: `<thead><tr><th>${label}</th>${th}</tr></thead>
      <tbody>${shown.map(x => row(x.raw ? x.k : nameFn(x.k), x.a)).join("")}${row("Total", tot, "total")}</tbody>`, n: list.length, rest: rest.length };
 }
+/* Lo mismo para las tablas que se pintan directo (Origen y Por mes): se reordenan las filas ya pintadas leyendo el número de la celda
+   (quita $, % y comas); el Total se queda al final. Se vuelve a aplicar después de cada repintado. (Alin, 2026-10-27: «replícalo en todas») */
+const ORDEN_DOM = {};
+function aplicarOrdenDom(id) {
+  const t = byId(id), ord = ORDEN_DOM[id], tb = t.querySelector("tbody"); if (!tb) return;
+  t.querySelectorAll("thead th").forEach((th, i) => { if (i === 0) return; th.classList.add("ord"); th.dataset.col = i; th.classList.toggle("on", !!ord && ord.col === i); th.classList.toggle("desc", !!ord && ord.col === i && ord.desc); th.classList.toggle("asc", !!ord && ord.col === i && !ord.desc); });
+  if (!ord) return;
+  const num = tr => { const c = tr.children[ord.col]; const v = parseFloat((c ? c.textContent : "").replace(/[^0-9.\-]/g, "")); return isFinite(v) ? v : (ord.desc ? -Infinity : Infinity); };
+  const filas = [...tb.querySelectorAll("tr")].filter(tr => !tr.classList.contains("total")), total = tb.querySelector("tr.total");
+  filas.sort((x, y) => ord.desc ? num(y) - num(x) : num(x) - num(y)).forEach(tr => tb.appendChild(tr));
+  if (total) tb.appendChild(total);
+}
+["tOrigen", "tMes"].forEach(id => on(byId(id), "click", e => {
+  const th = e.target.closest("th.ord"); if (!th) return;
+  const col = +th.dataset.col, ord = ORDEN_DOM[id];
+  ORDEN_DOM[id] = !ord || ord.col !== col ? { col, desc: true } : ord.desc ? { col, desc: false } : null;
+  if (ORDEN_DOM[id]) aplicarOrdenDom(id); else if (id === "tOrigen") renderOrigen(); else renderMes();
+}));
 /* Clic en un encabezado: ordena esa tabla por esa métrica, de mayor a menor; segundo clic invierte; tercero vuelve al orden normal. */
 ["tPerfil", "tDesg"].forEach(id => on(byId(id), "click", e => {
   const th = e.target.closest("th.ord"); if (!th) return;
@@ -547,6 +565,7 @@ function renderOrigen() {
       <td class="din">${paid ? money(a.inversion) : "—"}</td><td class="din">${paid ? money(div(a.inversion, a.leads)) : "—"}</td><td class="din">${paid ? money(div(a.inversion, a.pvr)) : "—"}</td><td class="din">${paid ? money(div(a.inversion, a.ventas)) : "—"}</td></tr>`; }).join("");
   byId("tOrigen").innerHTML = `<thead><tr><th>Origen</th><th>Registros</th><th>Leads</th><th>% de leads</th><th>Citas agendadas</th><th>PVRs</th><th>TAL%</th><th>Ventas</th><th class="din">Inversión</th><th class="din">CPL</th><th class="din">Costo/PVR</th><th class="din">Costo/venta</th></tr></thead>
     <tbody>${body}<tr class="total"><td>Total</td><td>${nf.format(regT)}</td><td>${nf.format(tot.leads)}</td><td>100%</td><td>${nf.format(tot.citas)}</td><td>${nf.format(tot.pvr)}</td><td>${pct(div(tot.pvr, tot.leads))}</td><td>${nf.format(tot.ventas)}</td><td class="din">${money(tot.inversion)}</td><td class="din">${money(div(tot.inversion, tot.leads))}</td><td class="din">${money(div(tot.inversion, tot.pvr))}</td><td class="din">${money(div(tot.inversion, tot.ventas))}</td></tr></tbody>`;
+  aplicarOrdenDom("tOrigen");
   const suc = state.sucs.length ? sucsLabel() : "", nac = sum(ROWS.filter(r => r.origen === "nacional")), loc = sum(ROWS.filter(r => r.origen === "local"));
   byId("origenHint").textContent = suc ? `Leads de ${suc.toLowerCase()}: las campañas nacionales aportan ${pct(div(nac.leads, tot.leads))} y la campaña local ${pct(div(loc.leads, tot.leads))}.` : "Elige una sucursal en las pestañas para separar su campaña local de las nacionales.";
   byId("origenNote").textContent = suc && localRegions().length ? `«Campaña local» agrupa todo lo etiquetado con región ${localRegions().slice(0, 2).join(" o ")} en campañas pagadas. Si una campaña cambió de segmentación sin cambiar sus UTM, aquí se ve junta.` : "";
@@ -833,6 +852,7 @@ function renderMes() {
   byId("tMes").innerHTML = `<thead><tr><th>Mes</th>${cols.map(c => `<th>${c[0]}</th>`).join("")}</tr></thead><tbody>` +
     ms.map((mo, i) => `<tr${state.mes === mo.key ? ' class="hl"' : ""}><td>${cap(mo.long)}</td>${cols.map(c => `<td>${c[1](per[i].all, i)}</td>`).join("")}</tr>`).join("") +
     `<tr class="total"><td>${state.mes === "todo" ? "Total" : "Total del periodo"}</td>${cols.map(c => `<td>${c[1](sum(MROWS), null)}</td>`).join("")}</tr></tbody>`;
+  aplicarOrdenDom("tMes");
 }
 
 /* ===== Evolución diaria: tres gráficas pequeñas (leads, citas, PVR), por día o por semana ===== */
