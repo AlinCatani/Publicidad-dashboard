@@ -420,82 +420,68 @@ const STAGES = [
 ];
 const legendHtml = chs => chs.map(c => `<span><i class="dot ${c}"></i>${CH[c]}</span>`).join("");
 const tipRows = rows => rows.map(r => `<div class="row"><span>${r[0]}</span><b>${r[1]}</b></div>`).join("");
+/* Colores de medio copiados de la gráfica «Medio» del Looker (Alin, 2026-10-27); los medios que ahí no salen (pmax, youtube, tiktok,
+   display, instagram) toman colores libres de la misma paleta, fijos. */
+const MEDIO_COL = { facebook: "#0072f0", google_search: "#7cb342", web: "#5e35b1", "(sin medio)": "#f48fb1", dgen: "#737373", socialmedia: "#f15a60", social_media: "#5a9bd4", google: "#ec407a", web_surrogate: "#7ac36a", presencial: "#f66d00", whatsapp: "#f10096", correo: "#faa75a", x: "#9e67ab", threads: "#d77fb3", "x-test": "#ce7058", pmax: "#00b6cb", youtube: "#ff7043", tiktok: "#03a9f4", display: "#81d4fa", instagram: "#ffa800", demand_gen: "#737373", meta: "#0072f0", otros: "#9aa7bd" };
+const medioKey = m => (m == null || m === "" ? "(sin medio)" : String(m));
+const medioNombre = m => CH[m] || m;
 function renderFunnel() {
-  const chs = channels();
-  /* Funnel PAGADO (Alin, 2026-10-27): todo lo que viene de campaña paid / paid_int / paid_us, de cualquier medio; lo no pagado va en el funnel de OLE abajo. */
+  /* Funnel PAGADO por MEDIO (Alin, 2026-10-27: «quiero ver youtube, tiktok, pmax, no solo Meta y Google»): todo lo que viene de campaña
+     paid / paid_int / paid_us, un segmento por medio. Leads, citas, PVR, ventas e inversión salen de las filas por medio de la sección de
+     costos (CROWS, pagado = 1); registros de RROWS y anuncios de AROWS, ya con medio. Lo no pagado va en el funnel de OLE abajo. */
   const esPagado = r => r.origen !== "sin_campana";
-  const pagado = ROWS.filter(esPagado);
-  const per = {}; chs.forEach(c => per[c] = sum(pagado.filter(r => r.canal === c)));
-  const a = sum(pagado);
-  const regPag = c => regSum(RROWS.filter(r => inMes(r) && esPagado(r) && (!c || r.canal === c)));
   const R = 46, SW = 14, C = 2 * Math.PI * R, GAP = 3;
   const ring = (inner, label) => `<svg class="donut" viewBox="0 0 120 120" role="img" aria-label="${label}"><g transform="rotate(-90 60 60)">${inner}</g></svg>`;
+  const track = `<circle cx="60" cy="60" r="${R}" fill="none" class="ring-track" stroke-width="${SW}"/>`;
   const pendingCard = (n, why) => `<div class="dcard pending"><div class="dname">${n}</div>
       <div class="dslot"><div class="dwrap" style="width:100%">${ring(`<circle cx="60" cy="60" r="${R}" fill="none" class="ring-pending" stroke-width="${SW}"/>`, `${n}: pendiente`)}
         <div class="dcenter"><span class="dval na">—</span></div></div></div><div class="dline">${why}</div></div>`;
+  const M = {}; const add = (m, k, v) => { const key = medioKey(m); M[key] = M[key] || { impresiones: 0, clics: 0, inv_ads: 0, registros: 0, leads: 0, citas: 0, pvr: 0, ventas: 0, inversion: 0 }; M[key][k] += v || 0; };
+  const porMedio = CROWS.length > 0; // sin filas por medio (nivel «resultados» en el sitio) se parte por Meta / Google / otros
+  if (porMedio) CROWS.filter(r => r.pagado === 1 && inMes(r)).forEach(r => ["leads", "citas", "pvr", "ventas", "inversion"].forEach(k => add(r.medio, k, r[k])));
+  else ROWS.filter(esPagado).forEach(r => ["leads", "citas", "pvr", "ventas", "inversion"].forEach(k => add(r.canal, k, r[k])));
+  RROWS.filter(r => inMes(r) && esPagado(r)).forEach(r => add(porMedio ? r.medio : r.canal, "registros", r.registros));
+  AROWS.filter(r => inMes(r)).forEach(r => { const m = porMedio ? r.medio : r.canal; add(m, "impresiones", r.impresiones); add(m, "clics", r.clics); add(m, "inv_ads", r.inversion); });
+  const medios = Object.keys(M).filter(m => Object.values(M[m]).some(v => v > 0)).sort((x, y) => (M[y].leads - M[x].leads) || (M[y].registros - M[x].registros) || (M[y].impresiones - M[x].impresiones));
+  const col = {}; medios.forEach((m, i) => { col[m] = MEDIO_COL[m] || PAL[(i + 7) % PAL.length]; });
+  const T = {}; ["impresiones", "clics", "inv_ads", "registros", "leads", "citas", "pvr", "ventas", "inversion"].forEach(k => { T[k] = medios.reduce((x, m) => x + M[m][k], 0); });
+  const a = { leads: T.leads, citas: T.citas, pvr: T.pvr, ventas: T.ventas, inversion: T.inversion, importe: sum(ROWS.filter(esPagado)).importe };
+  const regPag = () => T.registros;
+  const ST = [
+    { k: "impresiones", name: "Impresiones", sub: "de los anuncios", g: "atr", cost: ["CPM", o => div(o.inv_ads, o.impresiones) * 1000] },
+    { k: "clics", name: "Clics de enlace", sub: "al sitio", g: "atr", prev: "impresiones", conv: "CTR", cost: ["CPC", o => div(o.inv_ads, o.clics)] },
+    { k: "registros", name: "Registros", sub: "formularios", g: "conv", prev: "clics", conv: "de clics", cost: ["Costo por registro", o => div(o.inversion, o.registros)] },
+    { k: "leads", name: "Leads", sub: "Airtable", g: "conv", prev: "registros", conv: "de registros", cost: ["CPL", o => div(o.inversion, o.leads)] },
+    { k: "citas", name: "Citas agendadas", sub: "en BIC", g: "conv", prev: "leads", conv: "de leads", cost: ["Costo por cita agendada", o => div(o.inversion, o.citas)] },
+    { k: "pvr", name: "Primeras visitas", sub: "realizadas", g: "conv", prev: "citas", conv: "de citas agendadas", cost: ["Costo por PVR", o => div(o.inversion, o.pvr)] },
+    { k: "ventas", name: "Ventas", sub: "BEC en BIT", g: "conv", prev: "pvr", conv: "de primeras visitas", cost: ["Costo por venta", o => div(o.inversion, o.ventas)] }
+  ];
   let html = `<div class="donuts fila"><div class="fdiv"><span>Atracción</span></div>`;
-  /* Atracción: impresiones, clics y vistas de landing de los anuncios (AROWS), por medio. CPM, CPC y costo por vista con la inversión real. */
-  const ads = {}; chs.forEach(c => ads[c] = AROWS.filter(r => r.canal === c).reduce((o, r) => { o.inversion += r.inversion; o.impresiones += r.impresiones; o.clics += r.clics; return o; }, { inversion: 0, impresiones: 0, clics: 0 }));
-  const adsT = chs.reduce((o, c) => { o.inversion += ads[c].inversion; o.impresiones += ads[c].impresiones; o.clics += ads[c].clics; return o; }, { inversion: 0, impresiones: 0, clics: 0 });
-  if (!AROWS.length) html += pendingCard("Impresiones y clics", "Sin datos de anuncios para estos filtros");
-  else {
-    const ATR = [
-      { m: "impresiones", name: "Impresiones", sub: "Meta y Google", cost: "CPM", costFn: (inv, v) => div(inv, v) * 1000 },
-      { m: "clics", name: "Clics de enlace", sub: "al sitio", conv: "CTR", cost: "CPC", costFn: div }
-    ];
-    let prevA = null;
-    ATR.forEach(st => {
-      const parts = chs.filter(c => !st.solo || st.solo(c)).map(c => ({ c, v: ads[c][st.m] })).filter(p => p.v > 0);
-      const total = parts.reduce((x, p) => x + p.v, 0), invP = parts.reduce((x, p) => x + ads[p.c].inversion, 0);
-      let offset = 0, segs = `<circle cx="60" cy="60" r="${R}" fill="none" class="ring-track" stroke-width="${SW}"/>`;
-      parts.forEach(p => {
-        const frac = div(p.v, total) || 0, gap = parts.length > 1 ? GAP : 0, len = Math.max(0, frac * C - gap);
-        const tip = `<div class="tt">${st.name} · ${CH[p.c]}</div>` + tipRows([["Volumen", nf.format(p.v)], parts.length > 1 ? ["% del total", pct(frac)] : null,
-          prevA ? [st.conv, pct(div(p.v, ads[p.c][prevA]))] : null, [st.cost, money(st.costFn(ads[p.c].inversion, p.v))]].filter(Boolean));
-        segs += `<circle cx="60" cy="60" r="${R}" fill="none" class="s-${p.c}" stroke-width="${SW}" stroke-dasharray="${len.toFixed(2)} ${(C - len).toFixed(2)}" stroke-dashoffset="${(-offset - gap / 2).toFixed(2)}" data-tip="${encodeURIComponent(tip)}"/>`; offset += frac * C; });
-      const split = parts.length > 1 ? `<div class="dsplit">${parts.map(p => `<span><i class="dot ${p.c}"></i>${pct(div(p.v, total))}</span>`).join("")}</div>` : "";
-      const prevTot = prevA ? parts.reduce((x, p) => x + ads[p.c][prevA], 0) : 0;
-      const conv = prevA ? `<div class="dconv">${pct(div(total, prevTot))} ${st.conv}</div>` : `<div class="dconv muted">Inicio de la atracción</div>`;
-      const sc = Math.min(1, Math.max(0.42, 1 + 0.35 * Math.log10(div(total, adsT.impresiones) || 0.001)));
-      html += `<div class="dcard${total ? "" : " pending"}"><div class="dname">${st.name}<small>${st.sub}</small></div>
-      <div class="dslot"><div class="dwrap" style="width:${(sc * 100).toFixed(1)}%">${ring(segs, `${st.name}: ${nf.format(total)}`)}
-        <div class="dcenter"><span class="dval" style="font-size:${(12 + 7 * sc).toFixed(1)}px">${total ? compact.format(total) : "—"}</span></div></div></div>
-      ${split}${conv}<div class="dline din">${st.cost} ${total ? money(st.costFn(invP, total)) : "—"}</div></div>`;
-      prevA = st.m;
-    });
-  }
-  html += `<div class="fdiv"><span>Conversión · pagado</span></div>`;
-  let prevM = null;
-  /* Registros: primer anillo, por canal */
-  { const total = regPag(null); let offset = 0, segs = `<circle cx="60" cy="60" r="${R}" fill="none" class="ring-track" stroke-width="${SW}"/>`;
-    const parts = chs.map(c => ({ c, v: regPag(c) })).filter(p => p.v > 0);
-    parts.forEach(p => { const frac = div(p.v, total) || 0, gap = parts.length > 1 ? GAP : 0, len = Math.max(0, frac * C - gap);
-      const tip = `<div class="tt">Registros · ${CH[p.c]}</div>` + tipRows([["Volumen", nf.format(p.v)], ["Pasaron a lead", pct(div(per[p.c].leads, p.v))], ["Costo por registro", money(div(per[p.c].inversion, p.v))]]);
-      segs += `<circle cx="60" cy="60" r="${R}" fill="none" class="s-${p.c}" stroke-width="${SW}" stroke-dasharray="${len.toFixed(2)} ${(C - len).toFixed(2)}" stroke-dashoffset="${(-offset - gap / 2).toFixed(2)}" data-tip="${encodeURIComponent(tip)}"/>`; offset += frac * C; });
-    html += `<div class="dcard"><div class="dname">Registros<small>formularios</small></div><div class="dslot"><div class="dwrap" style="width:100%">${ring(segs, `Registros: ${nf.format(total)}`)}<div class="dcenter"><span class="dval" style="font-size:19px">${nf.format(total)}</span></div></div></div>
-      ${chs.length > 1 ? `<div class="dsplit">${parts.map(p => `<span><i class="dot ${p.c}"></i>${pct(div(p.v, total))}</span>`).join("")}</div>` : ""}${adsT.clics ? `<div class="dconv">${pct(div(total, adsT.clics))} de clics</div>` : `<div class="dconv muted">Inicio del funnel</div>`}<div class="dline">Costo por registro ${money(div(a.inversion, total))}</div></div>`; }
-  STAGES.forEach(st => {
-    const total = a[st.m];
-    let offset = 0, segs = `<circle cx="60" cy="60" r="${R}" fill="none" class="ring-track" stroke-width="${SW}"/>`;
-    const parts = chs.map(c => ({ c, v: per[c][st.m] })).filter(p => p.v > 0);
+  let grupo = "atr";
+  ST.forEach(st => {
+    if (st.g !== grupo) { grupo = st.g; html += `<div class="fdiv"><span>Conversión · pagado</span></div>`; }
+    if (st.g === "atr" && !T.impresiones) { if (st.k === "impresiones") html += pendingCard("Impresiones y clics", "Sin datos de anuncios para estos filtros"); return; }
+    const total = T[st.k];
+    const parts = medios.map(m => ({ m, v: M[m][st.k] })).filter(p => p.v > 0);
+    let offset = 0, segs = track;
     parts.forEach(p => {
-      const frac = div(p.v, total) || 0, gap = parts.length > 1 ? GAP : 0, len = Math.max(0, frac * C - gap);
-      const tip = `<div class="tt">${st.name} · ${CH[p.c]}</div>` + tipRows([
-        ["Volumen", nf.format(p.v)], chs.length > 1 ? ["% del total", pct(frac)] : null,
-        prevM ? ["Conversión", pct(div(p.v, per[p.c][prevM]))] : null, [st.cost, money(div(per[p.c].inversion, p.v))]].filter(Boolean));
-      segs += `<circle cx="60" cy="60" r="${R}" fill="none" class="s-${p.c}" stroke-width="${SW}" stroke-dasharray="${len.toFixed(2)} ${(C - len).toFixed(2)}" stroke-dashoffset="${(-offset - gap / 2).toFixed(2)}" data-tip="${encodeURIComponent(tip)}"/>`;
+      const frac = div(p.v, total) || 0, gap = parts.length > 1 ? GAP : 0, len = Math.max(0, frac * C - gap), o = M[p.m];
+      const tip = `<div class="tt">${st.name} · ${medioNombre(p.m)}</div>` + tipRows([["Volumen", nf.format(p.v)], parts.length > 1 ? ["% del total", pct(frac)] : null,
+        st.prev && o[st.prev] ? [st.conv, pct(div(p.v, o[st.prev]))] : null, [st.cost[0], money(st.cost[1](o))]].filter(Boolean));
+      segs += `<circle cx="60" cy="60" r="${R}" fill="none" style="stroke:${col[p.m]}" stroke-width="${SW}" stroke-dasharray="${len.toFixed(2)} ${(C - len).toFixed(2)}" stroke-dashoffset="${(-offset - gap / 2).toFixed(2)}" data-tip="${encodeURIComponent(tip)}"/>`;
       offset += frac * C;
     });
-    const split = chs.length > 1 ? `<div class="dsplit">${chs.filter(c => per[c][st.m] > 0).map(c => `<span><i class="dot ${c}"></i>${pct(div(per[c][st.m], total))}</span>`).join("")}</div>` : "";
-    const regT = regPag(null);
-    const conv = prevM ? `<div class="dconv">${pct(div(total, a[prevM]))} ${st.conv}</div>` : regT ? `<div class="dconv">${pct(div(total, regT))} de registros</div>` : `<div class="dconv muted">Inicio de la conversión</div>`;
-    const sc = Math.min(1, Math.max(0.42, 1 + 0.35 * Math.log10(div(total, regT || a.leads) || 0.001)));
-    html += `<div class="dcard"><div class="dname">${st.name}<small>${st.sub}</small></div>
+    const split = parts.length > 1 ? `<div class="dsplit">${parts.slice(0, 4).map(p => `<span><i class="dot" style="background:${col[p.m]}"></i>${pct(div(p.v, total))}</span>`).join("")}${parts.length > 4 ? `<span>+${parts.length - 4}</span>` : ""}</div>` : "";
+    const prevT = st.prev ? T[st.prev] : 0;
+    const conv = st.prev && prevT ? `<div class="dconv">${pct(div(total, prevT))} ${st.conv}</div>` : `<div class="dconv muted">${st.g === "atr" ? "Inicio de la atracción" : "Inicio del funnel"}</div>`;
+    const base = st.g === "atr" ? T.impresiones : (T.registros || T.leads);
+    const sc = Math.min(1, Math.max(0.42, 1 + 0.35 * Math.log10(div(total, base) || 0.001)));
+    html += `<div class="dcard${total ? "" : " pending"}"><div class="dname">${st.name}<small>${st.sub}</small></div>
       <div class="dslot"><div class="dwrap" style="width:${(sc * 100).toFixed(1)}%">${ring(segs, `${st.name}: ${nf.format(total)}`)}
-        <div class="dcenter"><span class="dval" style="font-size:${(12 + 7 * sc).toFixed(1)}px">${nf.format(total)}</span></div></div></div>
-      ${split}${conv}<div class="dline din">${st.cost} ${money(div(a.inversion, total))}</div></div>`;
-    prevM = st.m;
+        <div class="dcenter"><span class="dval" style="font-size:${(12 + 7 * sc).toFixed(1)}px">${total ? (st.g === "atr" ? compact.format(total) : nf.format(total)) : "—"}</span></div></div></div>
+      ${split}${conv}<div class="dline din">${st.cost[0]} ${total ? money(st.cost[1](T)) : "—"}</div></div>`;
   });
+  byId("legFunnel").innerHTML = medios.map(m => `<span><i class="dot" style="background:${col[m]}"></i>${medioNombre(m)}</span>`).join("");
   /* OLE con el mismo funnel que arriba (Alin, 2026-10-27): registros, leads, citas, PVR y ventas de TODO lo no pagado, en anillos
      partidos por de dónde entra (web, social media, Google u otros medios), con las filas por medio de la sección de costos (CROWS, pagado = 0). */
   const o = ole(), oReg = regBy(null, null, "sin_campana");
@@ -525,7 +511,6 @@ function renderFunnel() {
   html += `</div><div class="overall"><span>Registro → lead <b>${pct(div(o.leads, oReg))}</b></span><span>Lead → cita agendada <b>${pct(div(o.citas, o.leads))}</b></span><span>TAL% <b>${pct(div(o.pvr, o.leads))}</b></span><span>PVR → venta <b>${pct(div(o.ventas, o.pvr))}</b></span></div>
   </div><div class="overall"><span class="tenue">Pagado: campañas paid, paid_int y paid_us, de todos los medios.</span>${regPag(null) ? `<span>Registro → PVR <b>${pct(div(a.pvr, regPag(null)))}</b></span>` : ""}<span>Lead → cita agendada <b>${pct(div(a.citas, a.leads))}</b></span><span>Cita agendada → PVR <b>${pct(div(a.pvr, a.citas))}</b></span><span>TAL% <b>${pct(div(a.pvr, a.leads))}</b></span><span>PVR → venta <b>${pct(div(a.ventas, a.pvr))}</b></span><span class="din">Inversión asignada <b>${money(a.inversion)}</b></span><span class="din">Importe vendido <b>${money(a.importe)}</b></span></div>`;
   byId("funnel").innerHTML = html;
-  byId("legFunnel").innerHTML = legendHtml(chs);
 }
 
 /* ===== Origen de los leads ===== */
@@ -696,7 +681,7 @@ async function refreshHora(force) {
 
 /* ===== Costo por resultado por medio: líneas por mes, un medio por línea (solo campañas pagadas) + OLE ===== */
 const COSTO_PAL = ["#1a73e8", "#e6007e", "#ff7043", "#5e35b1", "#00acc1", "#fbbc04", "#f06292", "#757575", "#8d6e63", "#3949ab", "#00897b", "#c0ca33", "#ab47bc", "#ef5350", "#26c6da", "#ffa726", "#5c6bc0", "#9ccc65", "#78909c", "#253f78"];
-const COSTO_FIJO = { facebook: "#1a73e8", google_search: "#c8a040", instagram: "#e6007e", web: "#7ab83b", "(sin medio)": "#9aa7bd" };
+const COSTO_FIJO = MEDIO_COL; // mismos colores de medio que el funnel y el Looker (2026-10-27)
 const filasCosto = () => CROWS.filter(r => (state.costoVista === "ole") === (r.pagado === 0));
 function gruposCosto() { // medios de la vista elegida (pagado u OLE), ordenados por leads en el periodo
   const tot = {}; filasCosto().forEach(r => tot[r.medio] = (tot[r.medio] || 0) + r.leads);
@@ -880,6 +865,8 @@ const PAL_FIJA = {
   "Quiero tener un bebé": "#ec407a", "Quiero evaluar mi fertilidad": "#ff7043",
   "segunda-opinion": "#0072f0", "investigando-opciones": "#00b6cb", ingenes: "#ffa800", "informacion-educativa": "#f10096", "agendar-cita": "#f66d00",
   Prelead: "#0072f0", "Lead Completo": "#00b6cb", "Lead Avanzado": "#ffa800", Lead: "#f10096",
+  paid: "#f10096", paid_us: "#5a9bd4", organic: "#7cb342", paid_int: "#ffa800", community: "#ce7058", test: "#7ac36a",
+  facebook: "#0072f0", google_search: "#7cb342", web: "#5e35b1", dgen: "#737373", socialmedia: "#f15a60", social_media: "#5a9bd4", google: "#ec407a", web_surrogate: "#7ac36a", presencial: "#f66d00", whatsapp: "#f10096", correo: "#faa75a", x: "#9e67ab", threads: "#d77fb3", "x-test": "#ce7058", pmax: "#00b6cb", youtube: "#ff7043", tiktok: "#03a9f4", display: "#81d4fa", instagram: "#ffa800",
   __otros: "#9aa7bd" }; // «Otros» (el resto agrupado) en gris, para no confundirlo con «Otro pais» (Alin, 2026-10-27)
 const fDiaMet = byId("fDiaMet");
 fDiaMet.innerHTML = MES_MET_KEYS.map(k => `<button type="button" data-v="${k}">${MES_MET[k]}</button>`).join("");
@@ -1062,7 +1049,7 @@ async function loadOptions(force) {
 }
 async function refreshReg(force) {
   try { const { rows } = await runSql("registros", force); if (!rows) return;
-    RROWS = rows.map(r => ({ mes: String(r.mes), canal: String(r.canal), origen: String(r.origen), registros: +r.registros || 0 })); render();
+    RROWS = rows.map(r => ({ mes: String(r.mes), canal: String(r.canal), origen: String(r.origen), medio: medioKey(r.medio), registros: +r.registros || 0 })); render();
   } catch (e) { /* registros se quedan en cero */ }
   if (!hay("reg")) return;
   try { const { rows } = await runSql("reg_diario", force); if (!rows) return;
@@ -1084,7 +1071,7 @@ async function refreshAds(force) {
   try {
     const { rows } = await runSql("publicidad", force);
     if (my !== aseq || !rows) return;
-    AROWS = rows.map(r => ({ mes: String(r.mes), canal: String(r.canal), inversion: +r.inversion || 0, impresiones: +r.impresiones || 0, alcance: +r.alcance || 0, clics: +r.clics || 0, visitas: r.visitas == null ? null : +r.visitas }));
+    AROWS = rows.map(r => ({ mes: String(r.mes), canal: String(r.canal), medio: medioKey(r.medio), inversion: +r.inversion || 0, impresiones: +r.impresiones || 0, alcance: +r.alcance || 0, clics: +r.clics || 0, visitas: r.visitas == null ? null : +r.visitas }));
     renderAds(); renderFunnel();
   } catch (e) { /* la sección conserva lo anterior */ }
 }

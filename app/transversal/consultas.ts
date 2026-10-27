@@ -172,10 +172,10 @@ const regDiarioSql = (e: Estado) => `SELECT CAST(Fecha AS STRING) dia, COUNT(*) 
 FROM ${REG}
 WHERE ${regWhereSql(e)}
 GROUP BY 1 ORDER BY 1`;
-const regSql = (e: Estado) => `SELECT FORMAT_DATE('%Y-%m', Fecha) mes, ${CANAL_SQL} canal, ${ORIGEN_SQL("campaign", "region", localRegions(e.sucs))} origen, COUNT(*) registros
+const regSql = (e: Estado) => `SELECT FORMAT_DATE('%Y-%m', Fecha) mes, ${CANAL_SQL} canal, ${ORIGEN_SQL("campaign", "region", localRegions(e.sucs))} origen, LOWER(TRIM(IFNULL(medium,''))) medio, COUNT(*) registros
 FROM ${REG}
 WHERE ${regWhereSql(e)}
-GROUP BY 1,2,3`;
+GROUP BY 1,2,3,4`; // medio desde 2026-10-27: el funnel pagado se parte por medio
 
 /* Semanal de la campaña local (Meta, región de la sucursal): leads de la sucursal vs. todos los leads de esa campaña. */
 const terrAnd = (e: Estado) => { const t = terrSql(e.terr); return t ? ` AND ${t}` : ""; };
@@ -245,10 +245,10 @@ function adsSql(e: Estado) {
   const chs = channels(e); if (chs.length < 3) w.push(`${canalSql("medio")} IN (${inList(chs)})`);
   if (e.mes !== "todo") w.push(`FORMAT_DATE('%Y-%m', dia) = '${e.mes}'`);
   Object.keys(ADS_DIMS).forEach((k) => { if (e.f[k].length) w.push(`${ADS_DIMS[k]} IN (${e.f[k].map(sqlStr).join(",")})`); });
-  return `SELECT FORMAT_DATE('%Y-%m', dia) mes, ${canalSql("medio")} canal, ROUND(SUM(IF(moneda = 'USD', costo * 18, costo))) inversion, SUM(impresiones) impresiones, SUM(alcance) alcance, SUM(clics_enlace) clics, SUM(vistas_landing) visitas
+  return `SELECT FORMAT_DATE('%Y-%m', dia) mes, ${canalSql("medio")} canal, LOWER(TRIM(IFNULL(medio,''))) medio, ROUND(SUM(IF(moneda = 'USD', costo * 18, costo))) inversion, SUM(impresiones) impresiones, SUM(alcance) alcance, SUM(clics_enlace) clics, SUM(vistas_landing) visitas
 FROM ${ADS}
 WHERE ${w.join("\n  AND ")}
-GROUP BY 1,2`;
+GROUP BY 1,2,3`;
 }
 
 export function construirSql(tipo: Tipo, e: Estado): string | null {
