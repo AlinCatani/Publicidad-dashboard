@@ -482,33 +482,34 @@ function renderFunnel() {
       ${split}${conv}<div class="dline din">${st.cost[0]} ${total ? money(st.cost[1](T)) : "—"}</div></div>`;
   });
   byId("legFunnel").innerHTML = medios.map(m => `<span><i class="dot" style="background:${col[m]}"></i>${medioNombre(m)}</span>`).join("");
-  /* OLE con el mismo funnel que arriba (Alin, 2026-10-27): registros, leads, citas, PVR y ventas de TODO lo no pagado, en anillos
-     partidos por de dónde entra (web, social media, Google u otros medios), con las filas por medio de la sección de costos (CROWS, pagado = 0). */
+  /* OLE con el mismo funnel que arriba (Alin, 2026-10-27): registros, leads, citas, PVR y ventas de TODO lo no pagado, un segmento por
+     medio (web, facebook, instagram, whatsapp…) con los colores de medio del Looker, como el funnel pagado. */
   const o = ole(), oReg = regBy(null, null, "sin_campana");
-  const OLE_G = { web: ["Web", "#7ab83b"], social: ["Social media", "#1a73e8"], google: ["Google", "#c8a040"], otros: ["Otros medios", "#9aa7bd"] };
-  const medGrupo = m => /^(facebook|instagram|socialmedia|social_media|threads|x|x-test|tiktok|meta|linkedin)$/.test(m) ? "social" : /google|dgen|pmax|youtube|display/.test(m) ? "google" : m === "web" ? "web" : "otros";
-  const porG = {}; CROWS.filter(r => r.pagado === 0 && inMes(r)).forEach(r => { const g = medGrupo(r.medio); porG[g] = porG[g] || { leads: 0, citas: 0, pvr: 0, ventas: 0 }; ["leads", "citas", "pvr", "ventas"].forEach(k => porG[g][k] += r[k]); });
-  const hayG = Object.keys(porG).length > 0;
-  const OLE_ST = [["Registros", "formularios", "reg", oReg, null], ["Leads", "sin campaña pagada", "leads", o.leads, "de registros"], ["Citas agendadas", "en BIC", "citas", o.citas, "de leads"], ["Primeras visitas", "realizadas", "pvr", o.pvr, "de citas agendadas"], ["Ventas", "BEC en BIT", "ventas", o.ventas, "de primeras visitas"]];
-  let prevO = null;
-  const legOle = hayG ? Object.keys(OLE_G).filter(g => porG[g]).map(g => `<span><i class="dot" style="background:${OLE_G[g][1]}"></i>${OLE_G[g][0]}</span>`).join("") : "";
-  html += `</div><div class="ole-funnel"><div class="fgroup-title">OLE · todo lo NO pagado, por dónde entra</div>${legOle ? `<div class="legend" style="margin-bottom:6px">${legOle}</div>` : ""}<div class="donuts fila">`;
-  OLE_ST.forEach(([name, sub, m, v, convTxt]) => {
-    let segs = `<circle cx="60" cy="60" r="${R}" fill="none" class="ring-track" stroke-width="${SW}"/>`;
-    const parts = m !== "reg" && hayG ? Object.keys(OLE_G).map(g => ({ g, v: porG[g] ? porG[g][m] : 0 })).filter(p => p.v > 0) : (v > 0 ? [{ g: "ole", v }] : []);
-    const totP = parts.reduce((x, p) => x + p.v, 0) || v; let offset = 0;
-    parts.forEach(p => { const frac = div(p.v, totP) || 0, gap = parts.length > 1 ? GAP : 0, len = Math.max(0, frac * C - gap);
-      const tip = `<div class="tt">${name} · ${p.g === "ole" ? "OLE" : OLE_G[p.g][0]}</div>` + tipRows([["Volumen", nf.format(p.v)], parts.length > 1 ? ["% del total OLE", pct(frac)] : null, prevO != null && p.g !== "ole" && porG[p.g] && prevO.g && prevO.g[p.g] ? [convTxt, pct(div(p.v, prevO.g[p.g]))] : null].filter(Boolean));
-      segs += `<circle cx="60" cy="60" r="${R}" fill="none" ${p.g === "ole" ? 'class="s-ole"' : `style="stroke:${OLE_G[p.g][1]}"`} stroke-width="${SW}" stroke-dasharray="${len.toFixed(2)} ${(C - len).toFixed(2)}" stroke-dashoffset="${(-offset - gap / 2).toFixed(2)}" data-tip="${encodeURIComponent(tip)}"/>`; offset += frac * C; });
-    const sc = Math.min(1, Math.max(0.42, 1 + 0.35 * Math.log10(div(v, oReg || o.leads) || 0.001)));
-    const split = parts.length > 1 ? `<div class="dsplit">${parts.map(p => `<span><i class="dot" style="background:${OLE_G[p.g][1]}"></i>${pct(div(p.v, totP))}</span>`).join("")}</div>` : "";
-    const conv = prevO != null ? `<div class="dconv">${pct(div(v, prevO.v))} ${convTxt}</div>` : `<div class="dconv muted">Inicio del funnel</div>`;
-    html += `<div class="dcard${v ? "" : " pending"}"><div class="dname">${name}<small>${sub}</small></div>
-      <div class="dslot"><div class="dwrap" style="width:${(sc * 100).toFixed(1)}%">${ring(segs, `${name} OLE: ${nf.format(v)}`)}
-        <div class="dcenter"><span class="dval" style="font-size:${(12 + 7 * sc).toFixed(1)}px">${nf.format(v)}</span></div></div></div>${split}${conv}</div>`;
-    prevO = { v, g: m !== "reg" && hayG ? Object.fromEntries(Object.keys(porG).map(g => [g, porG[g][m]])) : null };
+  const MO = {}; const addO = (m, k, v) => { const key = medioKey(m); MO[key] = MO[key] || { registros: 0, leads: 0, citas: 0, pvr: 0, ventas: 0 }; MO[key][k] += v || 0; };
+  if (porMedio) CROWS.filter(r => r.pagado === 0 && inMes(r)).forEach(r => ["leads", "citas", "pvr", "ventas"].forEach(k => addO(r.medio, k, r[k])));
+  else ALL.filter(r => r.origen === "sin_campana" && inMes(r)).forEach(r => ["leads", "citas", "pvr", "ventas"].forEach(k => addO(r.canal, k, r[k])));
+  RROWS.filter(r => inMes(r) && r.origen === "sin_campana").forEach(r => addO(porMedio ? r.medio : r.canal, "registros", r.registros));
+  const mediosO = Object.keys(MO).filter(m => Object.values(MO[m]).some(v => v > 0)).sort((x, y) => (MO[y].leads - MO[x].leads) || (MO[y].registros - MO[x].registros));
+  const colO = {}; mediosO.forEach((m, i) => { colO[m] = MEDIO_COL[m] || PAL[(i + 7) % PAL.length]; });
+  const TO = {}; ["registros", "leads", "citas", "pvr", "ventas"].forEach(k => { TO[k] = mediosO.reduce((x, m) => x + MO[m][k], 0); });
+  const OLE_ST = [["Registros", "formularios", "registros", null, null], ["Leads", "sin campaña pagada", "leads", "registros", "de registros"], ["Citas agendadas", "en BIC", "citas", "leads", "de leads"], ["Primeras visitas", "realizadas", "pvr", "citas", "de citas agendadas"], ["Ventas", "BEC en BIT", "ventas", "pvr", "de primeras visitas"]];
+  const legOle = mediosO.map(m => `<span><i class="dot" style="background:${colO[m]}"></i>${medioNombre(m)}</span>`).join("");
+  html += `</div><div class="ole-funnel"><div class="fgroup-title">OLE · todo lo NO pagado, por medio</div>${legOle ? `<div class="legend" style="margin-bottom:6px">${legOle}</div>` : ""}<div class="donuts fila">`;
+  OLE_ST.forEach(([name, sub, k, prevK, convTxt]) => {
+    const total = TO[k];
+    const parts = mediosO.map(m => ({ m, v: MO[m][k] })).filter(p => p.v > 0);
+    let offset = 0, segs = track;
+    parts.forEach(p => { const frac = div(p.v, total) || 0, gap = parts.length > 1 ? GAP : 0, len = Math.max(0, frac * C - gap), om = MO[p.m];
+      const tip = `<div class="tt">${name} · ${medioNombre(p.m)} · OLE</div>` + tipRows([["Volumen", nf.format(p.v)], parts.length > 1 ? ["% del total OLE", pct(frac)] : null, prevK && om[prevK] ? [convTxt, pct(div(p.v, om[prevK]))] : null].filter(Boolean));
+      segs += `<circle cx="60" cy="60" r="${R}" fill="none" style="stroke:${colO[p.m]}" stroke-width="${SW}" stroke-dasharray="${len.toFixed(2)} ${(C - len).toFixed(2)}" stroke-dashoffset="${(-offset - gap / 2).toFixed(2)}" data-tip="${encodeURIComponent(tip)}"/>`; offset += frac * C; });
+    const sc = Math.min(1, Math.max(0.42, 1 + 0.35 * Math.log10(div(total, TO.registros || TO.leads) || 0.001)));
+    const split = parts.length > 1 ? `<div class="dsplit">${parts.slice(0, 4).map(p => `<span><i class="dot" style="background:${colO[p.m]}"></i>${pct(div(p.v, total))}</span>`).join("")}${parts.length > 4 ? `<span>+${parts.length - 4}</span>` : ""}</div>` : "";
+    const conv = prevK && TO[prevK] ? `<div class="dconv">${pct(div(total, TO[prevK]))} ${convTxt}</div>` : `<div class="dconv muted">Inicio del funnel</div>`;
+    html += `<div class="dcard${total ? "" : " pending"}"><div class="dname">${name}<small>${sub}</small></div>
+      <div class="dslot"><div class="dwrap" style="width:${(sc * 100).toFixed(1)}%">${ring(segs, `${name} OLE: ${nf.format(total)}`)}
+        <div class="dcenter"><span class="dval" style="font-size:${(12 + 7 * sc).toFixed(1)}px">${nf.format(total)}</span></div></div></div>${split}${conv}</div>`;
   });
-  html += `</div><div class="overall"><span>Registro → lead <b>${pct(div(o.leads, oReg))}</b></span><span>Lead → cita agendada <b>${pct(div(o.citas, o.leads))}</b></span><span>TAL% <b>${pct(div(o.pvr, o.leads))}</b></span><span>PVR → venta <b>${pct(div(o.ventas, o.pvr))}</b></span></div>
+  html += `</div><div class="overall"><span>Registro → lead <b>${pct(div(TO.leads, TO.registros))}</b></span><span>Lead → cita agendada <b>${pct(div(TO.citas, TO.leads))}</b></span><span>TAL% <b>${pct(div(TO.pvr, TO.leads))}</b></span><span>PVR → venta <b>${pct(div(TO.ventas, TO.pvr))}</b></span></div>
   </div><div class="overall"><span class="tenue">Pagado: campañas paid, paid_int y paid_us, de todos los medios.</span>${regPag(null) ? `<span>Registro → PVR <b>${pct(div(a.pvr, regPag(null)))}</b></span>` : ""}<span>Lead → cita agendada <b>${pct(div(a.citas, a.leads))}</b></span><span>Cita agendada → PVR <b>${pct(div(a.pvr, a.citas))}</b></span><span>TAL% <b>${pct(div(a.pvr, a.leads))}</b></span><span>PVR → venta <b>${pct(div(a.ventas, a.pvr))}</b></span><span class="din">Inversión asignada <b>${money(a.inversion)}</b></span><span class="din">Importe vendido <b>${money(a.importe)}</b></span></div>`;
   byId("funnel").innerHTML = html;
 }
