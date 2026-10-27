@@ -351,7 +351,7 @@ function renderKpis() {
       d = `${up ? "▲" : "▼"} ${Math.abs(ch * 100).toFixed(1)}% vs ${prevName}`;
       if (!it.neutral) cls = (it.cost ? !up : up) ? "good" : "bad";
     }
-    return `<div class="kpi${it.cls ? " " + it.cls : ""}"><span class="k">${it.k}</span><span class="v${ROWS.length && String(it.f(it.v)).length > 9 ? " larga" : ""}">${ROWS.length ? it.f(it.v) : "—"}</span><span class="d ${cls}">${d}</span></div>`;
+    return `<div class="kpi${it.cls ? " " + it.cls : ""}"><span class="k">${it.k}</span><span class="v${ROWS.length ? (String(it.f(it.v)).length > 8 ? " muylarga" : String(it.f(it.v)).length > 6 ? " larga" : "") : ""}">${ROWS.length ? it.f(it.v) : "—"}</span><span class="d ${cls}">${d}</span></div>`;
   }).join("");
   /* Fila OLE con el mismo funnel que arriba (Alin, 2026-10-27): registros, leads, citas, PVR y ventas de los leads NO pagados, sin costos. */
   const o = ole(), oReg = regBy(null, null, "sin_campana"), po = pk ? sum(ALL.filter(r => r.origen === "sin_campana" && r.mes === pk)) : null;
@@ -363,11 +363,13 @@ function renderKpis() {
     { k: "TAL% OLE", v: div(o.pvr, o.leads), f: pct, prev: has && div(po.pvr, po.leads) },
     { k: "Ventas OLE", v: o.ventas, f: nf.format, prev: has && po.ventas, sub: `${pct(div(o.ventas, o.pvr))} de primeras visitas` }
   ];
-  byId("kpis").innerHTML += `<div class="kpi-fila">` + oleItems.map(it => {
+  let hostOle = document.getElementById("kpisOle");
+  if (!hostOle) { hostOle = document.createElement("section"); hostOle.id = "kpisOle"; hostOle.className = "kpis kpis-ole"; hostOle.setAttribute("aria-label", "OLE"); byId("kpis").insertAdjacentElement("afterend", hostOle); }
+  hostOle.innerHTML = oleItems.map(it => {
     let d = it.sub || "", cls = "";
     if (it.prev && isFinite(it.prev) && isFinite(it.v)) { const ch = it.v / it.prev - 1, up = ch >= 0; d = `${up ? "▲" : "▼"} ${Math.abs(ch * 100).toFixed(1)}% vs ${prevName}`; cls = up ? "good" : "bad"; }
     return `<div class="kpi ole"><span class="k">${it.k}</span><span class="v">${ROWS.length ? it.f(it.v) : "—"}</span><span class="d ${cls}">${d}</span></div>`;
-  }).join("") + `</div>`;
+  }).join("");
 }
 
 /* ===== Tabla genérica de resultados por valor ===== */
