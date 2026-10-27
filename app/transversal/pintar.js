@@ -470,6 +470,7 @@ function renderPerfil() {
 const MAPA_MET = { leads: ["Leads", nf.format], citas: ["Citas agendadas", nf.format], pvr: ["Primeras visitas", nf.format], ventas: ["Ventas", nf.format], cpl: ["CPL", money] };
 /* nombre en los datos → nombre del trazo */
 const MAPA_ALIAS = { "Veracruz de Ignacio de la Llave": "Veracruz", "Michoacán de Ocampo": "Michoacán", "Coahuila de Zaragoza": "Coahuila", "Pensilvania": "Pennsylvania", "Nuevo México": "New Mexico", "Carolina del Norte": "North Carolina", "Carolina del Sur": "South Carolina", "Nueva York": "New York", "Nueva Jersey": "New Jersey", "Distrito Federal": "Ciudad de México", "Estado de México": "México", "Queretaro": "Querétaro", "Yucatan": "Yucatán", "Nuevo Leon": "Nuevo León", "Michoacan": "Michoacán", "San Luis Potosi": "San Luis Potosí", "Mexico": "México" };
+const MAPA_DATO = {}; Object.keys(MAPA_ALIAS).forEach(k => { if (!MAPA_DATO[MAPA_ALIAS[k]]) MAPA_DATO[MAPA_ALIAS[k]] = k; }); // trazo → nombre como viene en los datos
 const fMapaMet = byId("fMapaMet");
 fMapaMet.innerHTML = Object.keys(MAPA_MET).map(k => `<button type="button" data-v="${k}"${k === "cpl" ? ' class="din"' : ""}>${MAPA_MET[k][0]}</button>`).join("");
 on(fMapaMet, "click", e => { const b = e.target.closest("button"); if (!b) return; state.mapaMet = b.dataset.v; save(); renderMapa(); });
@@ -489,8 +490,8 @@ function renderMapa() {
   const [x0, y0, x1, y1] = MAPA_BOX;
   const paths = Object.keys(MAPA_PATHS).map(n => { const a = porEstado[n], v = a ? val(a) : NaN;
     const tipo = a ? `<div class="tt">${n}</div>` + tipRows([["Leads", nf.format(a.leads)], ["Citas agendadas", nf.format(a.citas)], ["Primeras visitas", nf.format(a.pvr)], ["Ventas", nf.format(a.ventas)], SIN_MONTOS ? null : ["Inversión", money(a.inversion)], SIN_MONTOS ? null : ["CPL", money(div(a.inversion, a.leads))]].filter(Boolean)) : `<div class="tt">${n}</div><div class="row"><span>Sin leads con estos filtros</span></div>`;
-    const tip2 = (!a && MAPA_PAIS[n] === "CA" ? `<div class="tt">${n}</div><div class="row"><span>Canadá: el formulario no guarda la provincia; sus leads van en «Otro pais»</span></div>` : tipo) + (a ? `<div class="row"><span>${sel === n ? "Clic para quitar el filtro" : "Clic para filtrar todo el reporte"}</span></div>` : "");
-    return `<path d="${MAPA_PATHS[n]}" fill="${esc(v)}" class="${sel === n ? "sel" : ""}${a ? " clic" : ""}" data-estado="${esc(nombreDato[n] || "")}" data-tip="${encodeURIComponent(tip2)}"><title>${n}</title></path>`; }).join("");
+    const tip2 = (!a && MAPA_PAIS[n] === "CA" ? `<div class="tt">${n}</div><div class="row"><span>Canadá: el formulario no guarda la provincia; sus leads van en «Otro pais»</span></div>` : tipo) + (MAPA_PAIS[n] !== "CA" ? `<div class="row"><span>${sel === n ? "Clic para quitar el filtro" : "Clic para filtrar todo el reporte"}</span></div>` : "");
+    return `<path d="${MAPA_PATHS[n]}" fill="${esc(v)}" class="${sel === n ? "sel" : ""}${MAPA_PAIS[n] !== "CA" ? " clic" : ""}" data-estado="${esc(MAPA_PAIS[n] === "CA" ? "" : (nombreDato[n] || MAPA_DATO[n] || n))}" data-tip="${encodeURIComponent(tip2)}"><title>${n}</title></path>`; }).join("");
   /* Abreviaturas sobre cada estado (Alin, 2026-10-27); los muy chicos (DC, RI, Tlaxcala…) solo con tooltip, para que no se encimen. */
   const etiq = Object.keys(MAPA_ETIQ).filter(n => MAPA_ETIQ[n][3] >= 180 && MAPA_ETIQ[n][2] >= y0).map(n => { const [ab, cx, cy, area] = MAPA_ETIQ[n]; const v = porEstado[n] ? val(porEstado[n]) : NaN; const osc = isFinite(v) && v > 0 && Math.sqrt((v - vmin) / Math.max(1e-9, vmax - vmin)) > 0.55;
     return `<text x="${cx}" y="${cy}" text-anchor="middle" dominant-baseline="middle" class="mapa-et${osc ? " clara" : ""}${area < 450 ? " chica" : ""}">${ab}</text>`; }).join("");
