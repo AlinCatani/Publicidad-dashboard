@@ -10,7 +10,8 @@ const serif = Cormorant_Garamond({ subsets: ["latin"], weight: ["500", "600", "7
 const sans = Quattrocento_Sans({ subsets: ["latin"], weight: ["400", "700"], style: ["normal", "italic"], variable: "--f-sans" });
 
 // `marcado` = el HTML del reporte (MARCADO o MARCADO_CAMPANAS); el pintado es el mismo.
-export default function Tablero({ marcado }: { marcado: string }) {
+// `nivel` = completo | resultados: con «resultados» el pintado esconde todo lo de dinero (y la API no lo manda).
+export default function Tablero({ marcado, nivel = "completo" }: { marcado: string; nivel?: "completo" | "resultados" }) {
   const raiz = useRef<HTMLDivElement>(null);
   useEffect(() => {
     const el = raiz.current;
@@ -19,5 +20,5 @@ export default function Tablero({ marcado }: { marcado: string }) {
     const limpiar = montar(el, { sitio: true });
     return () => { limpiar(); el.innerHTML = ""; };
   }, [marcado]);
-  return <div ref={raiz} className={`rt ${serif.variable} ${sans.variable}`} />;
+  return <div ref={raiz} className={`rt ${serif.variable} ${sans.variable}`} data-nivel={nivel} />;
 }

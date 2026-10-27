@@ -1,12 +1,13 @@
 import type { Metadata } from "next";
-import { requerirSesion } from "@/lib/sesion";
+import { requerirAcceso } from "@/lib/sesion";
 import Tablero from "./tablero";
 import { MARCADO } from "./marcado";
 
 export const metadata: Metadata = { title: "Reporte Transversal" };
 
-// La página solo exige sesión; los datos los pide el navegador a /api/transversal según los filtros.
+// La página exige sesión y permiso para «transversal» (lista de /admin); los datos los pide el navegador a
+// /api/transversal según los filtros. `nivel` = completo | resultados (sin montos); la API lo vuelve a aplicar.
 export default async function Transversal() {
-  await requerirSesion();
-  return <Tablero marcado={MARCADO} />;
+  const { nivel } = await requerirAcceso("transversal");
+  return <Tablero marcado={MARCADO} nivel={nivel} />;
 }

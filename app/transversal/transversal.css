@@ -312,6 +312,8 @@ tr.hl td { background: var(--accent-soft); }
 .subpanel.sin-linea { margin-top: 0; padding-top: 0; border-top: 0; }
 .subpanel h3 { font-family: var(--font-serif); font-size: 20px; font-weight: 600; color: var(--primary); margin: 0; }
 .chart text.lbl.chica { font-size: 9px; }
+/* Nivel «resultados» (acceso por usuario, 2026-10-27): nada de dinero a la vista. */
+&.sin-montos .din, &.sin-montos [data-sec="ads"], &.sin-montos [data-sec="costos"], &.sin-montos [data-sec="cag"], &.sin-montos [data-sec="cpvr"], &.sin-montos [data-sec="local"], &.sin-montos [data-sec="wk"] { display: none !important; }
 .chart text.seglbl { font-size: 11px; fill: #fff; font-weight: 700; } .chart text.seglbl.chica { font-size: 8.5px; }
 .legend .lg-item { font: inherit; font-size: 13px; color: var(--ink-2); background: transparent; border: 1px solid transparent; border-radius: 999px; padding: 2px 8px 2px 6px; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; }
 .legend .lg-item:hover { background: var(--soft); }

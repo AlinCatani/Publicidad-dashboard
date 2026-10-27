@@ -71,6 +71,10 @@ const today = iso(new Date());
 /* ===== Estado ===== */
 const MES_MET_KEYS = ["leads", "citas", "pvr"];
 const MAX_VALS_F = 200; // valores por filtro; igual que MAX_VALS en consultas.ts
+/* Nivel «resultados» (acceso por usuario, 2026-10-27): el sitio pone data-nivel en la raíz y la API ya no manda dinero.
+   Aquí solo se esconde lo que lo mostraría (tarjetas, columnas y secciones de montos) para que no queden huecos. */
+const SIN_MONTOS = !!(raiz && raiz.dataset && raiz.dataset.nivel === "resultados");
+if (SIN_MONTOS && raiz.classList) raiz.classList.add("sin-montos");
 const state = { desde: MIN_DATE, hasta: today, mes: "todo", canal: "todos", modo: "directo", terr: "", diaMet: "leads", gran: "dia", evolGran: "dia", desgMet: "leads", desgGran: "dia", regMet: "registros", regGran: "dia", costoMet: "leads", costoVista: "pagado", horaMet: "registros", dim: "campaign", pdim: "tipo_de_paciente", sucs: [], f: {} }; // arranca en ALL y con todos los medios (Alin, 2026-10-15): «no dejes fuera nada»
 /* El filtro «Sucursal» de la barra y el menú lateral son la misma selección: state.f.sucursal_real es un alias de state.sucs
    (no enumerable, así no se guarda dos veces ni viaja al servidor como filtro aparte). */
@@ -332,7 +336,7 @@ function renderKpis() {
     { k: "Costo por PVR", v: div(a.inversion, a.pvr), f: money, prev: has && div(p.inversion, p.pvr), cost: true },
     { k: "TAL% · lead → PVR", v: div(a.pvr, a.leads), f: pct, prev: has && div(p.pvr, p.leads) },
     { k: "OLE", v: ole().leads, f: nf.format, sub: `Leads NO pagados · ${nf.format(ole().citas)} citas agendadas · ${nf.format(ole().pvr)} PVR`, cls: "ole" }
-  ];
+  ].filter(it => !(SIN_MONTOS && it.cost)); // nivel «resultados»: sin tarjetas de costo
   const prevName = pk ? new Date(pk + "-01T12:00:00").toLocaleDateString("es-MX", { month: "short" }).replace(".", "") : "";
   byId("kpis").innerHTML = items.map(it => {
     let d = it.sub || "", cls = "";
@@ -362,9 +366,9 @@ function resultTable(rows, label, nameFn) {
       <td><span class="share">${pct(div(a.leads, tot.leads))}<span class="bar"><i style="width:${(div(a.leads, tot.leads) * 100 || 0).toFixed(1)}%"></i></span></span></td>
       <td>${nf.format(a.citas)}</td><td>${pct(div(a.citas, a.leads))}</td>
       <td>${nf.format(a.pvr)}</td><td>${pct(div(a.pvr, a.leads))}</td>
-      <td>${money(a.inversion)}</td><td class="hl">${money(div(a.inversion, a.leads))}</td><td class="hl">${money(div(a.inversion, a.citas))}</td><td class="hl">${money(div(a.inversion, a.pvr))}</td>
+      <td class="din">${money(a.inversion)}</td><td class="hl din">${money(div(a.inversion, a.leads))}</td><td class="hl din">${money(div(a.inversion, a.citas))}</td><td class="hl din">${money(div(a.inversion, a.pvr))}</td>
     </tr>`;
-  return { html: `<thead><tr><th>${label}</th><th>Leads</th><th>% leads</th><th>Citas agendadas</th><th>Lead → cita agendada</th><th>PVR</th><th>TAL%</th><th>Inversión</th><th>CPL</th><th>Costo/cita agendada</th><th>Costo/PVR</th></tr></thead>
+  return { html: `<thead><tr><th>${label}</th><th>Leads</th><th>% leads</th><th>Citas agendadas</th><th>Lead → cita agendada</th><th>PVR</th><th>TAL%</th><th class="din">Inversión</th><th class="din">CPL</th><th class="din">Costo/cita agendada</th><th class="din">Costo/PVR</th></tr></thead>
      <tbody>${shown.map(x => row(x.raw ? x.k : nameFn(x.k), x.a)).join("")}${row("Total", tot, "total")}</tbody>`, n: list.length, rest: rest.length };
 }
 const monthName = key => { const m = monthsSel().find(x => x.key === key); return m ? cap(m.long) : key; };
@@ -427,7 +431,7 @@ function renderFunnel() {
       html += `<div class="dcard${total ? "" : " pending"}"><div class="dname">${st.name}<small>${st.sub}</small></div>
       <div class="dslot"><div class="dwrap" style="width:${(sc * 100).toFixed(1)}%">${ring(segs, `${st.name}: ${nf.format(total)}`)}
         <div class="dcenter"><span class="dval" style="font-size:${(12 + 7 * sc).toFixed(1)}px">${total ? compact.format(total) : "—"}</span></div></div></div>
-      ${split}${conv}<div class="dline">${st.cost} ${total ? money(st.costFn(invP, total)) : "—"}</div></div>`;
+      ${split}${conv}<div class="dline din">${st.cost} ${total ? money(st.costFn(invP, total)) : "—"}</div></div>`;
       prevA = st.m;
     });
   }
@@ -460,7 +464,7 @@ function renderFunnel() {
     html += `<div class="dcard"><div class="dname">${st.name}<small>${st.sub}</small></div>
       <div class="dslot"><div class="dwrap" style="width:${(sc * 100).toFixed(1)}%">${ring(segs, `${st.name}: ${nf.format(total)}`)}
         <div class="dcenter"><span class="dval" style="font-size:${(12 + 7 * sc).toFixed(1)}px">${nf.format(total)}</span></div></div></div>
-      ${split}${conv}<div class="dline">${st.cost} ${money(div(a.inversion, total))}</div></div>`;
+      ${split}${conv}<div class="dline din">${st.cost} ${money(div(a.inversion, total))}</div></div>`;
     prevM = st.m;
   });
   const o = ole(), oleMax = Math.max(1, o.leads);
@@ -481,9 +485,9 @@ function renderOrigen() {
       <td>${nf.format(reg)}</td><td>${nf.format(a.leads)}</td>
       <td><span class="share">${pct(share)}<span class="bar"><i style="width:${(share * 100 || 0).toFixed(1)}%"></i></span></span></td>
       <td>${nf.format(a.citas)}</td><td>${nf.format(a.pvr)}</td><td>${pct(div(a.pvr, a.leads))}</td>
-      <td>${paid ? money(a.inversion) : "—"}</td><td>${paid ? money(div(a.inversion, a.leads)) : "—"}</td><td>${paid ? money(div(a.inversion, a.pvr)) : "—"}</td></tr>`; }).join("");
-  byId("tOrigen").innerHTML = `<thead><tr><th>Origen</th><th>Registros</th><th>Leads</th><th>% de leads</th><th>Citas agendadas</th><th>PVRs</th><th>TAL%</th><th>Inversión</th><th>CPL</th><th>Costo/PVR</th></tr></thead>
-    <tbody>${body}<tr class="total"><td>Total</td><td>${nf.format(regT)}</td><td>${nf.format(tot.leads)}</td><td>100%</td><td>${nf.format(tot.citas)}</td><td>${nf.format(tot.pvr)}</td><td>${pct(div(tot.pvr, tot.leads))}</td><td>${money(tot.inversion)}</td><td>${money(div(tot.inversion, tot.leads))}</td><td>${money(div(tot.inversion, tot.pvr))}</td></tr></tbody>`;
+      <td class="din">${paid ? money(a.inversion) : "—"}</td><td class="din">${paid ? money(div(a.inversion, a.leads)) : "—"}</td><td class="din">${paid ? money(div(a.inversion, a.pvr)) : "—"}</td></tr>`; }).join("");
+  byId("tOrigen").innerHTML = `<thead><tr><th>Origen</th><th>Registros</th><th>Leads</th><th>% de leads</th><th>Citas agendadas</th><th>PVRs</th><th>TAL%</th><th class="din">Inversión</th><th class="din">CPL</th><th class="din">Costo/PVR</th></tr></thead>
+    <tbody>${body}<tr class="total"><td>Total</td><td>${nf.format(regT)}</td><td>${nf.format(tot.leads)}</td><td>100%</td><td>${nf.format(tot.citas)}</td><td>${nf.format(tot.pvr)}</td><td>${pct(div(tot.pvr, tot.leads))}</td><td class="din">${money(tot.inversion)}</td><td class="din">${money(div(tot.inversion, tot.leads))}</td><td class="din">${money(div(tot.inversion, tot.pvr))}</td></tr></tbody>`;
   const suc = state.sucs.length ? sucsLabel() : "", nac = sum(ROWS.filter(r => r.origen === "nacional")), loc = sum(ROWS.filter(r => r.origen === "local"));
   byId("origenHint").textContent = suc ? `Leads de ${suc.toLowerCase()}: las campañas nacionales aportan ${pct(div(nac.leads, tot.leads))} y la campaña local ${pct(div(loc.leads, tot.leads))}.` : "Elige una sucursal en las pestañas para separar su campaña local de las nacionales.";
   byId("origenNote").textContent = suc && localRegions().length ? `«Campaña local» agrupa todo lo etiquetado con región ${localRegions().slice(0, 2).join(" o ")} en campañas pagadas. Si una campaña cambió de segmentación sin cambiar sus UTM, aquí se ve junta.` : "";
@@ -765,7 +769,7 @@ function renderMes() {
   host.innerHTML = `<svg class="chart" viewBox="0 0 ${W} ${H}" role="img" aria-label="${metN} por mes">${s}</svg>`;
   byId("legMes").innerHTML = legendHtml(chs);
   const cols = [["Registros", (a, i) => nf.format(i == null ? regSum(RROWS) : regBy(null, ms[i].key))], ["Leads", a => nf.format(a.leads)], ["Citas agendadas", a => nf.format(a.citas)], ["Lead → cita agendada", a => pct(div(a.citas, a.leads))], ["PVR", a => nf.format(a.pvr)], ["TAL%", a => pct(div(a.pvr, a.leads))],
-    ["Inversión", a => money(a.inversion)], ["CPL", a => money(div(a.inversion, a.leads))], ["Costo/cita", a => money(div(a.inversion, a.citas))], ["Costo/PVR", a => money(div(a.inversion, a.pvr))]];
+    ["Inversión", a => money(a.inversion)], ["CPL", a => money(div(a.inversion, a.leads))], ["Costo/cita", a => money(div(a.inversion, a.citas))], ["Costo/PVR", a => money(div(a.inversion, a.pvr))]].filter(c => !(SIN_MONTOS && /Inversión|CPL|Costo/.test(c[0])));
   byId("tMes").innerHTML = `<thead><tr><th>Mes</th>${cols.map(c => `<th>${c[0]}</th>`).join("")}</tr></thead><tbody>` +
     ms.map((mo, i) => `<tr${state.mes === mo.key ? ' class="hl"' : ""}><td>${cap(mo.long)}</td>${cols.map(c => `<td>${c[1](per[i].all, i)}</td>`).join("")}</tr>`).join("") +
     `<tr class="total"><td>${state.mes === "todo" ? "Total" : "Total del periodo"}</td>${cols.map(c => `<td>${c[1](sum(MROWS), null)}</td>`).join("")}</tr></tbody>`;
@@ -1007,7 +1011,7 @@ async function refreshWeekly(force) {
 }
 let aseq = 0;
 async function refreshAds(force) {
-  if (!hay("ads")) return;
+  if (!hay("ads") || SIN_MONTOS) return;
   const my = ++aseq;
   try {
     const { rows } = await runSql("publicidad", force);
@@ -1029,7 +1033,7 @@ async function refreshDiario(force) {
 }
 let cseq = 0;
 async function refreshCostos(force) {
-  if (!hay("costos")) return;
+  if (!hay("costos") || SIN_MONTOS) return;
   const my = ++cseq;
   try {
     const { rows } = await runSql("costos", force);

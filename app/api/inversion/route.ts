@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/auth";
+import { nivelPara, permisoDe } from "@/lib/acceso";
 import { consultarCon } from "@/lib/bigquery";
 import { TIPOS, construirSql, validarMes, type Tipo } from "@/app/inversion/consultas";
 
@@ -10,6 +11,7 @@ export async function POST(req: Request) {
   if (!sesion?.user?.email?.toLowerCase().endsWith("@ingenes.com")) {
     return NextResponse.json({ code: "sesion", error: "Sin sesión" }, { status: 401 });
   }
+  if (!nivelPara(await permisoDe(sesion.user.email), "inversion")) return NextResponse.json({ code: "sin_acceso", error: "Sin permiso para este reporte" }, { status: 403 });
   let cuerpo: Record<string, unknown>;
   try { cuerpo = await req.json(); } catch { return NextResponse.json({ code: "bad_request", error: "Cuerpo inválido" }, { status: 400 }); }
   const tipo = cuerpo.tipo as Tipo;
