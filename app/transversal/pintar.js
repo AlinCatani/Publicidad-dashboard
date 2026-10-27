@@ -61,6 +61,8 @@ const mxn = new Intl.NumberFormat("es-MX", { style: "currency", currency: "MXN",
 const compact = new Intl.NumberFormat("es-MX", { notation: "compact", maximumFractionDigits: 1 });
 const pct = v => isFinite(v) ? (v * 100).toLocaleString("es-MX", { maximumFractionDigits: 1 }) + "%" : "—";
 const money = v => isFinite(v) ? mxn.format(v) : "—";
+/* Montos grandes en tarjeta: $201.1 M en vez de $201,092,156, para que quepan (Alin, 2026-10-27: «que entre el importe vendido»). */
+const moneyK = v => !isFinite(v) ? "—" : Math.abs(v) >= 1e6 ? `$${(v / 1e6).toLocaleString("es-MX", { maximumFractionDigits: 1 })} M` : mxn.format(v);
 const div = (a, b) => b ? a / b : NaN;
 const esc = s => String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
 const cap = s => s ? s[0].toUpperCase() + s.slice(1) : s;
@@ -339,7 +341,7 @@ function renderKpis() {
     { k: "TAL% · lead → PVR", v: div(a.pvr, a.leads), f: pct, prev: has && div(p.pvr, p.leads) },
     { k: "Ventas (BEC)", v: a.ventas, f: nf.format, prev: has && p.ventas, sub: `${pct(div(a.ventas, a.pvr))} de primeras visitas` },
     { k: "Costo por venta", v: div(a.inversion, a.ventas), f: money, prev: has && div(p.inversion, p.ventas), cost: true },
-    { k: "Importe vendido", v: a.importe, f: money, prev: has && p.importe, din: true },
+    { k: "Importe vendido", v: a.importe, f: moneyK, prev: has && p.importe, din: true },
     { k: "OLE", v: ole().leads, f: nf.format, sub: `Leads NO pagados · ${nf.format(ole().citas)} citas agendadas · ${nf.format(ole().pvr)} PVR`, cls: "ole" }
   ].filter(it => !(SIN_MONTOS && (it.cost || it.din))); // nivel «resultados»: sin tarjetas de dinero
   const prevName = pk ? new Date(pk + "-01T12:00:00").toLocaleDateString("es-MX", { month: "short" }).replace(".", "") : "";
@@ -350,7 +352,7 @@ function renderKpis() {
       d = `${up ? "▲" : "▼"} ${Math.abs(ch * 100).toFixed(1)}% vs ${prevName}`;
       if (!it.neutral) cls = (it.cost ? !up : up) ? "good" : "bad";
     }
-    return `<div class="kpi${it.cls ? " " + it.cls : ""}"><span class="k">${it.k}</span><span class="v">${ROWS.length ? it.f(it.v) : "—"}</span><span class="d ${cls}">${d}</span></div>`;
+    return `<div class="kpi${it.cls ? " " + it.cls : ""}"><span class="k">${it.k}</span><span class="v${ROWS.length && String(it.f(it.v)).length > 9 ? " larga" : ""}">${ROWS.length ? it.f(it.v) : "—"}</span><span class="d ${cls}">${d}</span></div>`;
   }).join("");
 }
 
