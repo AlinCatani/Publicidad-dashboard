@@ -47,3 +47,4 @@ next-env.d.ts
 # por si acaso: las llaves viven fuera del repo, en ../secretos/
 /secretos/
 *.json.key
+.claude/

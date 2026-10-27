@@ -1,9 +1,9 @@
 import type { Metadata } from "next";
-import { signOut } from "@/auth";
 import { requerirAdmin } from "@/lib/sesion";
 import { leerAcceso, NIVELES, TABLERO_IDS, type Nivel } from "@/lib/acceso";
 import { TABLEROS } from "@/lib/tableros";
 import { agregarUsuarios, fijarCampo, fijarTablero, quitarUsuario } from "./acciones";
+import BarraSitio from "@/components/BarraSitio";
 import "./admin.css";
 
 export const metadata: Metadata = { title: "Administración de reportes" };
@@ -18,17 +18,9 @@ export default async function Admin() {
   const enEdge = !!process.env.EDGE_CONFIG;
 
   return (
+    <><BarraSitio permiso={yo} actual="/admin" />
     <main className="contenedor adm">
-      <header className="barra">
-        <div style={{ display: "flex", alignItems: "center", gap: 18 }}>
-          <img src="/ingenes-logo.webp" alt="Instituto Ingenes" />
-          <h1>Administración de reportes</h1>
-        </div>
-        <form action={async () => { "use server"; await signOut({ redirectTo: "/entrar" }); }}>
-          <span className="tenue">{yo.email}</span>{" "}
-          <button type="submit" className="enlace">Salir</button>
-        </form>
-      </header>
+      <header className="barra"><h1>Administración de reportes</h1></header>
 
       <p className="tenue">
         Quien no esté aquí no entra, aunque tenga correo @ingenes.com. <b>Completo</b> ve montos (inversión, CPL, costos);
@@ -130,7 +122,7 @@ export default async function Admin() {
         )}
         <p className="tenue" style={{ marginTop: 12 }}>Última modificación: {acceso.actualizado.startsWith("1970") ? "—" : new Date(acceso.actualizado).toLocaleString("es-MX")}. Un cambio tarda hasta medio minuto en aplicarse a quien ya tiene el reporte abierto.</p>
       </section>
-    </main>
+    </main></>
   );
 }
 

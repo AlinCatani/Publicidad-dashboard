@@ -37,6 +37,17 @@ h1, h2 { font-family: var(--font-serif); color: var(--primary); font-weight: 600
 
 /* ---- Inicio: lista de tableros ---- */
 .contenedor { max-width: 1100px; margin: 0 auto; padding: 24px 20px 64px; }
+/* Barra de navegación del sitio (2026-10-27): solo los reportes de cada quien. */
+.nav-sitio { display: flex; align-items: center; gap: 18px; padding: 8px 20px; background: var(--surface); border-bottom: 1px solid var(--line); box-shadow: var(--shadow); position: relative; z-index: 7; }
+.nav-logo { width: 96px; height: auto; flex: none; }
+.nav-links { display: flex; flex-wrap: wrap; gap: 4px; flex: 1; }
+.nav-links a { font: inherit; font-size: 14px; font-weight: 700; color: var(--primary); text-decoration: none; padding: 7px 14px; border-radius: 999px; border: 1px solid transparent; }
+.nav-links a:hover { background: var(--soft, #eef3fb); }
+.nav-links a.on { background: var(--primary); color: #fff; }
+.nav-links a.nav-admin { color: var(--muted); border-color: var(--line); }
+.nav-links a.nav-admin.on { background: var(--muted); color: #fff; }
+.nav-sesion { display: flex; align-items: center; gap: 10px; font-size: 13px; white-space: nowrap; }
+@media (max-width: 640px) { .nav-sesion .tenue { display: none; } .nav-logo { width: 72px; } }
 .barra { display: flex; justify-content: space-between; align-items: center; gap: 16px; flex-wrap: wrap; margin-bottom: 28px; padding-bottom: 16px; border-bottom: 1px solid var(--line); }
 .barra img { width: 140px; height: auto; }
 .barra h1 { font-size: 30px; }
