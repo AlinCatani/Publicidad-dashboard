@@ -1,5 +1,4 @@
 import type { Metadata } from "next";
-import { headers } from "next/headers";
 import { Cormorant_Garamond, Quattrocento_Sans } from "next/font/google";
 import "./globals.css";
 
@@ -9,10 +8,9 @@ const sans = Quattrocento_Sans({ subsets: ["latin"], weight: ["400", "700"], sty
 
 // El título de la pestaña depende del dominio: en reportetransversal.vercel.app el sitio ES el reporte (Alin, 2026-10-15).
 export async function generateMetadata(): Promise<Metadata> {
-  const host = (await headers()).get("host") ?? "";
-  const esTransversal = /^reportetransversal\./i.test(host);
+  // Desde el 2026-10-27 la raíz es el reporte en los dos dominios; cada página puede poner su propio título (p. ej. /inversion).
   return {
-    title: esTransversal ? "Reporte transversal" : "Reportes de Atracción",
+    title: "Reporte transversal",
     description: "Tableros de publicidad de Ingenes. Solo correos @ingenes.com.",
     robots: { index: false, follow: false },
     // Favicon en .webp (pedido por Alin, 2026-10-07); iOS no lo acepta, por eso el PNG para apple-icon.

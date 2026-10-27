@@ -1,5 +1,4 @@
 import { existsSync } from "node:fs";
-import { headers } from "next/headers";
 import { signIn } from "@/auth";
 
 // Foto de portada opcional: public/portada.webp. Si no está, queda el degradado azul.
@@ -12,8 +11,7 @@ const GOOGLE_G = (
 export default async function Entrar({ searchParams }: PageProps<"/entrar">) {
   const { error, callbackUrl } = await searchParams;
   // En reportetransversal.vercel.app la pantalla de entrar es la del reporte (Alin, 2026-10-15).
-  const host = (await headers()).get("host") ?? "";
-  const titulo = /^reportetransversal\./i.test(host) ? "Reporte transversal" : "Reportes de Atracción";
+  const titulo = "Reporte transversal"; // la raíz es el reporte en los dos dominios (2026-10-27)
   // Volver a la página que se pidió, pero solo dentro del sitio (nunca a otro dominio).
   let destino = "/";
   try {
