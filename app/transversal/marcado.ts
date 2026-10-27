@@ -84,6 +84,7 @@ const PLANTILLA = `<div class="wrap">
         <div class="seg" role="group" aria-label="Métrica del mapa" id="fMapaMet"></div>
         <div class="legend" id="legMapa" style="margin-left:auto"></div>
       </div>
+      <p class="hint" id="mapaHintSel" style="margin-bottom:6px"></p>
       <div id="cMapa"></div>
       <p class="caveat" id="mapaNote"></p>
     </div>

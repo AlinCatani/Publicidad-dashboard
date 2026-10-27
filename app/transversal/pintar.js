@@ -192,6 +192,14 @@ fDim.addEventListener("click", e => { const b = e.target.closest("button"); if (
 const fPerfil = byId("fPerfil");
 fPerfil.innerHTML = PERFIL_DIMS.map(k => `<button type="button" data-v="${k}">${DIMS[k].label}</button>`).join("") + `<button type="button" data-v="mapa" title="Estado de residencia en mapa">Mapa</button>`; // «Mapa»: vista de mapa del estado de residencia, en lugar de la tabla (Alin, 2026-10-27)
 fPerfil.addEventListener("click", e => { const b = e.target.closest("button"); if (!b) return; if (b.dataset.v === "mapa") { state.vistaPerfil = "mapa"; state.pdim = "estado"; } else { state.vistaPerfil = "tabla"; state.pdim = b.dataset.v; } save(); paintFilters(); vistaPerfil(); refreshPerfil(false); refreshDiario(false); refreshMapa(false); });
+/* Clic en un estado del mapa (Alin, 2026-10-27): filtra TODO el reporte por ese estado de residencia (es el mismo filtro «Estado de
+   residencia» de la barra, así que aparece como chip y se quita igual); otro clic en el mismo estado lo quita. */
+on(byId("cMapa"), "click", e => {
+  const p = e.target.closest("path[data-estado]"); if (!p || !p.dataset.estado) return;
+  const v = p.dataset.estado;
+  state.f.estado = state.f.estado.length === 1 && state.f.estado[0] === v ? [] : [v];
+  save(); renderSelects(); paintFilters(); renderTabs(); refresh(false);
+});
 /* Tabla o mapa: el mapa ocupa el lugar de la tabla; la tendencia de abajo sigue abierta por estado. */
 function vistaPerfil() { const mapa = state.vistaPerfil === "mapa"; byId("vistaTablaPerfil").hidden = mapa; byId("bloqueMapa").hidden = !mapa; }
 
@@ -471,8 +479,9 @@ function renderMapa() {
   vistaPerfil();
   const met = state.mapaMet, [metN, fmt] = MAPA_MET[met];
   fMapaMet.querySelectorAll("button").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.v === met)));
-  const porEstado = {}, fuera = [];
-  MAPROWS.forEach(r => { const k = MAPA_ALIAS[r.dim] || r.dim; if (MAPA_PATHS[k]) porEstado[k] = sum((porEstado[k] ? [porEstado[k]] : []).concat([r])); else fuera.push(r); });
+  const porEstado = {}, fuera = [], nombreDato = {};
+  MAPROWS.forEach(r => { const k = MAPA_ALIAS[r.dim] || r.dim; if (MAPA_PATHS[k]) { porEstado[k] = sum((porEstado[k] ? [porEstado[k]] : []).concat([r])); nombreDato[k] = r.dim; } else fuera.push(r); });
+  const sel = state.f.estado.length === 1 ? (MAPA_ALIAS[state.f.estado[0]] || state.f.estado[0]) : null; // estado filtrado desde el mapa (o desde el filtro)
   const val = a => met === "cpl" ? div(a.inversion, a.leads) : a[met];
   const vals = Object.values(porEstado).map(val).filter(v => isFinite(v) && v > 0);
   const vmax = Math.max(1, ...vals), vmin = vals.length ? Math.min(...vals) : 0;
@@ -480,12 +489,13 @@ function renderMapa() {
   const [x0, y0, x1, y1] = MAPA_BOX;
   const paths = Object.keys(MAPA_PATHS).map(n => { const a = porEstado[n], v = a ? val(a) : NaN;
     const tipo = a ? `<div class="tt">${n}</div>` + tipRows([["Leads", nf.format(a.leads)], ["Citas agendadas", nf.format(a.citas)], ["Primeras visitas", nf.format(a.pvr)], ["Ventas", nf.format(a.ventas)], SIN_MONTOS ? null : ["Inversión", money(a.inversion)], SIN_MONTOS ? null : ["CPL", money(div(a.inversion, a.leads))]].filter(Boolean)) : `<div class="tt">${n}</div><div class="row"><span>Sin leads con estos filtros</span></div>`;
-    const tip2 = !a && MAPA_PAIS[n] === "CA" ? `<div class="tt">${n}</div><div class="row"><span>Canadá: el formulario no guarda la provincia; sus leads van en «Otro pais»</span></div>` : tipo;
-    return `<path d="${MAPA_PATHS[n]}" fill="${esc(v)}" data-tip="${encodeURIComponent(tip2)}"><title>${n}</title></path>`; }).join("");
+    const tip2 = (!a && MAPA_PAIS[n] === "CA" ? `<div class="tt">${n}</div><div class="row"><span>Canadá: el formulario no guarda la provincia; sus leads van en «Otro pais»</span></div>` : tipo) + (a ? `<div class="row"><span>${sel === n ? "Clic para quitar el filtro" : "Clic para filtrar todo el reporte"}</span></div>` : "");
+    return `<path d="${MAPA_PATHS[n]}" fill="${esc(v)}" class="${sel === n ? "sel" : ""}${a ? " clic" : ""}" data-estado="${esc(nombreDato[n] || "")}" data-tip="${encodeURIComponent(tip2)}"><title>${n}</title></path>`; }).join("");
   /* Abreviaturas sobre cada estado (Alin, 2026-10-27); los muy chicos (DC, RI, Tlaxcala…) solo con tooltip, para que no se encimen. */
   const etiq = Object.keys(MAPA_ETIQ).filter(n => MAPA_ETIQ[n][3] >= 180 && MAPA_ETIQ[n][2] >= y0).map(n => { const [ab, cx, cy, area] = MAPA_ETIQ[n]; const v = porEstado[n] ? val(porEstado[n]) : NaN; const osc = isFinite(v) && v > 0 && Math.sqrt((v - vmin) / Math.max(1e-9, vmax - vmin)) > 0.55;
     return `<text x="${cx}" y="${cy}" text-anchor="middle" dominant-baseline="middle" class="mapa-et${osc ? " clara" : ""}${area < 450 ? " chica" : ""}">${ab}</text>`; }).join("");
   byId("cMapa").innerHTML = `<svg class="mapa" viewBox="${x0 - 4} ${y0 - 4} ${x1 - x0 + 8} ${y1 - y0 + 8}" role="img" aria-label="${metN} por estado de residencia">${paths}${etiq}</svg>`;
+  byId("mapaHintSel").textContent = sel ? `Filtrado por ${sel}: todo el reporte (leads, citas, PVR, ventas, sucursales…) muestra solo ese estado. Clic en el estado o en su chip de la barra para quitarlo.` : "";
   byId("legMapa").innerHTML = vals.length ? `<span class="mapa-esc">${fmt(vmin)} <i style="background:linear-gradient(90deg,#dbe6f8,${met === "cpl" ? "#a90707" : "#253f78"})"></i> ${fmt(vmax)}</span>` : "";
   const top = Object.keys(porEstado).map(n => [n, val(porEstado[n])]).filter(x => isFinite(x[1]) && x[1] > 0).sort((a, b) => met === "cpl" ? a[1] - b[1] : b[1] - a[1]).slice(0, 5);
   const sinMapa = fuera.filter(r => r[met === "cpl" ? "leads" : met] > 0).sort((a, b) => b.leads - a.leads).slice(0, 6).map(r => `${r.dim || "(vacío)"} ${nf.format(r[met === "cpl" ? "leads" : met])}`);
