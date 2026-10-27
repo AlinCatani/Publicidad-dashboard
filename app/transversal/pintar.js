@@ -342,7 +342,6 @@ function renderKpis() {
     { k: "Ventas (BEC)", v: a.ventas, f: nf.format, prev: has && p.ventas, sub: `${pct(div(a.ventas, a.pvr))} de primeras visitas` },
     { k: "Costo por venta", v: div(a.inversion, a.ventas), f: money, prev: has && div(p.inversion, p.ventas), cost: true },
     { k: "Importe vendido", v: a.importe, f: moneyK, prev: has && p.importe, din: true },
-    { k: "OLE", v: ole().leads, f: nf.format, sub: `Leads NO pagados · ${nf.format(ole().citas)} citas agendadas · ${nf.format(ole().pvr)} PVR`, cls: "ole" }
   ].filter(it => !(SIN_MONTOS && (it.cost || it.din))); // nivel «resultados»: sin tarjetas de dinero
   const prevName = pk ? new Date(pk + "-01T12:00:00").toLocaleDateString("es-MX", { month: "short" }).replace(".", "") : "";
   byId("kpis").innerHTML = items.map(it => {
@@ -354,6 +353,21 @@ function renderKpis() {
     }
     return `<div class="kpi${it.cls ? " " + it.cls : ""}"><span class="k">${it.k}</span><span class="v${ROWS.length && String(it.f(it.v)).length > 9 ? " larga" : ""}">${ROWS.length ? it.f(it.v) : "—"}</span><span class="d ${cls}">${d}</span></div>`;
   }).join("");
+  /* Fila OLE con el mismo funnel que arriba (Alin, 2026-10-27): registros, leads, citas, PVR y ventas de los leads NO pagados, sin costos. */
+  const o = ole(), oReg = regBy(null, null, "sin_campana"), po = pk ? sum(ALL.filter(r => r.origen === "sin_campana" && r.mes === pk)) : null;
+  const oleItems = [
+    { k: "Registros OLE", v: oReg, f: nf.format, prev: has && regBy(null, pk, "sin_campana"), sub: "sin campaña pagada" },
+    { k: "Leads OLE", v: o.leads, f: nf.format, prev: has && po.leads, sub: oReg ? `${pct(div(o.leads, oReg))} de registros` : "" },
+    { k: "Citas agendadas OLE", v: o.citas, f: nf.format, prev: has && po.citas, sub: `${pct(div(o.citas, o.leads))} de leads` },
+    { k: "Primeras visitas OLE", v: o.pvr, f: nf.format, prev: has && po.pvr, sub: `${pct(div(o.pvr, o.citas))} de citas agendadas` },
+    { k: "TAL% OLE", v: div(o.pvr, o.leads), f: pct, prev: has && div(po.pvr, po.leads) },
+    { k: "Ventas OLE", v: o.ventas, f: nf.format, prev: has && po.ventas, sub: `${pct(div(o.ventas, o.pvr))} de primeras visitas` }
+  ];
+  byId("kpis").innerHTML += `<div class="kpi-fila">` + oleItems.map(it => {
+    let d = it.sub || "", cls = "";
+    if (it.prev && isFinite(it.prev) && isFinite(it.v)) { const ch = it.v / it.prev - 1, up = ch >= 0; d = `${up ? "▲" : "▼"} ${Math.abs(ch * 100).toFixed(1)}% vs ${prevName}`; cls = up ? "good" : "bad"; }
+    return `<div class="kpi ole"><span class="k">${it.k}</span><span class="v">${ROWS.length ? it.f(it.v) : "—"}</span><span class="d ${cls}">${d}</span></div>`;
+  }).join("") + `</div>`;
 }
 
 /* ===== Tabla genérica de resultados por valor ===== */
