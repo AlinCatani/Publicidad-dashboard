@@ -78,7 +78,15 @@ const PLANTILLA = `<div class="wrap">
       </div>
     </div>
     <div class="seg" role="group" aria-label="Característica" id="fPerfil" style="margin-bottom:12px"></div>
-    <div class="tscroll"><table id="tPerfil"></table></div>
+    <div class="tscroll" id="vistaTablaPerfil"><table id="tPerfil"></table></div>
+    <div id="bloqueMapa" hidden>
+      <div class="fila-ctrl">
+        <div class="seg" role="group" aria-label="Métrica del mapa" id="fMapaMet"></div>
+        <div class="legend" id="legMapa" style="margin-left:auto"></div>
+      </div>
+      <div id="cMapa"></div>
+      <p class="caveat" id="mapaNote"></p>
+    </div>
     <div class="subpanel" id="bloqueDiario">
       <div class="phead">
         <div><h3 id="h-diario">Tendencia de resultados</h3><p class="hint" id="diarioHint">Resultados por día, apilados por la característica elegida arriba (por ejemplo LS y LP por día).</p></div>
@@ -89,17 +97,6 @@ const PLANTILLA = `<div class="wrap">
       </div>
       <div class="legend" id="diarioLeg" style="margin-bottom:10px"></div>
       <div id="cDiario"></div>
-    </div>
-    <div class="subpanel" id="bloqueMapa">
-      <div class="phead">
-        <div><h3 id="h-mapa">Mapa por estado de residencia</h3><p class="hint" id="mapaHint">Escala de color por estado (México, Estados Unidos y Canadá) con los filtros de arriba. Pasa el cursor sobre un estado para ver el detalle.</p></div>
-      </div>
-      <div class="fila-ctrl">
-        <div class="seg" role="group" aria-label="Métrica del mapa" id="fMapaMet"></div>
-        <div class="legend" id="legMapa" style="margin-left:auto"></div>
-      </div>
-      <div id="cMapa"></div>
-      <p class="caveat" id="mapaNote"></p>
     </div>
   </section>
 

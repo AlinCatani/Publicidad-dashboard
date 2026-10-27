@@ -79,7 +79,7 @@ const MAX_VALS_F = 200; // valores por filtro; igual que MAX_VALS en consultas.t
 const raizNivel = (typeof raiz !== "undefined" && raiz) || document.querySelector(".rt"); // en el artefacto no hay `raiz` (se quita el envoltorio montar)
 const SIN_MONTOS = !!(raizNivel && raizNivel.dataset && raizNivel.dataset.nivel === "resultados");
 if (SIN_MONTOS && raizNivel.classList) raizNivel.classList.add("sin-montos");
-const state = { desde: MIN_DATE, hasta: today, mes: "todo", canal: "todos", modo: "directo", terr: "", diaMet: "leads", gran: "dia", evolGran: "dia", desgMet: "leads", desgGran: "dia", regMet: "registros", regGran: "dia", costoMet: "leads", costoVista: "pagado", horaMet: "registros", mapaMet: "leads", dim: "campaign", pdim: "tipo_de_paciente", sucs: [], f: {} }; // arranca en ALL y con todos los medios (Alin, 2026-10-15): «no dejes fuera nada»
+const state = { desde: MIN_DATE, hasta: today, mes: "todo", canal: "todos", modo: "directo", terr: "", diaMet: "leads", gran: "dia", evolGran: "dia", desgMet: "leads", desgGran: "dia", regMet: "registros", regGran: "dia", costoMet: "leads", costoVista: "pagado", horaMet: "registros", mapaMet: "leads", vistaPerfil: "tabla", dim: "campaign", pdim: "tipo_de_paciente", sucs: [], f: {} }; // arranca en ALL y con todos los medios (Alin, 2026-10-15): «no dejes fuera nada»
 /* El filtro «Sucursal» de la barra y el menú lateral son la misma selección: state.f.sucursal_real es un alias de state.sucs
    (no enumerable, así no se guarda dos veces ni viaja al servidor como filtro aparte). */
 Object.defineProperty(state.f, "sucursal_real", { get: () => state.sucs, set: v => { state.sucs = v; }, enumerable: false });
@@ -98,6 +98,7 @@ try {
   if (s.costoVista === "ole") state.costoVista = "ole";
   if (["registros", "leads", "citas", "pvr", "ventas"].includes(s.horaMet)) state.horaMet = s.horaMet;
   if (["leads", "citas", "pvr", "ventas", "cpl"].includes(s.mapaMet)) state.mapaMet = s.mapaMet;
+  if (s.vistaPerfil === "mapa") { state.vistaPerfil = "mapa"; state.pdim = "estado"; }
   if (typeof s.mesMet === "string") state.mesMet = s.mesMet;
   if (/^\d{4}-\d\d-\d\d$/.test(s.desde || "")) state.desde = s.desde < MIN_DATE ? MIN_DATE : s.desde;
   if (/^\d{4}-\d\d-\d\d$/.test(s.hasta || "")) state.hasta = s.hasta;
@@ -189,8 +190,10 @@ const fDim = byId("fDim");
 fDim.innerHTML = DESG_DIMS.map(k => `<button type="button" data-v="${k}">${DIMS[k].label}</button>`).join("");
 fDim.addEventListener("click", e => { const b = e.target.closest("button"); if (!b) return; state.dim = b.dataset.v; save(); paintFilters(); refresh(false); refreshDesgDiario(false); });
 const fPerfil = byId("fPerfil");
-fPerfil.innerHTML = PERFIL_DIMS.map(k => `<button type="button" data-v="${k}">${DIMS[k].label}</button>`).join("");
-fPerfil.addEventListener("click", e => { const b = e.target.closest("button"); if (!b) return; state.pdim = b.dataset.v; save(); paintFilters(); refreshPerfil(false); refreshDiario(false); });
+fPerfil.innerHTML = PERFIL_DIMS.map(k => `<button type="button" data-v="${k}">${DIMS[k].label}</button>`).join("") + `<button type="button" data-v="mapa" title="Estado de residencia en mapa">Mapa</button>`; // «Mapa»: vista de mapa del estado de residencia, en lugar de la tabla (Alin, 2026-10-27)
+fPerfil.addEventListener("click", e => { const b = e.target.closest("button"); if (!b) return; if (b.dataset.v === "mapa") { state.vistaPerfil = "mapa"; state.pdim = "estado"; } else { state.vistaPerfil = "tabla"; state.pdim = b.dataset.v; } save(); paintFilters(); vistaPerfil(); refreshPerfil(false); refreshDiario(false); refreshMapa(false); });
+/* Tabla o mapa: el mapa ocupa el lugar de la tabla; la tendencia de abajo sigue abierta por estado. */
+function vistaPerfil() { const mapa = state.vistaPerfil === "mapa"; byId("vistaTablaPerfil").hidden = mapa; byId("bloqueMapa").hidden = !mapa; }
 
 /* ===== Filtros de varias opciones: botón + desplegable con casillas, «Todas» y «Solo» ===== */
 const selVal = o => o.v === "" ? VACIO : o.v, selLabel = (v, k) => v === VACIO ? "(vacío)" : k === "sucursal_real" ? sucName(v) : v;
@@ -287,7 +290,7 @@ function paintFilters() {
   document.querySelectorAll("#fCanal button").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.v === state.canal)));
   fMes.querySelectorAll("button").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.v === state.mes)));
   fDim.querySelectorAll("button").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.v === state.dim)));
-  fPerfil.querySelectorAll("button").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.v === state.pdim)));
+  fPerfil.querySelectorAll("button").forEach(b => b.setAttribute("aria-pressed", String(state.vistaPerfil === "mapa" ? b.dataset.v === "mapa" : b.dataset.v === state.pdim)));
   periodBtn.textContent = `${fmtDate(state.desde)} – ${fmtDate(state.hasta)} ▾`;
   byId("eyebrow").textContent = `Marketing · ${sucsLabel()}`;
   pintarPliegue();
@@ -450,6 +453,7 @@ function renderPerfil() {
   const d = DIMS[state.pdim];
   const t = resultTable(PROWS, d.label, k => dimName(state.pdim, k), "tPerfil");
   byId("tPerfil").innerHTML = t.html;
+  if (state.vistaPerfil === "mapa") { byId("perfilHint").textContent = "Mapa: estado de residencia que declaró el lead, en escala de color (México, Estados Unidos y Canadá). Elige la métrica con los botones; pasa el cursor sobre un estado para ver el detalle. Los filtros de arriba aplican."; return; }
   byId("perfilHint").textContent = `CPL, costo por cita agendada y costo por primera visita por ${d.label.toLowerCase()}. Los filtros de arriba aplican; la tendencia de abajo se abre por la misma característica.`;
 }
 
@@ -464,6 +468,7 @@ on(fMapaMet, "click", e => { const b = e.target.closest("button"); if (!b) retur
 const mezcla = (a, b, t) => "#" + [0, 1, 2].map(i => Math.round(parseInt(a.slice(1 + i * 2, 3 + i * 2), 16) * (1 - t) + parseInt(b.slice(1 + i * 2, 3 + i * 2), 16) * t).toString(16).padStart(2, "0")).join("");
 function renderMapa() {
   if (!hay("perfil") || !document.getElementById("cMapa")) return;
+  vistaPerfil();
   const met = state.mapaMet, [metN, fmt] = MAPA_MET[met];
   fMapaMet.querySelectorAll("button").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.v === met)));
   const porEstado = {}, fuera = [];
