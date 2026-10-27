@@ -43,14 +43,15 @@ const DIMS: Record<string, { sql: string; fixed?: boolean }> = {
   grupo_edad: { sql: EDAD_SQL },
   es_leading: { sql: "IF(es_leading=1,'LeadING','No LeadING')", fixed: true },
   ole: { sql: "IF(STARTS_WITH(LOWER(TRIM(IFNULL(campaign,''))),'paid'),'Con campaña','OLE')", fixed: true }, // OLE = lead orgánico: sin campaña pagada (sin parámetros)
-  estado: { sql: "IFNULL(estado,'')" }, // estado de residencia que declaró el lead (Alin, 2026-10-22, como en Looker)
+  estado: { sql: "IFNULL(estado,'')" },
+  octante: { sql: "IF(IFNULL(perfil,'')='' OR IFNULL(score,'')='', 'Sin clasificar', CONCAT(perfil,' ',score))" }, // octantes = perfil × score (Azul Blanco, Verde Intermedio…), como en Looker (Alin, 2026-10-27) // estado de residencia que declaró el lead (Alin, 2026-10-22, como en Looker)
   internacional: { sql: "IF(LOWER(TRIM(IFNULL(internacional,'')))='internacional','Internacional','Nacional')", fixed: true }, // columna de leads_historico: teléfono fuera de +52 o vive fuera; vacío = Nacional
   canal: { sql: CANAL_SQL },
   mes: { sql: "FORMAT_DATE('%Y-%m', fecha)" },
 };
-const FILTER_DIMS = ["campaign", "medium", "landing", "region", "anuncio", "mensaje", "tipo_de_paciente", "perfil", "score", "user_persona", "grupo_edad", "es_leading", "ole", "internacional", "estado"];
+const FILTER_DIMS = ["campaign", "medium", "landing", "region", "anuncio", "mensaje", "tipo_de_paciente", "perfil", "score", "user_persona", "grupo_edad", "es_leading", "ole", "internacional", "estado", "octante"];
 const DESG_DIMS = ["campaign", "medium", "landing", "region", "anuncio", "mensaje", "sucursal_real", "canal", "mes"];
-const PERFIL_DIMS = ["tipo_de_paciente", "perfil", "score", "user_persona", "es_leading", "grupo_edad", "internacional"]; // Nacional / Internacional como barras apiladas (Alin, 2026-10-22)
+const PERFIL_DIMS = ["tipo_de_paciente", "perfil", "score", "octante", "user_persona", "es_leading", "grupo_edad", "internacional", "estado"]; // + octantes y estado de residencia (Alin, 2026-10-27) // Nacional / Internacional como barras apiladas (Alin, 2026-10-22)
 const CANALES = ["pagado", "todos", "meta", "google", "otros"];
 export const TIPOS = ["principal", "registros", "reg_diario", "semanal", "perfil", "opciones", "diario", "desg_diario", "costos", "hora", "reg_hora", "publicidad"] as const;
 const VACIO = "__vacio__"; // el select manda esto para «(vacío)»; en SQL es ''
