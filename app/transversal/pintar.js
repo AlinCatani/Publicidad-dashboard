@@ -40,7 +40,7 @@ const DIMS = {
 };
 const FILTER_ROW1 = ["sucursal_real", "campaign", "medium", "landing", "region", "anuncio", "mensaje"]; // sucursal también como filtro (Alin, 2026-10-22); es la misma selección que el menú lateral
 const FILTER_ROW2 = ["tipo_de_paciente", "perfil", "score", "octante", "user_persona", "grupo_edad", "es_leading", "ole", "internacional", "estado", "etapa", "motivo", "necesidad"];
-const FILTER_DIMS = FILTER_ROW1.concat(FILTER_ROW2);
+const FILTER_DIMS = ["unidad"].concat(FILTER_ROW1, FILTER_ROW2); // «unidad» no es selector: son los botones junto a Directo/Indirecto, pero sí es filtro (chip, SQL)
 const DESG_DIMS = ["campaign", "medium", "landing", "region", "anuncio", "mensaje", "sucursal_real", "etapa", "unidad"]; // «canal» (Meta/Google/otros) salió de los botones el 2026-10-15 a pedido de Alin; el servidor lo sigue aceptando
 const PERFIL_DIMS = ["tipo_de_paciente", "perfil", "score", "octante", "user_persona", "es_leading", "grupo_edad", "internacional", "estado", "motivo", "necesidad"]; // + octantes y estado de residencia (Alin, 2026-10-27) // Nacional / Internacional como barras apiladas (Alin, 2026-10-22)
 
