@@ -42,7 +42,7 @@ const FILTER_ROW1 = ["sucursal_real", "campaign", "medium", "landing", "region",
 const FILTER_ROW2 = ["tipo_de_paciente", "perfil", "score", "octante", "user_persona", "grupo_edad", "es_leading", "ole", "internacional", "estado", "etapa", "motivo", "necesidad"];
 const FILTER_DIMS = ["unidad"].concat(FILTER_ROW1, FILTER_ROW2); // «unidad» no es selector: son los botones junto a Directo/Indirecto, pero sí es filtro (chip, SQL)
 const DESG_DIMS = ["campaign", "medium", "landing", "region", "anuncio", "mensaje", "sucursal_real", "etapa", "unidad"]; // «canal» (Meta/Google/otros) salió de los botones el 2026-10-15 a pedido de Alin; el servidor lo sigue aceptando
-const PERFIL_DIMS = ["tipo_de_paciente", "perfil", "score", "octante", "user_persona", "es_leading", "grupo_edad", "internacional", "estado", "motivo", "necesidad"]; // + octantes y estado de residencia (Alin, 2026-10-27) // Nacional / Internacional como barras apiladas (Alin, 2026-10-22)
+const PERFIL_DIMS = ["tipo_de_paciente", "perfil", "score", "octante", "user_persona", "es_leading", "grupo_edad", "internacional", "estado", "motivo", "necesidad", "unidad"]; // + unidad de negocio junto a Mapa (2026-10-28); + octantes y estado de residencia (Alin, 2026-10-27) // Nacional / Internacional como barras apiladas (Alin, 2026-10-22)
 
 /* Sucursales: abreviatura y grupo de color (mx = verde del logo, us = azul marino, tur = dorado). */
 const SUC = {
@@ -981,6 +981,7 @@ const PAL_FIJA = {
   "Quiero tener un bebé": "#ec407a", "Quiero evaluar mi fertilidad": "#ff7043",
   "segunda-opinion": "#0072f0", "investigando-opciones": "#00b6cb", ingenes: "#ffa800", "informacion-educativa": "#f10096", "agendar-cita": "#f66d00",
   Prelead: "#0072f0", "Lead Completo": "#00b6cb", "Lead Avanzado": "#ffa800", Lead: "#f10096",
+  Fertilidad: "#253f78", Subrogado: "#c8a040", More: "#7ab83b", "Sin unidad": "#9aa7bd",
   paid: "#f10096", paid_us: "#5a9bd4", organic: "#7cb342", paid_int: "#ffa800", community: "#ce7058", test: "#7ac36a",
   facebook: "#0072f0", google_search: "#7cb342", web: "#5e35b1", dgen: "#737373", socialmedia: "#f15a60", social_media: "#5a9bd4", google: "#ec407a", web_surrogate: "#7ac36a", presencial: "#f66d00", whatsapp: "#f10096", correo: "#faa75a", x: "#9e67ab", threads: "#d77fb3", "x-test": "#ce7058", pmax: "#00b6cb", youtube: "#ff7043", tiktok: "#03a9f4", display: "#81d4fa", instagram: "#ffa800",
   __otros: "#9aa7bd" }; // «Otros» (el resto agrupado) en gris, para no confundirlo con «Otro pais» (Alin, 2026-10-27)
