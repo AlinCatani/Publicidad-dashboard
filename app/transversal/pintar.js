@@ -201,7 +201,7 @@ const fDim = byId("fDim");
 fDim.innerHTML = DESG_DIMS.map(k => `<button type="button" data-v="${k}">${DIMS[k].label}</button>`).join("");
 fDim.addEventListener("click", e => { const b = e.target.closest("button"); if (!b) return; state.dim = b.dataset.v; save(); paintFilters(); refresh(false); refreshDesgDiario(false); });
 const fPerfil = byId("fPerfil");
-fPerfil.innerHTML = PERFIL_DIMS.map(k => `<button type="button" data-v="${k}">${DIMS[k].label}</button>`).join("") + `<button type="button" data-v="mapa" title="Estado de residencia en mapa">Mapa</button>`; // «Mapa»: vista de mapa del estado de residencia, en lugar de la tabla (Alin, 2026-10-27)
+fPerfil.innerHTML = PERFIL_DIMS.filter(k => k !== "unidad").map(k => `<button type="button" data-v="${k}">${DIMS[k].label}</button>`).join("") + `<button type="button" data-v="mapa" title="Estado de residencia en mapa">Mapa</button><button type="button" data-v="unidad">${DIMS.unidad.label}</button>`; // orden pedido por Alin (2026-10-28): …, Necesidad, Mapa, Unidad de negocio // «Mapa»: vista de mapa del estado de residencia, en lugar de la tabla (Alin, 2026-10-27)
 fPerfil.addEventListener("click", e => { const b = e.target.closest("button"); if (!b) return; if (b.dataset.v === "mapa") { state.vistaPerfil = "mapa"; state.pdim = "estado"; } else { state.vistaPerfil = "tabla"; state.pdim = b.dataset.v; } save(); paintFilters(); vistaPerfil(); refreshPerfil(false); refreshDiario(false); refreshMapa(false); });
 /* Clic en un estado del mapa (Alin, 2026-10-27): filtra TODO el reporte por ese estado de residencia (es el mismo filtro «Estado de
    residencia» de la barra, así que aparece como chip y se quita igual); otro clic en el mismo estado lo quita. */
