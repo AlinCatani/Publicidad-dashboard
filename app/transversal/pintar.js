@@ -35,13 +35,13 @@ const DIMS = {
   sucursal_real: { label: "Sucursal" }, campaign: { label: "Campaña" }, medium: { label: "Medio" }, landing: { label: "Landing", top: 300 },
   region: { label: "Región" }, anuncio: { label: "Anuncio", top: 300 }, mensaje: { label: "Mensaje" },
   tipo_de_paciente: { label: "Tipo de paciente" }, perfil: { label: "Perfil" }, score: { label: "Score" }, user_persona: { label: "User persona" },
-  grupo_edad: { label: "Grupo de edad", sortKey: true }, es_leading: { label: "LeadING", fixed: ["LeadING", "No LeadING"] }, ole: { label: "OLE", fixed: ["OLE", "Con campaña"] }, internacional: { label: "Nacional / Internacional", fixed: ["Nacional", "Internacional"] }, estado: { label: "Estado de residencia" }, octante: { label: "Octantes" }, etapa: { label: "Etapa" }, motivo: { label: "Motivo" }, necesidad: { label: "Necesidad" },
+  grupo_edad: { label: "Grupo de edad", sortKey: true }, es_leading: { label: "LeadING", fixed: ["LeadING", "No LeadING"] }, ole: { label: "OLE", fixed: ["OLE", "Con campaña"] }, internacional: { label: "Nacional / Internacional", fixed: ["Nacional", "Internacional"] }, estado: { label: "Estado de residencia" }, unidad: { label: "Unidad de negocio" }, octante: { label: "Octantes" }, etapa: { label: "Etapa" }, motivo: { label: "Motivo" }, necesidad: { label: "Necesidad" },
   canal: { label: "Meta / Google" }, mes: { label: "Mes" }
 };
-const FILTER_ROW1 = ["sucursal_real", "campaign", "medium", "landing", "region", "anuncio", "mensaje"]; // sucursal también como filtro (Alin, 2026-10-22); es la misma selección que el menú lateral
+const FILTER_ROW1 = ["sucursal_real", "unidad", "campaign", "medium", "landing", "region", "anuncio", "mensaje"]; // sucursal también como filtro (Alin, 2026-10-22); es la misma selección que el menú lateral
 const FILTER_ROW2 = ["tipo_de_paciente", "perfil", "score", "octante", "user_persona", "grupo_edad", "es_leading", "ole", "internacional", "estado", "etapa", "motivo", "necesidad"];
 const FILTER_DIMS = FILTER_ROW1.concat(FILTER_ROW2);
-const DESG_DIMS = ["campaign", "medium", "landing", "region", "anuncio", "mensaje", "sucursal_real", "etapa"]; // «canal» (Meta/Google/otros) salió de los botones el 2026-10-15 a pedido de Alin; el servidor lo sigue aceptando
+const DESG_DIMS = ["campaign", "medium", "landing", "region", "anuncio", "mensaje", "sucursal_real", "etapa", "unidad"]; // «canal» (Meta/Google/otros) salió de los botones el 2026-10-15 a pedido de Alin; el servidor lo sigue aceptando
 const PERFIL_DIMS = ["tipo_de_paciente", "perfil", "score", "octante", "user_persona", "es_leading", "grupo_edad", "internacional", "estado", "motivo", "necesidad"]; // + octantes y estado de residencia (Alin, 2026-10-27) // Nacional / Internacional como barras apiladas (Alin, 2026-10-22)
 
 /* Sucursales: abreviatura y grupo de color (mx = verde del logo, us = azul marino, tur = dorado). */
@@ -128,7 +128,7 @@ function monthsSel() {
   return out;
 }
 
-const REG_SKIP = { perfil: 1, es_leading: 1, internacional: 1 };
+const REG_SKIP = { perfil: 1, es_leading: 1, internacional: 1, unidad: 1 };
 /* ===== Datos ===== */
 let ALL = [], ROWS = [], PROWS = [], RROWS = [], RDROWS = [], CROWS = [], HROWS = [], HRROWS = [], WEEKS = [], DROWS = [], GROWS = [], AROWS = [], MAPROWS = [], OPTIONS = null, OPTIONS_F = null; // OPTIONS: histórico completo (menú y colores); OPTIONS_F: en cascada con los filtros (selects)
 let MROWS = [];

@@ -43,6 +43,7 @@ const DIMS: Record<string, { sql: string; fixed?: boolean }> = {
   grupo_edad: { sql: EDAD_SQL },
   es_leading: { sql: "IF(es_leading=1,'LeadING','No LeadING')", fixed: true },
   ole: { sql: "IF(STARTS_WITH(LOWER(TRIM(IFNULL(campaign,''))),'paid'),'Con campaña','OLE')", fixed: true }, // OLE = lead orgánico: sin campaña pagada (sin parámetros)
+  unidad: { sql: "IFNULL(unidad,'Sin unidad')" }, // unidad de negocio: Fertilidad / Subrogado / More, de la cita o visita (Alin, 2026-10-28)
   estado: { sql: "IFNULL(estado,'')" },
   etapa: { sql: "IFNULL(Etapa,'')" }, // qué tan completo llegó el lead (Prelead / Lead / Lead avanzado / Lead completo); va con campañas (Alin, 2026-10-27)
   motivo: { sql: "IFNULL(motivo,'')" }, necesidad: { sql: "IFNULL(necesidad,'')" }, // lo que declara el paciente (Alin, 2026-10-27)
@@ -51,8 +52,8 @@ const DIMS: Record<string, { sql: string; fixed?: boolean }> = {
   canal: { sql: CANAL_SQL },
   mes: { sql: "FORMAT_DATE('%Y-%m', fecha)" },
 };
-const FILTER_DIMS = ["campaign", "medium", "landing", "region", "anuncio", "mensaje", "tipo_de_paciente", "perfil", "score", "user_persona", "grupo_edad", "es_leading", "ole", "internacional", "estado", "octante", "etapa", "motivo", "necesidad"];
-const DESG_DIMS = ["campaign", "medium", "landing", "region", "anuncio", "mensaje", "sucursal_real", "etapa", "canal", "mes"];
+const FILTER_DIMS = ["unidad", "campaign", "medium", "landing", "region", "anuncio", "mensaje", "tipo_de_paciente", "perfil", "score", "user_persona", "grupo_edad", "es_leading", "ole", "internacional", "estado", "octante", "etapa", "motivo", "necesidad"];
+const DESG_DIMS = ["campaign", "medium", "landing", "region", "anuncio", "mensaje", "sucursal_real", "etapa", "unidad", "canal", "mes"];
 const PERFIL_DIMS = ["tipo_de_paciente", "perfil", "score", "octante", "user_persona", "es_leading", "grupo_edad", "internacional", "estado", "motivo", "necesidad"]; // + octantes y estado de residencia (Alin, 2026-10-27) // Nacional / Internacional como barras apiladas (Alin, 2026-10-22)
 const CANALES = ["pagado", "todos", "meta", "google", "otros"];
 export const TIPOS = ["principal", "registros", "reg_diario", "semanal", "perfil", "opciones", "diario", "desg_diario", "costos", "hora", "reg_hora", "publicidad", "opciones_f", "mapa"] as const;
@@ -144,7 +145,7 @@ WHERE ${whereSql(e, false)}
 GROUP BY 1,2,3,4`;
 
 /* Registros: misma lógica de filtros sobre registros_historico (sin perfil ni LeadING; sucursal = la elegida). */
-const REG_SKIP: Record<string, 1> = { perfil: 1, es_leading: 1, internacional: 1 };
+const REG_SKIP: Record<string, 1> = { perfil: 1, es_leading: 1, internacional: 1, unidad: 1 }; // registros no tienen cita ni visita
 function regWhereSql(e: Estado) {
   const w = [`Fecha BETWEEN '${e.desde}' AND '${e.hasta}'`];
   const si = sucsIn(e, SUC_NORM_SQL("sucursal")); if (si) w.push(si);
