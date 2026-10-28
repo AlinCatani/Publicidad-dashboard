@@ -85,7 +85,11 @@ const state = { desde: MIN_DATE, hasta: today, mes: "todo", canal: "todos", modo
 Object.defineProperty(state.f, "sucursal_real", { get: () => state.sucs, set: v => { state.sucs = v; }, enumerable: false });
 FILTER_DIMS.forEach(k => state.f[k] = []);
 try {
-  const s = JSON.parse(localStorage.getItem("reporte-transversal-v3") || "{}");
+  /* Cada pestaña guarda su estado en su propia URL (#f=…), además del localStorage compartido (Alin, 2026-10-28: con varias
+     pestañas abiertas, recargar una le ponía los filtros de la última que tocó). Al cargar manda la URL de esa pestaña; si no
+     trae nada (enlace limpio), se usa lo último guardado. */
+  const deUrl = (() => { try { const m = (location.hash || "").match(/[#&]f=([^&]+)/); return m ? JSON.parse(decodeURIComponent(m[1])) : null; } catch (e) { return null; } })();
+  const s = deUrl || JSON.parse(localStorage.getItem("reporte-transversal-v3") || "{}");
   if (Array.isArray(s.sucs)) state.sucs = s.sucs.filter(v => typeof v === "string" && v).slice(0, 40);
   if (s.gran === "semana" || s.gran === "mes") state.gran = s.gran;
   if (MES_MET_KEYS.includes(s.diaMet)) state.diaMet = s.diaMet;
@@ -110,7 +114,8 @@ try {
   const viejo = { Leading: "LeadING", "No leading": "No LeadING" }; state.f.es_leading = state.f.es_leading.map(v => viejo[v] || v);
 } catch (e) {}
 if (state.hasta < state.desde) state.hasta = state.desde;
-const save = () => { try { localStorage.setItem("reporte-transversal-v3", JSON.stringify(state)); } catch (e) {} };
+const save = () => { try { localStorage.setItem("reporte-transversal-v3", JSON.stringify(state)); } catch (e) {}
+  try { const f = {}; Object.keys(state.f).forEach(k => { if (state.f[k].length) f[k] = state.f[k]; }); const url = "#f=" + encodeURIComponent(JSON.stringify({ ...state, f })); if (location.hash !== url) history.replaceState(null, "", url); } catch (e) {} };
 const channels = () => state.canal === "pagado" ? ["meta", "google"] : state.canal === "todos" ? ["meta", "google", "otros"] : [state.canal];
 /* Meses dentro del periodo elegido */
 function monthsSel() {
