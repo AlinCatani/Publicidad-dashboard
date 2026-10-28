@@ -116,6 +116,9 @@ try {
 if (state.hasta < state.desde) state.hasta = state.desde;
 const save = () => { try { localStorage.setItem("reporte-transversal-v3", JSON.stringify(state)); } catch (e) {}
   try { const f = {}; Object.keys(state.f).forEach(k => { if (state.f[k].length) f[k] = state.f[k]; }); const url = "#f=" + encodeURIComponent(JSON.stringify({ ...state, f })); if (location.hash !== url) history.replaceState(null, "", url); } catch (e) {} };
+/* La URL de la pestaña se fija desde que carga (no solo al tocar un filtro): así una pestaña abierta antes de este cambio, o recién
+   abierta, ya queda independiente de las demás en cuanto se recarga (2026-10-28, lo que le pasaba a Juan). */
+try { const f = {}; Object.keys(state.f).forEach(k => { if (state.f[k].length) f[k] = state.f[k]; }); history.replaceState(null, "", "#f=" + encodeURIComponent(JSON.stringify({ ...state, f }))); } catch (e) {}
 const channels = () => state.canal === "pagado" ? ["meta", "google"] : state.canal === "todos" ? ["meta", "google", "otros"] : [state.canal];
 /* Meses dentro del periodo elegido */
 function monthsSel() {
