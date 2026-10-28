@@ -38,7 +38,7 @@ const DIMS = {
   grupo_edad: { label: "Grupo de edad", sortKey: true }, es_leading: { label: "LeadING", fixed: ["LeadING", "No LeadING"] }, ole: { label: "OLE", fixed: ["OLE", "Con campaña"] }, internacional: { label: "Nacional / Internacional", fixed: ["Nacional", "Internacional"] }, estado: { label: "Estado de residencia" }, unidad: { label: "Unidad de negocio" }, octante: { label: "Octantes" }, etapa: { label: "Etapa" }, motivo: { label: "Motivo" }, necesidad: { label: "Necesidad" },
   canal: { label: "Meta / Google" }, mes: { label: "Mes" }
 };
-const FILTER_ROW1 = ["sucursal_real", "unidad", "campaign", "medium", "landing", "region", "anuncio", "mensaje"]; // sucursal también como filtro (Alin, 2026-10-22); es la misma selección que el menú lateral
+const FILTER_ROW1 = ["sucursal_real", "campaign", "medium", "landing", "region", "anuncio", "mensaje"]; // sucursal también como filtro (Alin, 2026-10-22); es la misma selección que el menú lateral
 const FILTER_ROW2 = ["tipo_de_paciente", "perfil", "score", "octante", "user_persona", "grupo_edad", "es_leading", "ole", "internacional", "estado", "etapa", "motivo", "necesidad"];
 const FILTER_DIMS = FILTER_ROW1.concat(FILTER_ROW2);
 const DESG_DIMS = ["campaign", "medium", "landing", "region", "anuncio", "mensaje", "sucursal_real", "etapa", "unidad"]; // «canal» (Meta/Google/otros) salió de los botones el 2026-10-15 a pedido de Alin; el servidor lo sigue aceptando
@@ -180,6 +180,7 @@ fMes.addEventListener("click", e => { const b = e.target.closest("button"); if (
 const rtEl = document.querySelector(".rt") || document.body;
 function pintarModo() {
   byId("fModo").querySelectorAll("button").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.v === state.modo)));
+  byId("fUnidad").querySelectorAll("button").forEach(b => b.setAttribute("aria-pressed", String((state.f.unidad.length === 1 ? state.f.unidad[0] : "") === b.dataset.v)));
   rtEl.classList.toggle("indirecto", state.modo === "indirecto");
   const ind = state.modo === "indirecto";
   byId("modoNote").textContent = ind
@@ -189,6 +190,8 @@ function pintarModo() {
     ? "Reporte indirecto: los leads se cuentan por su fecha de creación, las citas agendadas por BIC.FechaCitaProg y las primeras visitas por BIP.FechaPrimeraVisita, cada una dentro del periodo y mes elegidos. Las tasas (lead → cita, TAL%) cruzan cosas de distinta fecha; úsalas como ritmo del mes, no como conversión de una cohorte."
     : "El periodo filtra por fecha de creación del lead; sus citas agendadas y visitas se cuentan aunque ocurran después. Los últimos meses siguen madurando y sus tasas subirán.";
 }
+/* Unidad de negocio junto a Directo / Indirecto (Alin, 2026-10-28: «es un filtro muy importante»): es el filtro `unidad` de la barra, en botones. */
+on(byId("fUnidad"), "click", e => { const b = e.target.closest("button"); if (!b) return; state.f.unidad = b.dataset.v ? [b.dataset.v] : []; save(); renderSelects(); paintFilters(); renderTabs(); refresh(false); });
 on(byId("fModo"), "click", e => { const b = e.target.closest("button"); if (!b) return; state.modo = b.dataset.v; save(); pintarModo(); loadOptions(false); refresh(false); });
 pintarModo();
 
@@ -303,6 +306,7 @@ function renderTabs() {
 }
 
 function paintFilters() {
+  byId("fUnidad").querySelectorAll("button").forEach(b => b.setAttribute("aria-pressed", String((state.f.unidad.length === 1 ? state.f.unidad[0] : "") === b.dataset.v)));
   document.querySelectorAll("#fCanal button").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.v === state.canal)));
   fMes.querySelectorAll("button").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.v === state.mes)));
   fDim.querySelectorAll("button").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.v === state.dim)));

@@ -31,6 +31,10 @@ const PLANTILLA = `<div class="wrap">
         <button type="button" data-v="directo" title="Reporte directo">Directo</button>
         <button type="button" data-v="indirecto" title="Reporte indirecto: cambia toda la data del reporte">Indirecto</button>
       </div>
+      <span class="flabel" id="lbl-unidad">Unidad</span>
+      <div class="seg" role="group" aria-labelledby="lbl-unidad" id="fUnidad" title="Unidad de negocio de la cita o primera visita (BIC / BIP); los leads sin cita quedan en «Sin unidad»">
+        <button type="button" data-v="">Todas</button><button type="button" data-v="Fertilidad">Fertilidad</button><button type="button" data-v="Subrogado">Subrogado</button><button type="button" data-v="More">More</button>
+      </div>
       <button type="button" class="ver-filtros" id="verFiltros" aria-expanded="false" title="Mostrar los filtros"><span aria-hidden="true">⌄</span><small>Ver filtros</small></button>
       <span class="caveat" id="modoNote" style="margin:0"></span>
       <div class="periodo-esq"><span class="flabel" id="lbl-periodo">Periodo</span>
