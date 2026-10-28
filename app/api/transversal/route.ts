@@ -10,6 +10,9 @@ const SIN_MONTOS_TIPOS = new Set(["publicidad", "costos"]);
 
 // Datos del Reporte Transversal+Ole. El navegador manda { tipo, estado, force };
 // aquí se exige sesión @ingenes.com, permiso para el tablero, se valida el estado y se arma el SQL (consultas.ts).
+// Hasta 60 s por consulta (2026-10-28): en frío algunas pasan de los 10 s que Vercel da por omisión y el navegador recibía un 504.
+export const maxDuration = 60;
+
 export async function POST(req: Request) {
   const sesion = await auth();
   if (!sesion?.user?.email?.toLowerCase().endsWith("@ingenes.com")) {

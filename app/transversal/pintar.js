@@ -1202,7 +1202,7 @@ async function refreshAds(force) {
     if (my !== aseq || !rows) return;
     AROWS = rows.map(r => ({ mes: String(r.mes), canal: String(r.canal), medio: medioKey(r.medio), inversion: +r.inversion || 0, impresiones: +r.impresiones || 0, alcance: +r.alcance || 0, clics: +r.clics || 0, visitas: r.visitas == null ? null : +r.visitas }));
     renderAds(); renderFunnel();
-  } catch (e) { /* la sección conserva lo anterior */ }
+  } catch (e) { if (!force && !refreshAds.reintento) { refreshAds.reintento = true; setTimeout(() => refreshAds(false), 2500); } /* un reintento si la API falló en frío (2026-10-28) */ }
 }
 let dseq = 0;
 async function refreshDiario(force) {
@@ -1224,7 +1224,7 @@ async function refreshCostos(force) {
     if (my !== cseq || !rows) return;
     CROWS = rows.map(r => ({ mes: String(r.mes), pagado: +r.pagado || 0, medio: String(r.medio), leads: +r.leads || 0, citas: +r.citas || 0, pvr: +r.pvr || 0, ventas: +r.ventas || 0, inversion: +r.inversion || 0 }));
     renderCostos(); renderFunnel(); // el funnel de OLE se parte por medio con estas filas
-  } catch (e) { /* la sección conserva lo anterior */ }
+  } catch (e) { if (!force && !refreshCostos.reintento) { refreshCostos.reintento = true; setTimeout(() => refreshCostos(false), 2500); } }
 }
 let gseq = 0;
 async function refreshDesgDiario(force) {

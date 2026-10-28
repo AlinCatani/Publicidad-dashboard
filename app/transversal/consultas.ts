@@ -245,9 +245,28 @@ function whereSinSql(e: Estado, sin: string) {
   FILTER_DIMS.forEach((k) => { if (k !== sin && e.f[k].length) w.push(filtroIn(k, e.f[k])); });
   return w.join("\n  AND ");
 }
-const optionsSql = (e?: Estado) => ["sucursal_real", ...FILTER_DIMS].filter((k) => !DIMS[k].fixed).map((k) =>
-  `SELECT '${k}' k, ${DIMS[k].sql} v, SUM(leads) n FROM ${VIEW} WHERE ${e ? whereSinSql(e, k) : `tipo_fila='lead' AND fecha >= '${MIN_DATE}'`} GROUP BY 1,2`,
-).join("\nUNION ALL\n") + "\nORDER BY k, n DESC";
+const OPCION_DIMS = ["sucursal_real", ...FILTER_DIMS].filter((k) => !DIMS[k].fixed);
+/* Una sola pasada sobre la vista (2026-10-28): antes eran 17 consultas en UNION ALL, 12 s en frío, más que el límite de Vercel. Cada
+   fila aporta a cada filtro solo si pasa los DEMÁS filtros (el propio no se aplica a sí mismo). */
+function optionsSql(e?: Estado): string {
+  if (!e) return OPCION_DIMS.map((k) => `SELECT '${k}' k, ${DIMS[k].sql} v, SUM(leads) n FROM ${VIEW} WHERE tipo_fila='lead' AND fecha >= '${MIN_DATE}' GROUP BY 1,2`).join("\nUNION ALL\n") + "\nORDER BY k, n DESC";
+  const base = [`tipo_fila = 'lead'`, `fecha BETWEEN '${e.desde}' AND '${e.hasta}'`];
+  const ts = terrSql(e.terr); if (ts) base.push(ts);
+  const condDe = (sin: string) => {
+    const c: string[] = [];
+    if (sin !== "sucursal_real") { const si = sucsIn(e, "sucursal_real"); if (si) c.push(si); }
+    FILTER_DIMS.forEach((k) => { if (k !== sin && e.f[k].length) c.push(filtroIn(k, e.f[k])); });
+    return c.length ? c.join(" AND ") : "TRUE";
+  };
+  const arr = OPCION_DIMS.map((k) => `STRUCT('${k}' AS k, ${DIMS[k].sql} AS v, ${condDe(k)} AS ok)`).join(",\n    ");
+  return `SELECT k, v, SUM(leads) n
+FROM ${VIEW}, UNNEST([
+    ${arr}
+  ]) o
+WHERE ${base.join("\n  AND ")} AND o.ok
+GROUP BY 1,2
+ORDER BY k, n DESC`;
+}
 
 /* El SQL de cada tipo de consulta. null = no aplica con ese estado (semanal sin sucursal). */
 /* Publicidad por mes y medio: solo filtran periodo, medio, mes y los 6 UTM; USD × 18 como en la vista. */
