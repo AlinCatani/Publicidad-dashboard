@@ -4,6 +4,8 @@ import { leerAcceso, NIVELES, TABLERO_IDS, type Nivel } from "@/lib/acceso";
 import { TABLEROS } from "@/lib/tableros";
 import { agregarUsuarios, fijarCampo, fijarTablero, quitarUsuario } from "./acciones";
 import BarraSitio from "@/components/BarraSitio";
+import { cookies } from "next/headers";
+import { COOKIE_AVISO, type ResultadoAviso } from "@/lib/enviar-correo";
 import "./admin.css";
 
 export const metadata: Metadata = { title: "Administración de reportes" };
@@ -16,6 +18,8 @@ export default async function Admin() {
   const usuarios = [...acceso.usuarios].sort((a, b) => a.email.localeCompare(b.email));
   const nombreTablero = (id: string) => TABLEROS.find((t) => t.ruta === `/${id}`)?.nombre ?? id;
   const enEdge = !!(process.env.GLOBAL_CONFIG || process.env.EDGE_CONFIG);
+  let aviso: ResultadoAviso | null = null;
+  try { aviso = JSON.parse((await cookies()).get(COOKIE_AVISO)?.value ?? "null"); } catch { aviso = null; }
 
   return (
     <><BarraSitio permiso={yo} actual="/growth" />
@@ -27,6 +31,16 @@ export default async function Admin() {
         <b> Resultados</b> ve registros, leads, citas, PVR y tasas, sin dinero.
         {!enEdge && <> · <span className="aviso">Modo local:</span> los cambios se guardan en un archivo de esta máquina, no en Vercel.</>}
       </p>
+
+      {aviso && (aviso.enviados.length > 0 || aviso.fallidos.length > 0) && (
+        <div className={`adm-resultado${aviso.fallidos.length ? " con-fallos" : ""}`}>
+          {aviso.enviados.length > 0 && <p>Correo de aviso enviado a {aviso.enviados.join(", ")}.</p>}
+          {aviso.fallidos.length > 0 && (
+            <p><b>No se envió el aviso</b> a {aviso.fallidos.join(", ")}
+              {aviso.sinConfigurar ? " porque el envío de correo no está configurado." : "."} El acceso sí quedó guardado: avísales tú.</p>
+          )}
+        </div>
+      )}
 
       <section className="adm-alta">
         <h2>Dar acceso</h2>
@@ -48,6 +62,7 @@ export default async function Admin() {
               ))}
             </fieldset>
           </div>
+          <label className="adm-check"><input type="checkbox" name="avisar" defaultChecked /> Avisar por correo <span className="tenue">· solo a quien es nuevo o recibe un tablero que no tenía</span></label>
           <button type="submit" className="boton">Agregar</button>
         </form>
       </section>

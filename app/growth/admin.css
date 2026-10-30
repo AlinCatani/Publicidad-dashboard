@@ -26,3 +26,9 @@
 .adm-borrar { color: #a90707; background: #fbeaea; border-color: #f0c4c4; }
 .adm-toggle { font: inherit; font-size: 12.5px; font-weight: 700; color: var(--muted); background: #f1f3f7; border: 1px solid var(--line); border-radius: 999px; padding: 4px 12px; cursor: pointer; }
 .adm-toggle.on { color: #fff; background: var(--primary); border-color: var(--primary); }
+/* Resultado del aviso por correo (2026-10-29) */
+.adm-resultado { margin-top: 18px; padding: 12px 16px; border-radius: 14px; background: var(--soft); border: 1px solid var(--line); color: var(--ink); font-size: 14px; }
+.adm-resultado p { margin: 0; }
+.adm-resultado p + p { margin-top: 6px; }
+.adm-resultado.con-fallos { border-color: var(--aviso); }
+.adm-resultado.con-fallos b { color: var(--aviso); }
